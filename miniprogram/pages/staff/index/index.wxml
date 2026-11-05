@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="card" wx:if="{{stat}}">
+    <view class="between">
+      <text class="title">今日概况</text>
+      <text class="tag orange">{{role}}</text>
+    </view>
+    <view class="stats">
+      <view wx:if="{{isStaff}}" class="s"><view class="n">{{stat.entries}}</view><view class="muted">入场人次</view></view>
+      <view class="s"><view class="n">{{stat.classBookings}}</view><view class="muted">课程预约</view></view>
+      <view wx:if="{{isStaff}}" class="s"><view class="n">{{stat.venueBookings}}</view><view class="muted">娱乐预约</view></view>
+      <view wx:if="{{isStaff}}" class="s"><view class="n">{{stat.members}}</view><view class="muted">会员总数</view></view>
+    </view>
+  </view>
+
+  <button wx:if="{{isStaff}}" class="btn block" bindtap="scanEntry">扫码核验入场</button>
+  <view wx:if="{{last}}" class="card mt">
+    <view wx:if="{{last.denied}}"><text class="tag red">拒绝</text> {{last.message}} <text class="muted">{{last.time}}</text></view>
+    <view wx:else><text class="tag green">已入场</text> {{last.name}} · {{last.cardName}} · {{last.info}} <text class="muted">{{last.time}}</text></view>
+  </view>
+
+  <view class="card mt">
+    <view class="list-item" data-url="/pages/staff/schedule/schedule?staff={{isStaff ? 1 : 0}}" bindtap="go"><text class="grow">{{isStaff ? '排课与签到' : '我的课程与签到'}}</text><text class="muted">›</text></view>
+    <view wx:if="{{isStaff}}" class="list-item" data-url="/pages/staff/venue-bookings/venue-bookings" bindtap="go"><text class="grow">娱乐预约核销</text><text class="muted">›</text></view>
+    <view wx:if="{{isStaff}}" class="list-item" data-url="/pages/staff/members/members?admin={{isAdmin ? 1 : 0}}" bindtap="go"><text class="grow">会员与办卡</text><text class="muted">›</text></view>
+    <view wx:if="{{isStaff}}" class="list-item" data-url="/pages/staff/card-types/card-types?admin={{isAdmin ? 1 : 0}}" bindtap="go"><text class="grow">卡种管理</text><text class="muted">›</text></view>
+    <view wx:if="{{isStaff}}" class="list-item" data-url="/pages/staff/venues/venues?admin={{isAdmin ? 1 : 0}}" bindtap="go"><text class="grow">娱乐项目管理</text><text class="muted">›</text></view>
+  </view>
+</view>

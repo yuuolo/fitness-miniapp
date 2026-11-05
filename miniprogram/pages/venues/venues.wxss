@@ -1,0 +1,27 @@
+.tabs { white-space: nowrap; margin-bottom: 24rpx; }
+.tab {
+  display: inline-block;
+  padding: 12rpx 28rpx;
+  margin-right: 16rpx;
+  border-radius: 32rpx;
+  background: #fff;
+  color: #5c6370;
+}
+.tab.on { background: #ff6a3d; color: #fff; }
+.grid { display: flex; flex-wrap: wrap; margin: 0 -8rpx; }
+.slot {
+  width: calc(25% - 16rpx);
+  margin: 8rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 16rpx 0;
+  text-align: center;
+  box-sizing: border-box;
+  border: 1px solid #fff;
+}
+.slot .s-t { font-size: 30rpx; font-weight: 600; }
+.slot .s-r { font-size: 22rpx; color: #1a9a4b; }
+.slot.off { background: #f0f1f4; }
+.slot.off .s-t, .slot.off .s-r { color: #b8bcc4; }
+.slot.mine { border-color: #ff6a3d; background: #fff1eb; }
+.slot.mine .s-r { color: #ff6a3d; }

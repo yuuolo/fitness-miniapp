@@ -1,0 +1,65 @@
+<view class="page">
+  <view wx:if="{{editing}}" class="card">
+    <view class="title">{{form._id ? '编辑课程' : '新增课程'}}</view>
+    <view class="form-row"><text class="label">课程名称</text><input value="{{form.courseName}}" data-field="courseName" bindinput="onInput" placeholder="如：动感单车" /></view>
+    <view class="form-row">
+      <text class="label">类型</text>
+      <picker range="{{kinds}}" range-key="label" value="{{form.kindIndex}}" data-field="kindIndex" bindchange="onPick">
+        <view class="picker-text">{{kinds[form.kindIndex].label}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="label">教练</text>
+      <picker range="{{coaches}}" range-key="name" value="{{form.coachIndex}}" data-field="coachIndex" bindchange="onPick">
+        <view class="{{form.coachIndex >= 0 ? 'picker-text' : 'placeholder'}}">{{form.coachIndex >= 0 ? coaches[form.coachIndex].name : '请选择（需先把员工设为教练）'}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="label">日期</text>
+      <picker mode="date" value="{{form.date}}" data-field="date" bindchange="onPick"><view class="picker-text">{{form.date}}</view></picker>
+    </view>
+    <view class="form-row">
+      <text class="label">开始时间</text>
+      <picker mode="time" value="{{form.time}}" data-field="time" bindchange="onPick"><view class="picker-text">{{form.time}}</view></picker>
+    </view>
+    <view class="form-row"><text class="label">时长（分钟）</text><input type="number" value="{{form.duration}}" data-field="duration" bindinput="onInput" /></view>
+    <view wx:if="{{form.kindIndex === 0}}" class="form-row"><text class="label">人数上限</text><input type="number" value="{{form.capacity}}" data-field="capacity" bindinput="onInput" /></view>
+    <view class="form-row"><text class="label">教室</text><input value="{{form.room}}" data-field="room" bindinput="onInput" placeholder="选填" /></view>
+    <view class="row mt">
+      <button class="btn ghost grow" bindtap="closeForm">取消</button>
+      <view style="width:24rpx"></view>
+      <button class="btn grow" bindtap="save">保存</button>
+    </view>
+  </view>
+
+  <block wx:else>
+    <view class="date-bar">
+      <view wx:for="{{days}}" wx:key="date" class="d {{item.date === date ? 'on' : ''}}" data-date="{{item.date}}" bindtap="pickDate">
+        <view class="w">{{item.week}}</view>
+        <view class="n">{{item.day}}</view>
+      </view>
+    </view>
+
+    <button wx:if="{{isStaff}}" class="btn block" bindtap="newSchedule">新增课程</button>
+
+    <view wx:if="{{!list.length}}" class="empty">这一天没有课程</view>
+    <view wx:for="{{list}}" wx:key="_id" class="card mt">
+      <view class="between" data-id="{{item._id}}" bindtap="openRoster">
+        <view class="grow">
+          <view>
+            <text class="title">{{item.courseName}}</text>
+            <text class="tag {{item.kind === 'private' ? 'orange' : ''}}">{{item.kindName}}</text>
+            <text wx:if="{{item.status === 'cancelled'}}" class="tag red">已取消</text>
+          </view>
+          <view class="muted">{{item.time}} · {{item.coachName}}{{item.room ? ' · ' + item.room : ''}}</view>
+        </view>
+        <view class="muted">{{item.booked}}/{{item.capacity}} 人 ›</view>
+      </view>
+      <view wx:if="{{isStaff && item.status === 'active'}}" class="row mt">
+        <button class="btn ghost" data-index="{{index}}" bindtap="editSchedule">编辑</button>
+        <view style="width:16rpx"></view>
+        <button class="btn gray" data-index="{{index}}" bindtap="cancelSchedule">取消课程</button>
+      </view>
+    </view>
+  </block>
+</view>

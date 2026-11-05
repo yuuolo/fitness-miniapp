@@ -1,0 +1,32 @@
+<view class="page">
+  <view wx:if="{{!venues.length}}" class="empty">暂无可预约的项目</view>
+  <block wx:else>
+    <scroll-view scroll-x class="tabs">
+      <view wx:for="{{venues}}" wx:key="_id" class="tab {{index === venueIndex ? 'on' : ''}}" data-index="{{index}}" bindtap="pickVenue">{{item.name}}</view>
+    </scroll-view>
+
+    <view class="card" wx:if="{{venue}}">
+      <view class="between">
+        <text class="title">{{venue.name}}</text>
+        <text class="price">¥{{venues[venueIndex].priceText}}/小时</text>
+      </view>
+      <view class="muted">{{venue.desc}} · 每时段 {{venue.capacity}} 个名额 · 到店付款</view>
+    </view>
+
+    <view class="date-bar">
+      <view wx:for="{{days}}" wx:key="date" class="d {{item.date === date ? 'on' : ''}}" data-date="{{item.date}}" bindtap="pickDate">
+        <view class="w">{{item.week}}</view>
+        <view class="n">{{item.day}}</view>
+      </view>
+    </view>
+
+    <view class="grid">
+      <view wx:for="{{slots}}" wx:key="hour" data-index="{{index}}" bindtap="tapSlot"
+        class="slot {{item.myBookingId ? 'mine' : (item.past || item.remain <= 0 ? 'off' : '')}}">
+        <view class="s-t">{{item.label}}</view>
+        <view class="s-r">{{item.myBookingId ? '已预约' : (item.past ? '已过' : (item.remain > 0 ? '剩 ' + item.remain : '约满'))}}</view>
+      </view>
+    </view>
+    <view class="muted mt">点击已预约的时段可以取消</view>
+  </block>
+</view>

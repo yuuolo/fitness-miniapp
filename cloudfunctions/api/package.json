@@ -1,0 +1,10 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "健身娱乐系统后端（云函数，按 action 路由）",
+  "main": "index.js",
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -1,0 +1,47 @@
+<view class="page">
+  <view wx:if="{{loaded && !initialized}}" class="card">
+    <view class="title">系统尚未初始化</view>
+    <view class="muted mt">请管理员到「我的」页面完成初始化。</view>
+    <button class="btn mt" bindtap="goMine">去初始化</button>
+  </view>
+
+  <block wx:else>
+    <view class="hero">
+      <view class="hello">你好，{{me && me.nickName ? me.nickName : '欢迎光临'}}</view>
+      <view class="sub">今天也要动起来 · 积分 {{me ? me.points : 0}}</view>
+      <view class="entry-btn" bindtap="openEntry">
+        <view class="entry-text">出示入场码</view>
+        <view class="entry-sub">前台扫码入场</view>
+      </view>
+    </view>
+
+    <view class="quick">
+      <view class="q" bindtap="goSchedule"><view class="q-t">约团课</view><view class="muted">瑜伽 单车 搏击</view></view>
+      <view class="q" bindtap="goVenues"><view class="q-t">娱乐预约</view><view class="muted">攀岩 蹦床 台球</view></view>
+    </view>
+
+    <view class="section-title">我的会员卡</view>
+    <view class="card" bindtap="goCards">
+      <view wx:if="{{!cards.length}}" class="muted">还没有会员卡，请到前台办理</view>
+      <view wx:for="{{cards}}" wx:key="_id" class="list-item">
+        <view class="grow">
+          <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
+          <view class="muted">{{item.summary}}</view>
+        </view>
+        <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
+      </view>
+    </view>
+
+    <view class="section-title">今日预约</view>
+    <view class="card">
+      <view wx:if="{{!bookings.length}}" class="muted">今天没有预约</view>
+      <view wx:for="{{bookings}}" wx:key="_id" class="list-item">
+        <view class="grow">
+          <view class="title">{{item.title}}</view>
+          <view class="muted">{{item.timeText}}{{item.room ? ' · ' + item.room : ''}}</view>
+        </view>
+        <text class="tag orange">{{item.typeName}}</text>
+      </view>
+    </view>
+  </block>
+</view>

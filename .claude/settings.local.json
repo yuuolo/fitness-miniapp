@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node test/run.js)",
+      "Read(//d/claude/fitness-miniapp/%APPDATA%/**)"
+    ]
+  }
+}

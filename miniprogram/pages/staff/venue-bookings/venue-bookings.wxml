@@ -1,0 +1,18 @@
+<view class="page">
+  <view class="date-bar">
+    <view wx:for="{{days}}" wx:key="date" class="d {{item.date === date ? 'on' : ''}}" data-date="{{item.date}}" bindtap="pickDate">
+      <view class="w">{{item.week}}</view>
+      <view class="n">{{item.day}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{loaded && !list.length}}" class="empty">这一天没有娱乐预约</view>
+  <view wx:for="{{list}}" wx:key="_id" class="card between">
+    <view class="grow">
+      <view class="title">{{item.title}} · {{item.timeText}}</view>
+      <view class="muted">{{item.memberName}} {{item.memberPhone}} · 应收 ¥{{item.priceText}}</view>
+    </view>
+    <button wx:if="{{item.status === 'booked' && date === today}}" class="btn" data-index="{{index}}" bindtap="use">核销</button>
+    <text wx:else class="tag {{item.status === 'used' ? 'green' : ''}}">{{item.statusName}}</text>
+  </view>
+</view>

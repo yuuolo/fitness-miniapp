@@ -1,0 +1,18 @@
+<view class="page">
+  <view class="card row">
+    <input class="grow" value="{{keyword}}" bindinput="onInput" bindconfirm="search" confirm-type="search" placeholder="输入手机号或昵称搜索" />
+    <button class="btn" bindtap="search">搜索</button>
+  </view>
+  <view class="muted" style="margin: 0 8rpx 16rpx">会员需先打开一次小程序才会出现在这里；请让会员在「我的」填写手机号。</view>
+
+  <view wx:if="{{loaded && !list.length}}" class="empty">没有找到会员</view>
+  <view class="card" wx:if="{{list.length}}">
+    <view wx:for="{{list}}" wx:key="_id" class="list-item" data-id="{{item._id}}" bindtap="open">
+      <view class="grow">
+        <view>{{item.nickName || '未设置昵称'}} <text wx:if="{{item.role !== 'member'}}" class="tag orange">{{item.roleName}}</text></view>
+        <view class="muted">{{item.phone || '未填手机号'}} · {{item.since}} 加入 · 积分 {{item.points || 0}}</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+  </view>
+</view>

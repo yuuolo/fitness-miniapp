@@ -1,0 +1,39 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/schedule/schedule",
+    "pages/venues/venues",
+    "pages/mine/mine",
+    "pages/entry/entry",
+    "pages/cards/cards",
+    "pages/bookings/bookings",
+    "pages/staff/index/index",
+    "pages/staff/schedule/schedule",
+    "pages/staff/roster/roster",
+    "pages/staff/venue-bookings/venue-bookings",
+    "pages/staff/members/members",
+    "pages/staff/member/member",
+    "pages/staff/card-types/card-types",
+    "pages/staff/venues/venues"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "健身娱乐",
+    "backgroundColor": "#f5f6f8"
+  },
+  "tabBar": {
+    "color": "#8a8f99",
+    "selectedColor": "#ff6a3d",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页" },
+      { "pagePath": "pages/schedule/schedule", "text": "约课" },
+      { "pagePath": "pages/venues/venues", "text": "娱乐" },
+      { "pagePath": "pages/mine/mine", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

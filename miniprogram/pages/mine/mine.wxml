@@ -1,0 +1,42 @@
+<view class="page">
+  <view wx:if="{{loaded && !initialized}}" class="card">
+    <view class="title">系统尚未初始化</view>
+    <view class="muted mt">首次部署后，由店长或管理员点击下方按钮完成初始化。第一个点击的人会成为管理员。</view>
+    <button class="btn block mt" bindtap="bootstrap">初始化系统</button>
+  </view>
+
+  <block wx:else>
+    <view class="card">
+      <view class="between" bindtap="editName">
+        <view>
+          <text class="title">{{me.nickName || '点击设置昵称'}}</text>
+          <text class="tag orange">{{roleName}}</text>
+        </view>
+        <text class="muted">编辑</text>
+      </view>
+      <view class="between mt" bindtap="editPhone">
+        <text class="muted">手机号：{{me.phone || '未填写（预约前必填）'}}</text>
+        <text class="muted">编辑</text>
+      </view>
+      <view wx:if="{{blockedText}}" class="tag red mt">{{blockedText}}</view>
+    </view>
+
+    <view class="card">
+      <view class="list-item" bindtap="goCards"><text class="grow">我的会员卡</text><text class="muted">›</text></view>
+      <view class="list-item" bindtap="goBookings"><text class="grow">我的预约</text><text class="muted">›</text></view>
+      <view wx:if="{{isStaff}}" class="list-item" bindtap="goStaff"><text class="grow">员工工作台</text><text class="muted">›</text></view>
+    </view>
+
+    <view class="section-title">积分 {{me.points || 0}}</view>
+    <view class="card">
+      <view wx:if="{{!logs.length}}" class="muted">每天首次到店 +10，上课签到 +5</view>
+      <view wx:for="{{logs}}" wx:key="_id" class="list-item">
+        <view class="grow">
+          <view>{{item.source}}</view>
+          <view class="muted">{{item.time}}</view>
+        </view>
+        <text class="price">{{item.change > 0 ? '+' : ''}}{{item.change}}</text>
+      </view>
+    </view>
+  </block>
+</view>

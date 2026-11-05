@@ -1,0 +1,12 @@
+<view class="page">
+  <view wx:if="{{loaded && !list.length}}" class="empty">还没有预约记录</view>
+  <view wx:for="{{list}}" wx:key="_id" class="card between">
+    <view class="grow">
+      <view><text class="title">{{item.title}}</text> <text class="tag orange">{{item.typeName}}</text></view>
+      <view class="muted">{{item.timeText}}{{item.room ? ' · ' + item.room : ''}}{{item.coachName ? ' · ' + item.coachName : ''}}</view>
+      <view wx:if="{{item.priceText}}" class="muted">到店付款 ¥{{item.priceText}}</view>
+    </view>
+    <button wx:if="{{item.canCancel}}" class="btn ghost" data-index="{{index}}" bindtap="cancel">取消</button>
+    <text wx:else class="tag {{item.status === 'cancelled' || item.status === 'absent' ? 'red' : 'green'}}">{{item.statusName}}</text>
+  </view>
+</view>

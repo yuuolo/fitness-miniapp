@@ -1,0 +1,23 @@
+.hero {
+  background: linear-gradient(135deg, #ff6a3d, #ff9a5c);
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx;
+  color: #fff;
+  margin-bottom: 24rpx;
+}
+.hello { font-size: 40rpx; font-weight: 600; }
+.sub { font-size: 24rpx; opacity: 0.9; margin-top: 8rpx; }
+.entry-btn {
+  margin-top: 32rpx;
+  background: #fff;
+  color: #ff6a3d;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  text-align: center;
+}
+.entry-text { font-size: 34rpx; font-weight: 600; }
+.entry-sub { font-size: 22rpx; color: #8a8f99; }
+.quick { display: flex; margin-bottom: 24rpx; }
+.q { flex: 1; background: #fff; border-radius: 20rpx; padding: 24rpx; }
+.q + .q { margin-left: 24rpx; }
+.q-t { font-size: 30rpx; font-weight: 600; }

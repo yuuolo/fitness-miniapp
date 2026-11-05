@@ -1,0 +1,3 @@
+.box { text-align: center; padding: 48rpx 32rpx; }
+.qr { width: 480rpx; height: 480rpx; margin: 32rpx auto; display: block; }
+.placeholder { background: #f0f1f4; border-radius: 16rpx; }

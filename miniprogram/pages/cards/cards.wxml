@@ -1,0 +1,26 @@
+<view class="page">
+  <view class="section-title">我的会员卡</view>
+  <view class="card">
+    <view wx:if="{{loaded && !cards.length}}" class="muted">还没有会员卡</view>
+    <view wx:for="{{cards}}" wx:key="_id" class="list-item">
+      <view class="grow">
+        <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
+        <view class="muted">{{item.summary}}</view>
+      </view>
+      <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
+    </view>
+    <button wx:if="{{canRemind && cards.length}}" class="btn ghost mt" bindtap="remind">开启到期提醒</button>
+  </view>
+
+  <view class="section-title">可办理的卡</view>
+  <view class="card">
+    <view class="muted">暂不支持线上购买，请到前台付款办理，办好后会自动出现在上方。</view>
+    <view wx:for="{{types}}" wx:key="_id" class="list-item">
+      <view class="grow">
+        <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
+        <view class="muted">{{item.rule}}{{item.desc ? ' · ' + item.desc : ''}}</view>
+      </view>
+      <text class="price">¥{{item.priceText}}</text>
+    </view>
+  </view>
+</view>
