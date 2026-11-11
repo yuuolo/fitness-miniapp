@@ -1,4 +1,6 @@
-const { db, _, MIN, HOUR, DAY, cnDate, cnDateTime, cnHour, recordNoShow } = require('./common')
+const {
+  db, _, MIN, HOUR, DAY, cnDate, cnDateTime, cnHour, recordNoShow, releaseLessonPending
+} = require('./common')
 const { notify } = require('./notify')
 
 // 定时触发器每 15 分钟调用一次（见 config.json）
@@ -8,39 +10,56 @@ const EXPIRE_WITHIN = 3 * DAY
 const QUIET_BEFORE = 9
 const QUIET_FROM = 21
 const BATCH = 100
+// 单个任务最多翻多少轮，防止异常数据导致无限循环（100 × 20 = 2000 条/次）
+const MAX_ROUNDS = 20
 
 // 课程结束 30 分钟后仍未签到，自动记为缺席
 async function markNoShows(now) {
-  const list = (await db.collection('bookings')
-    .where({ type: 'class', status: 'booked', endAt: _.lt(now - ABSENT_AFTER_END) })
-    .limit(BATCH).get()).data
+  const where = { type: 'class', status: 'booked', endAt: _.lt(now - ABSENT_AFTER_END) }
   let count = 0
-  for (const b of list) {
-    const res = await db.collection('bookings').where({ _id: b._id, status: 'booked' })
-      .update({ data: { status: 'absent', checkedAt: now, operator: 'system' } })
-    if (res.stats && res.stats.updated === 1) {
-      await recordNoShow(b.openid, now)
-      count++
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const list = (await db.collection('bookings').where(where).limit(BATCH).get()).data
+    if (!list.length) break
+    let progressed = 0
+    for (const b of list) {
+      const res = await db.collection('bookings').where({ _id: b._id, status: 'booked' })
+        .update({ data: { status: 'absent', checkedAt: now, operator: 'system' } })
+      if (res.stats && res.stats.updated === 1) {
+        // 私教课包被这次的缺席占着，要放回去
+        if (b.kind === 'private' && b.cardId) await releaseLessonPending(b.cardId)
+        await recordNoShow(b.openid, now)
+        progressed++
+        count++
+      }
     }
+    // 没有任何进展说明这批数据都处理不了，跳出避免死循环
+    if (!progressed) break
+    if (list.length < BATCH) break
   }
   return count
 }
 
 // 开课前 2 小时内提醒一次；先占位再发送，避免两次触发重复提醒
 async function remindClasses(now) {
-  const list = (await db.collection('bookings')
-    .where({ type: 'class', status: 'booked', remindedAt: 0, startAt: _.gt(now).and(_.lte(now + REMIND_BEFORE)) })
-    .limit(BATCH).get()).data
+  const where = { type: 'class', status: 'booked', remindedAt: 0, startAt: _.gt(now).and(_.lte(now + REMIND_BEFORE)) }
   let count = 0
-  for (const b of list) {
-    const res = await db.collection('bookings').where({ _id: b._id, remindedAt: 0 })
-      .update({ data: { remindedAt: now } })
-    if (res.stats && res.stats.updated === 1) {
-      const sent = await notify('classReminder', b.openid, {
-        title: b.title, time: cnDateTime(b.startAt), place: b.room || '请准时到店'
-      })
-      if (sent) count++
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const list = (await db.collection('bookings').where(where).limit(BATCH).get()).data
+    if (!list.length) break
+    let progressed = 0
+    for (const b of list) {
+      const res = await db.collection('bookings').where({ _id: b._id, remindedAt: 0 })
+        .update({ data: { remindedAt: now } })
+      if (res.stats && res.stats.updated === 1) {
+        progressed++
+        const sent = await notify('classReminder', b.openid, {
+          title: b.title, time: cnDateTime(b.startAt), place: b.room || '请准时到店'
+        })
+        if (sent) count++
+      }
     }
+    if (!progressed) break
+    if (list.length < BATCH) break
   }
   return count
 }
@@ -49,18 +68,24 @@ async function remindClasses(now) {
 async function remindExpiringCards(now) {
   const hour = cnHour(now)
   if (hour < QUIET_BEFORE || hour >= QUIET_FROM) return 0
-  const list = (await db.collection('member_cards')
-    .where({ status: 'active', expireRemindedAt: 0, expireAt: _.gt(now).and(_.lte(now + EXPIRE_WITHIN)) })
-    .limit(BATCH).get()).data
+  const where = { status: 'active', expireRemindedAt: 0, expireAt: _.gt(now).and(_.lte(now + EXPIRE_WITHIN)) }
   let count = 0
-  for (const c of list) {
-    const res = await db.collection('member_cards').where({ _id: c._id, expireRemindedAt: 0 })
-      .update({ data: { expireRemindedAt: now } })
-    if (res.stats && res.stats.updated === 1) {
-      const tip = c.kind === 'period' ? '续卡请到前台办理' : '还剩 ' + c.remainTimes + ' 次，记得来练'
-      const sent = await notify('cardExpire', c.openid, { cardName: c.name, expireDate: cnDate(c.expireAt), tip })
-      if (sent) count++
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const list = (await db.collection('member_cards').where(where).limit(BATCH).get()).data
+    if (!list.length) break
+    let progressed = 0
+    for (const c of list) {
+      const res = await db.collection('member_cards').where({ _id: c._id, expireRemindedAt: 0 })
+        .update({ data: { expireRemindedAt: now } })
+      if (res.stats && res.stats.updated === 1) {
+        progressed++
+        const tip = c.kind === 'period' ? '续卡请到前台办理' : '还剩 ' + c.remainTimes + ' 次，记得来练'
+        const sent = await notify('cardExpire', c.openid, { cardName: c.name, expireDate: cnDate(c.expireAt), tip })
+        if (sent) count++
+      }
     }
+    if (!progressed) break
+    if (list.length < BATCH) break
   }
   return count
 }

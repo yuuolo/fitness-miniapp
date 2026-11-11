@@ -102,6 +102,23 @@ async function recordNoShow(openid, now) {
   await db.collection('members').doc(openid).update({ data: patch })
 }
 
+// 私教课包占位：预约时在 member_cards.pending 上 +1，取消 / 缺席 / 签到后释放
+// 用「带 pending 原值的条件更新」做乐观锁，避免并发下减成负数
+async function releaseLessonPending(cardId) {
+  if (!cardId) return false
+  for (let i = 0; i < 3; i++) {
+    const card = await getDoc('member_cards', cardId)
+    if (!card) return false
+    const pending = card.pending || 0
+    if (pending <= 0) return false
+    const res = await db.collection('member_cards')
+      .where({ _id: cardId, pending })
+      .update({ data: { pending: _.inc(-1) } })
+    if (res.stats && res.stats.updated === 1) return true
+  }
+  return false
+}
+
 async function addCardLog(card, change, reason, operator) {
   await db.collection('card_logs').add({
     data: { cardId: card._id, openid: card.openid, change, reason, operator: operator || '', createdAt: Date.now() }
@@ -110,5 +127,6 @@ async function addCardLog(card, change, reason, operator) {
 
 module.exports = {
   cloud, db, _, MIN, HOUR, DAY, cnDate, cnDateTime, cnHour, dayStart, BizError, fail, need, ROLE_LEVEL, ROLE_NAMES,
-  getDoc, txGet, strip, cardUsable, pickEntryCard, memberLabel, addPoints, addCardLog, recordNoShow
+  getDoc, txGet, strip, cardUsable, pickEntryCard, memberLabel, addPoints, addCardLog, recordNoShow,
+  releaseLessonPending
 }

@@ -1,6 +1,6 @@
 const {
-  db, _, MIN, DAY, cnDate, dayStart, fail, need, getDoc, cardUsable,
-  memberLabel, addPoints, addCardLog, recordNoShow, ROLE_LEVEL
+  db, _, MIN, DAY, cnDate, dayStart, fail, need, getDoc, txGet, cardUsable,
+  memberLabel, addPoints, addCardLog, recordNoShow, releaseLessonPending, ROLE_LEVEL
 } = require('./common')
 
 const PAY_METHODS = { cash: '现金', wechat_qr: '微信收款码', alipay_qr: '支付宝收款码', pos: 'POS 刷卡', free: '赠送' }
@@ -85,7 +85,7 @@ async function openCard({ me, data }) {
   const times = type.kind === 'period' ? 0 : type.times
   const card = {
     openid: member._id, typeId: type._id, name: type.name, kind: type.kind,
-    remainTimes: times, totalTimes: times, startAt: now, expireAt: now + type.days * DAY,
+    remainTimes: times, totalTimes: times, pending: 0, startAt: now, expireAt: now + type.days * DAY,
     status: 'active', pausedAt: 0, expireRemindedAt: 0, operator: me._id, createdAt: now
   }
   const res = await db.collection('member_cards').add({ data: card })
@@ -113,6 +113,10 @@ async function adjustCard({ me, data }) {
   const patch = {}
   if (delta) patch.remainTimes = _.inc(delta)
   if (extendDays) {
+    // 缩短有效期时不能缩到开卡时间之前
+    if (extendDays < 0 && card.expireAt + extendDays * DAY < card.startAt) {
+      fail('有效期不能早于开卡时间')
+    }
     patch.expireAt = _.inc(extendDays * DAY)
     patch.expireRemindedAt = 0
   }
@@ -241,10 +245,24 @@ async function cancelSchedule({ me, data }) {
   const s = await getDoc('schedules', data.scheduleId)
   if (!s || s.status !== 'active') fail('课程不存在或已取消')
   const now = Date.now()
-  await db.collection('schedules').doc(s._id).update({ data: { status: 'cancelled', booked: 0 } })
-  const res = await db.collection('bookings').where({ scheduleId: s._id, status: 'booked' })
-    .update({ data: { status: 'cancelled', cancelledAt: now, cancelledBy: 'staff' } })
-  return { cancelledBookings: res.stats ? res.stats.updated : 0 }
+  // 先把课程置为已取消，之后新的预约会被 bookSchedule 挡掉
+  await db.collection('schedules').doc(s._id).update({ data: { status: 'cancelled' } })
+
+  const list = (await db.collection('bookings').where({ scheduleId: s._id, status: 'booked' }).get()).data
+  let cancelled = 0
+  for (const b of list) {
+    const res = await db.collection('bookings').where({ _id: b._id, status: 'booked' })
+      .update({ data: { status: 'cancelled', cancelledAt: now, cancelledBy: 'staff' } })
+    if (res.stats && res.stats.updated === 1) {
+      // 私教课包把预约占位还回去
+      if (b.kind === 'private' && b.cardId) await releaseLessonPending(b.cardId)
+      cancelled++
+    }
+  }
+  // 自愈：按真实剩下的 booked 数重算，避免中途失败后计数不一致
+  const remain = (await db.collection('bookings').where({ scheduleId: s._id, status: 'booked' }).count()).total
+  await db.collection('schedules').doc(s._id).update({ data: { booked: remain } })
+  return { cancelledBookings: cancelled }
 }
 
 async function loadOwnSchedule(me, scheduleId) {
@@ -273,15 +291,29 @@ async function markAttendance({ me, data }) {
   if (data.status === 'attended') {
     if (now < b.startAt - 30 * MIN) fail('开课前 30 分钟内才能签到')
     if (b.kind === 'private') {
-      const res = await db.collection('member_cards').where({ _id: b.cardId, remainTimes: _.gt(0) })
-        .update({ data: { remainTimes: _.inc(-1) } })
-      if (!res.stats || res.stats.updated !== 1) fail('课包次数不足，请先续费')
+      // 扣课包、释放占位、改预约状态放在同一事务里，避免只扣了一半
+      await db.runTransaction(async tx => {
+        const cur = await txGet(tx, 'bookings', b._id)
+        if (!cur || cur.status !== 'booked') fail('已经处理过了')
+        const card = await txGet(tx, 'member_cards', b.cardId)
+        if (!card || card.remainTimes <= 0) fail('课包次数不足，请先续费')
+        await tx.collection('member_cards').doc(b.cardId).update({
+          data: {
+            remainTimes: card.remainTimes - 1,
+            pending: Math.max((card.pending || 0) - 1, 0)
+          }
+        })
+        await tx.collection('bookings').doc(b._id).update({ data: patch })
+      })
       await addCardLog({ _id: b.cardId, openid: b.openid }, -1, '私教课消课：' + b.title, me._id)
+    } else {
+      await db.collection('bookings').doc(b._id).update({ data: patch })
     }
-    await db.collection('bookings').doc(b._id).update({ data: patch })
     await addPoints(b.openid, ATTEND_POINTS, '上课签到：' + b.title)
   } else if (data.status === 'absent') {
     if (now < b.startAt) fail('开课后才能标记缺席')
+    // 缺席不扣课，把预约时占的位释放掉
+    if (b.kind === 'private' && b.cardId) await releaseLessonPending(b.cardId)
     await db.collection('bookings').doc(b._id).update({ data: patch })
     await recordNoShow(b.openid, now)
   } else {

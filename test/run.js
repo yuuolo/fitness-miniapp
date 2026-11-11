@@ -68,6 +68,20 @@ async function step(name, fn) {
     assert.strictEqual(store.get('venues').size, 4)
   })
 
+  await step('初始化可续做：哨兵丢失后重跑不会重复写入示例数据', async () => {
+    const typesBefore = store.get('card_types').size
+    const venuesBefore = store.get('venues').size
+    const schedulesBefore = store.get('schedules').size
+    // 模拟「上次初始化在写哨兵之前中断」：示例数据已写入，但 config/system 不存在
+    store.get('config').delete('system')
+    await ok(ADMIN, 'bootstrap')
+    assert.strictEqual(store.get('card_types').size, typesBefore, '卡种不应重复')
+    assert.strictEqual(store.get('venues').size, venuesBefore, '娱乐项目不应重复')
+    assert.strictEqual(store.get('schedules').size, schedulesBefore, '课程不应重复')
+    assert.ok(store.get('config').get('system'), '哨兵应补上')
+    await bad(BOB, 'bootstrap', {}, '已经初始化')
+  })
+
   const types = await ok(ADMIN, 'listCardTypes')
   const timesType = types.find(t => t.kind === 'times')
   const lessonType = types.find(t => t.kind === 'lesson')
@@ -214,11 +228,16 @@ async function step(name, fn) {
     await bad(BOB, 'bookSchedule', { scheduleId: p._id }, '私教课包')
     const card = await ok(ADMIN, 'openCard', { openid: BOB, typeId: lessonType._id, amount: 299000, payMethod: 'pos' })
     const bk = await ok(BOB, 'bookSchedule', { scheduleId: p._id })
+    // 预约时只在 pending 上占位，不动 remainTimes
+    assert.strictEqual(store.get('member_cards').get(card._id).pending, 1)
+    assert.strictEqual(store.get('member_cards').get(card._id).remainTimes, 10)
     const roster = await ok(CAROL, 'roster', { scheduleId: p._id })
     assert.strictEqual(roster.bookings.length, 1)
     clock = p.startAt
     await ok(CAROL, 'markAttendance', { bookingId: bk.bookingId, status: 'attended' })
     assert.strictEqual(store.get('member_cards').get(card._id).remainTimes, 9)
+    // 正式消课后占位释放
+    assert.strictEqual(store.get('member_cards').get(card._id).pending, 0)
   })
 
   await step('累计 3 次缺席暂停预约 7 天', async () => {
@@ -264,6 +283,27 @@ async function step(name, fn) {
     assert.strictEqual(res.cancelledBookings, 1)
     const after = await ok(CAROL, 'listSchedules', { date: '2026-11-04' })
     assert.ok(!after.find(s => s._id === box._id))
+  })
+
+  await step('调整有效期不能缩到开卡之前', async () => {
+    const detail = await ok(ADMIN, 'memberDetail', { openid: BOB })
+    const card = detail.cards.find(c => c.kind === 'times')
+    await bad(ADMIN, 'adjustCard', { cardId: card._id, extendDays: -3650, remark: '测试下限' }, '早于开卡')
+  })
+
+  await step('取消整节私教课时释放课包占位', async () => {
+    clock = Date.parse('2026-11-02T08:00:00+08:00')
+    const card = await ok(ADMIN, 'openCard', { openid: CAROL, typeId: lessonType._id, amount: 0, payMethod: 'free' })
+    const p = await ok(ADMIN, 'saveSchedule', {
+      courseName: '私教·待取消', kind: 'private', coachId: CAROL,
+      startAt: Date.parse('2026-11-06T18:00:00+08:00'), duration: 60, capacity: 1, room: ''
+    })
+    await ok(CAROL, 'bookSchedule', { scheduleId: p._id })
+    assert.strictEqual(store.get('member_cards').get(card._id).pending, 1, '预约后应占位 1')
+    const res = await ok(ADMIN, 'cancelSchedule', { scheduleId: p._id })
+    assert.strictEqual(res.cancelledBookings, 1)
+    assert.strictEqual(store.get('member_cards').get(card._id).pending, 0, '占位应释放')
+    assert.strictEqual(store.get('schedules').get(p._id).booked, 0, '计数应自愈为 0')
   })
 
   await step('员工搜索会员与概况统计', async () => {

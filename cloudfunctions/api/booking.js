@@ -47,13 +47,11 @@ async function bookSchedule({ openid, me, data }) {
 
   const cards = (await db.collection('member_cards').where({ openid, status: 'active' }).get()).data
   let card
+  let lessonCandidates = []
   if (s.kind === 'private') {
-    const lessons = cards.filter(c => c.kind === 'lesson' && cardUsable(c, s.startAt))
-    for (const c of lessons) {
-      const pending = (await db.collection('bookings').where({ cardId: c._id, status: 'booked' }).count()).total
-      if (pending < c.remainTimes) { card = c; break }
-    }
-    if (!card) fail('没有可用的私教课包，请到前台办理')
+    lessonCandidates = cards.filter(c => c.kind === 'lesson' && cardUsable(c, s.startAt))
+    if (!lessonCandidates.length) fail('没有可用的私教课包，请到前台办理')
+    card = lessonCandidates[0]
   } else {
     card = cards.find(c => c.kind !== 'lesson' && cardUsable(c, s.startAt))
     if (!card) fail('没有可用的会员卡，请到前台办理')
@@ -63,17 +61,37 @@ async function bookSchedule({ openid, me, data }) {
   const existing = await getDoc('bookings', id)
   if (existing && existing.status !== 'cancelled') fail('你已经预约过这节课了')
 
+  let bookedCard = card
   await db.runTransaction(async tx => {
     const cur = await txGet(tx, 'schedules', s._id)
     if (!cur || cur.status !== 'active') fail('课程已取消')
     if (cur.booked >= cur.capacity) fail('名额已满')
+
+    // 私教课包：在事务内选卡并占位（pending +1），
+    // 避免「先查已占用数、再写预约」之间被并发插入导致超额预约
+    if (s.kind === 'private') {
+      let chosen = null
+      for (const c of lessonCandidates) {
+        const cardDoc = await txGet(tx, 'member_cards', c._id)
+        if (!cardDoc || cardDoc.status !== 'active') continue
+        const pending = cardDoc.pending || 0
+        if (pending >= cardDoc.remainTimes) continue
+        chosen = cardDoc
+        break
+      }
+      if (!chosen) fail('私教课包剩余次数不足，请到前台续费')
+      bookedCard = chosen
+      await tx.collection('member_cards').doc(chosen._id)
+        .update({ data: { pending: (chosen.pending || 0) + 1 } })
+    }
+
     await tx.collection('schedules').doc(s._id).update({ data: { booked: _.inc(1) } })
     await tx.collection('bookings').doc(id).set({
       data: {
         type: 'class', openid, memberName: memberLabel(me), memberPhone: me.phone,
         scheduleId: s._id, kind: s.kind, title: s.courseName, coachId: s.coachId, coachName: s.coachName,
         room: s.room, startAt: s.startAt, endAt: s.startAt + s.duration * MIN, date: cnDate(s.startAt),
-        cardId: card._id, cardName: card.name, status: 'booked', remindedAt: 0, createdAt: now
+        cardId: bookedCard._id, cardName: bookedCard.name, status: 'booked', remindedAt: 0, createdAt: now
       }
     })
   })
@@ -98,6 +116,14 @@ async function cancelBooking({ openid, me, data }) {
     await tx.collection('bookings').doc(b._id).update({ data: { status: 'cancelled', cancelledAt: now } })
     if (b.type === 'class') {
       await tx.collection('schedules').doc(b.scheduleId).update({ data: { booked: _.inc(-1) } })
+      // 私教课包释放预约占位
+      if (b.kind === 'private' && b.cardId) {
+        const cardDoc = await txGet(tx, 'member_cards', b.cardId)
+        if (cardDoc && (cardDoc.pending || 0) > 0) {
+          await tx.collection('member_cards').doc(b.cardId)
+            .update({ data: { pending: cardDoc.pending - 1 } })
+        }
+      }
     } else {
       await tx.collection('venue_slots').doc(b.slotId).update({ data: { count: _.inc(-1) } })
     }
