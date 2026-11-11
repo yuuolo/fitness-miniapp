@@ -1,0 +1,19 @@
+# 依赖（云函数部署时由云端安装，不需要入库）
+node_modules/
+**/node_modules/
+
+# 微信开发者工具的本机私有配置
+project.private.config.json
+
+# 本地个人配置（云环境 ID、订阅消息模板 ID 等）
+miniprogram/config.local.js
+
+# AI/编辑器本地设置
+.claude/
+.vscode/
+.idea/
+
+# 系统与日志
+.DS_Store
+Thumbs.db
+*.log
