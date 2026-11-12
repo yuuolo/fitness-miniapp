@@ -6,6 +6,18 @@
   </view>
 
   <block wx:else>
+    <view wx:if="{{me && !me.profileReady}}" class="card profile-tip" bindtap="goProfile">
+      <view class="between">
+        <view class="grow">
+          <view class="title">完善个人资料</view>
+          <view class="muted">
+            {{!me.nickName && !me.phone ? '昵称和手机号还没填' : (!me.nickName ? '还没填昵称' : '还没填手机号')}}，填好才能约课
+          </view>
+        </view>
+        <text class="muted">去完善 ›</text>
+      </view>
+    </view>
+
     <view class="hero">
       <view class="hello">你好，{{me && me.nickName ? me.nickName : '欢迎光临'}}</view>
       <view class="sub">今天也要动起来 · 积分 {{me ? me.points : 0}}</view>

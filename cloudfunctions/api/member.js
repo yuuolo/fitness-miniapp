@@ -5,7 +5,9 @@ function publicMe(me) {
   if (!me) return null
   return {
     nickName: me.nickName, phone: me.phone, role: me.role, points: me.points || 0,
-    blockUntil: me.blockUntil || 0
+    blockUntil: me.blockUntil || 0, avatar: me.avatar || '',
+    // 前端用来提示「资料还没填完」
+    profileReady: !!(me.nickName && me.phone)
   }
 }
 
@@ -39,6 +41,12 @@ async function updateProfile({ openid, me, data }) {
     const p = String(data.phone).trim()
     if (!/^1\d{10}$/.test(p)) fail('请输入 11 位手机号')
     patch.phone = p
+  }
+  // 头像由小程序 chooseAvatar 拿到临时文件后上传云存储，这里只收 fileID
+  if (data.avatar !== undefined) {
+    const a = String(data.avatar || '')
+    if (a && !/^cloud:\/\//.test(a)) fail('头像地址不正确，请重新选择')
+    patch.avatar = a
   }
   if (!Object.keys(patch).length) fail('没有要修改的内容')
   await db.collection('members').doc(openid).update({ data: patch })

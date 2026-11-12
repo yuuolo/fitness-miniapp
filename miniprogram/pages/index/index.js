@@ -44,6 +44,10 @@ Page({
     wx.navigateTo({ url: '/pages/entry/entry' })
   },
 
+  goProfile() {
+    wx.navigateTo({ url: '/pages/profile/profile' })
+  },
+
   goSchedule() {
     wx.switchTab({ url: '/pages/schedule/schedule' })
   },

@@ -21,3 +21,5 @@
 .q { flex: 1; background: #fff; border-radius: 20rpx; padding: 24rpx; }
 .q + .q { margin-left: 24rpx; }
 .q-t { font-size: 30rpx; font-weight: 600; }
+
+.profile-tip { border: 1px solid #ffe0d3; background: #fff8f5; }

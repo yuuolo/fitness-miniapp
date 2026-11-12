@@ -88,7 +88,9 @@ async function step(name, fn) {
   const monthType = types.find(t => t.name === '月卡')
 
   await step('新会员自动建档；没填手机号、没卡都不能约课', async () => {
-    await ok(BOB, 'home')
+    const first = await ok(BOB, 'home')
+    assert.strictEqual(first.me.profileReady, false, '新用户资料应未完善')
+    assert.strictEqual(first.me.avatar, '')
     const tomorrow = await ok(BOB, 'listSchedules', { date: '2026-11-03' })
     assert.strictEqual(tomorrow.length, 3)
     await bad(BOB, 'bookSchedule', { scheduleId: tomorrow[0]._id }, '手机号')
@@ -96,6 +98,15 @@ async function step(name, fn) {
     await ok(BOB, 'updateProfile', { phone: '13800000001', nickName: '小博' })
     await bad(BOB, 'bookSchedule', { scheduleId: tomorrow[0]._id }, '会员卡')
     await bad(BOB, 'entryCode', {}, '会员卡')
+  })
+
+  await step('资料完善：头像只收云文件，profileReady 跟随昵称手机号', async () => {
+    await bad(BOB, 'updateProfile', { avatar: 'http://x/a.jpg' }, '头像地址')
+    const r = await ok(BOB, 'updateProfile', { avatar: 'cloud://env.bucket/a.jpg' })
+    assert.strictEqual(r.avatar, 'cloud://env.bucket/a.jpg')
+    assert.strictEqual(r.profileReady, true)
+    const home = await ok(BOB, 'home')
+    assert.strictEqual(home.me.avatar, 'cloud://env.bucket/a.jpg')
   })
 
   await step('普通会员不能调用员工接口', async () => {

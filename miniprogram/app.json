@@ -4,6 +4,7 @@
     "pages/schedule/schedule",
     "pages/venues/venues",
     "pages/mine/mine",
+    "pages/profile/profile",
     "pages/entry/entry",
     "pages/cards/cards",
     "pages/bookings/bookings",

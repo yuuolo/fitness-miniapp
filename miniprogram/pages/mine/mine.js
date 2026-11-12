@@ -27,29 +27,9 @@ Page({
     }, err => this.setData({ loaded: true, initialized: false, me: null, logs: [] }))
   },
 
-  editField(field, title, placeholder) {
-    const current = (this.data.me && this.data.me[field]) || ''
-    wx.showModal({
-      title,
-      editable: true,
-      placeholderText: placeholder,
-      content: current,
-      success: r => {
-        if (!r.confirm) return
-        api.call('updateProfile', { [field]: r.content }, { loading: '保存中' }).then(me => {
-          this.setData({ me: Object.assign({}, this.data.me, me) })
-          wx.showToast({ title: '已保存' })
-        })
-      }
-    })
-  },
-
-  editName() {
-    this.editField('nickName', '修改昵称', '1–20 个字')
-  },
-
-  editPhone() {
-    this.editField('phone', '填写手机号', '11 位手机号，预约时前台联系用')
+  // 昵称/头像/手机统一在「完善资料」页里改
+  goProfile() {
+    wx.navigateTo({ url: '/pages/profile/profile' })
   },
 
   goCards() {

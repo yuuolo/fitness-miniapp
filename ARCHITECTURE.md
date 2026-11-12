@@ -565,6 +565,11 @@ git add .gitignore && git commit -m "chore: stop tracking node_modules and priva
 - 订阅消息为一次性授权，发送失败（用户拒收/次数用尽）只记日志，不影响业务 —— 这是微信限制下的正确做法。
 - 入场码签名截断为 20 个十六进制字符（80 bit），对 60 秒窗口足够。
 - 员工端靠 query 参数控制 UI 显隐，安全由服务端 `need()` 兜底。
+- **昵称/头像无法自动获取**：微信 2022-10 起废弃 `getUserProfile`，只能用「头像昵称填写能力」
+  （`open-type="chooseAvatar"` + `input type="nickname"`），必须用户主动点选。
+  **手机号**需已认证的非个人主体才能用 `getPhoneNumber`；个人未认证主体只能手填。
+  因此新用户首次打开只有 `openid`，资料靠 `pages/profile/profile` 引导补齐，
+  首页与约课流程都会按 `profileReady` 提示。
 
 ### 11.5 本次修复记录
 

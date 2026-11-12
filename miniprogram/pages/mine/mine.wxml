@@ -6,17 +6,17 @@
   </view>
 
   <block wx:else>
-    <view class="card">
-      <view class="between" bindtap="editName">
-        <view>
-          <text class="title">{{me.nickName || '点击设置昵称'}}</text>
-          <text class="tag orange">{{roleName}}</text>
+    <view class="card" bindtap="goProfile">
+      <view class="between">
+        <view class="row">
+          <image wx:if="{{me.avatar}}" class="avatar" src="{{me.avatar}}" mode="aspectFill" />
+          <view wx:else class="avatar avatar-empty">＋</view>
+          <view class="ml">
+            <view><text class="title">{{me.nickName || '点击完善资料'}}</text> <text class="tag orange">{{roleName}}</text></view>
+            <view class="muted">手机号：{{me.phone || '未填写（预约前必填）'}}</view>
+          </view>
         </view>
-        <text class="muted">编辑</text>
-      </view>
-      <view class="between mt" bindtap="editPhone">
-        <text class="muted">手机号：{{me.phone || '未填写（预约前必填）'}}</text>
-        <text class="muted">编辑</text>
+        <text class="muted">{{me.profileReady ? '编辑' : '去完善'}}</text>
       </view>
       <view wx:if="{{blockedText}}" class="tag red mt">{{blockedText}}</view>
     </view>

@@ -18,7 +18,7 @@ async function ensureMember(openid) {
   const me = await getDoc('members', openid)
   if (me) return me
   const doc = {
-    _id: openid, nickName: '', phone: '', role: 'member', points: 0,
+    _id: openid, nickName: '', phone: '', avatar: '', role: 'member', points: 0,
     noShow: 0, blockUntil: 0, createdAt: Date.now()
   }
   try {

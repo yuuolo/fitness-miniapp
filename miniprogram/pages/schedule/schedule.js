@@ -51,12 +51,28 @@ Page({
         if (!r.confirm) return
         this.setData({ busyId: item._id })
         subscribe(['bookingSuccess', 'classReminder'])
-          .then(() => api.call('bookSchedule', { scheduleId: item._id }, { loading: '预约中' }))
+          .then(() => api.call('bookSchedule', { scheduleId: item._id }, { loading: '预约中', silent: true }))
           .then(() => {
             wx.showToast({ title: '预约成功' })
             this.setData({ busyId: '' })
             this.load()
-          }, () => this.setData({ busyId: '' }))
+          }, err => {
+            this.setData({ busyId: '' })
+            const msg = (err && err.message) || '预约失败'
+            // 没填手机号时直接引导去完善，而不是只弹一个错误
+            if (msg.indexOf('手机号') >= 0) {
+              wx.showModal({
+                title: '先完善资料',
+                content: '约课前要填手机号，方便前台开课前联系你。',
+                confirmText: '去完善',
+                success: r => {
+                  if (r.confirm) wx.navigateTo({ url: '/pages/profile/profile' })
+                }
+              })
+            } else {
+              wx.showToast({ title: msg, icon: 'none', duration: 2500 })
+            }
+          })
       }
     })
   },
