@@ -425,6 +425,29 @@ async function step(name, fn) {
     await bad(ADMIN, 'saveActivity', { openid: BOB }, '至少填写')
   })
 
+  await step('分享海报：小程序码只生成一次，短码可反查动态', async () => {
+    clock = Date.parse('2026-11-02T08:00:00+08:00')
+    const m = await ok(BOB, 'postMoment', { content: '海报测试', media: [{ fileID: 'cloud://env.bucket/a.jpg', type: 'image' }] })
+    const doc = store.get('moments').get(m._id)
+    assert.ok(doc.short && doc.short.length >= 6, '应生成短码')
+
+    const p1 = await ok(BOB, 'momentPoster', { id: m._id })
+    assert.ok(p1.fileID.startsWith('cloud://'), '应返回云存储 fileID')
+    assert.strictEqual(p1.cached, false)
+    // 第二次直接命中缓存，不再调微信接口
+    const p2 = await ok(BOB, 'momentPoster', { id: m._id })
+    assert.strictEqual(p2.fileID, p1.fileID)
+    assert.strictEqual(p2.cached, true)
+
+    // 扫码进来用短码反查
+    const found = await ok(BOB, 'momentByShort', { short: doc.short })
+    assert.strictEqual(found._id, m._id)
+    await bad(BOB, 'momentByShort', { short: 'nope' }, '不存在')
+
+    // 清理：这条只是为了测海报，别影响后面友圈列表的条数断言
+    await ok(BOB, 'deleteMoment', { id: m._id })
+  })
+
   await step('员工可查看会员完整档案', async () => {
     const all = await ok(ADMIN, 'memberFitness', { openid: BOB })
     assert.strictEqual(all.latestBody.weight, 80)
@@ -537,3 +560,5 @@ async function step(name, fn) {
   console.error('\n✗ ' + e.message)
   process.exit(1)
 })
+
+

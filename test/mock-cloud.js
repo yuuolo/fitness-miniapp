@@ -134,6 +134,10 @@ const sdk = {
   init() {},
   database: () => db,
   getWXContext: () => ({ OPENID: ctx.openid }),
+  // 云存储：只记录调用，返回一个假的 fileID
+  async uploadFile({ cloudPath }) {
+    return { fileID: 'cloud://test.bucket/' + cloudPath }
+  },
   openapi: {
     subscribeMessage: {
       async send(msg) {
@@ -144,6 +148,11 @@ const sdk = {
         }
         sent.push(clone(msg))
         return { errCode: 0 }
+      }
+    },
+    wxacode: {
+      async getUnlimited(params) {
+        return { buffer: Buffer.from('PNG:' + (params.scene || '')), contentType: 'image/jpeg' }
       }
     }
   }

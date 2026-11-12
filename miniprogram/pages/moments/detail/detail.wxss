@@ -20,3 +20,12 @@
   color: #ff6a3d;
   background: #fff1eb;
 }
+
+/* 海报画布：放到屏幕外，只用于绘制导出，不显示给用户 */
+.poster-canvas {
+  position: fixed;
+  left: -3000rpx;
+  top: 0;
+  width: 750px;
+  height: 1200px;
+}

@@ -1,6 +1,6 @@
 {
   "permissions": {
-    "openapi": ["subscribeMessage.send"]
+    "openapi": ["subscribeMessage.send", "wxacode.getUnlimited"]
   },
   "triggers": [
     {

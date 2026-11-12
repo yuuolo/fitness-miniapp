@@ -1,10 +1,18 @@
 const {
-  db, _, cnDate, cnDateTime, fail, need, getDoc, memberLabel, ROLE_LEVEL
+  cloud, db, _, cnDate, cnDateTime, fail, need, getDoc, memberLabel, ROLE_LEVEL
 } = require('./common')
 
 const MAX_CONTENT = 500
 const MAX_MEDIA = 9
 const PAGE_SIZE = 20
+const DETAIL_PAGE = 'pages/moments/detail/detail'
+
+// 小程序码 scene 最多 32 字符，用 10 位短码指回动态
+function makeShort() {
+  const t = Date.now().toString(36).slice(-6)
+  const r = Math.random().toString(36).slice(2, 6)
+  return t + r
+}
 
 function isStaff(me) {
   return (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.staff
@@ -71,6 +79,8 @@ async function postMoment({ me, data }) {
     coachId: byCoach ? me._id : '',
     coachName: byCoach ? memberLabel(me) : '',
     likedBy: [],
+    short: makeShort(),
+    posterQr: '',
     status: 'normal',
     date: cnDate(now),
     createdAt: now
@@ -121,4 +131,54 @@ async function likeMoment({ me, data }) {
   return { liked: want, likeCount: likedBy.length }
 }
 
-module.exports = { postMoment, momentList, momentDetail, deleteMoment, likeMoment }
+// 生成这条动态的小程序码（分享海报用），生成一次后缓存在动态文档上
+async function momentPoster({ me, data }) {
+  need(me, 'member')
+  const m = await getDoc('moments', data.id)
+  if (!m || m.status !== 'normal') fail('动态不存在或已删除')
+  if (m.posterQr) return { fileID: m.posterQr, cached: true }
+
+  let short = m.short
+  if (!short) {
+    short = makeShort()
+    await db.collection('moments').doc(m._id).update({ data: { short } })
+  }
+
+  let fileID = ''
+  try {
+    // scene 会出现在被扫码页面的 options.scene 里，形如 s=xxxxxxxxxx
+    const res = await cloud.openapi.wxacode.getUnlimited({
+      scene: 's=' + short,
+      page: DETAIL_PAGE,
+      width: 280,
+      checkPath: false
+    })
+    const up = await cloud.uploadFile({
+      cloudPath: 'posters/' + m._id + '_' + Date.now() + '.jpg',
+      fileContent: res.buffer
+    })
+    fileID = up.fileID
+  } catch (e) {
+    console.warn('wxacode.getUnlimited failed', e.errCode, e.errMsg || e.message)
+    // 把错误码和原因带出来，方便定位是权限问题还是参数问题
+    fail('小程序码生成失败(' + (e.errCode || 'unknown') + ')：' + (e.errMsg || e.message || ''))
+  }
+
+  await db.collection('moments').doc(m._id).update({ data: { posterQr: fileID } })
+  return { fileID, cached: false }
+}
+
+// 扫海报上的码进来时用短码找动态
+async function momentByShort({ me, data }) {
+  need(me, 'member')
+  const short = String(data.short || '')
+  if (!short) fail('缺少短码')
+  const list = (await db.collection('moments').where({ short, status: 'normal' }).limit(1).get()).data
+  if (!list.length) fail('动态不存在或已删除')
+  return momentView(list[0], me)
+}
+
+module.exports = {
+  postMoment, momentList, momentDetail, deleteMoment, likeMoment,
+  momentPoster, momentByShort
+}

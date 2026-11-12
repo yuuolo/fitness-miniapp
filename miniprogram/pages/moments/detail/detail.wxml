@@ -27,8 +27,22 @@
   </view>
 
   <view class="card">
+    <button class="btn block" bindtap="makePoster">生成分享海报</button>
+    <view class="muted mt">海报里带这张动态的内容和专属小程序码，保存到相册后发朋友圈即可。</view>
+  </view>
+
+  <view class="card">
     <view class="muted">分享方式：点右上角「···」→ 转发给朋友 / 分享到朋友圈。</view>
-    <button class="btn block mt" open-type="share">转发给朋友</button>
-    <view class="muted mt">小程序无法直接调起「发朋友圈」，只能用系统菜单里的「分享到朋友圈」，且打开后是单页模式。</view>
+    <button class="btn ghost block mt" open-type="share">转发给朋友</button>
+    <view class="muted mt">小程序无法直接调起「发朋友圈」，只能用系统菜单或海报。</view>
+  </view>
+
+  <canvas type="2d" id="poster" class="poster-canvas"></canvas>
+</view>
+
+<view class="page" wx:elif="{{loaded}}">
+  <view class="card">
+    <view class="title">打不开这条动态</view>
+    <view class="muted mt">{{error || '可能已被删除'}}</view>
   </view>
 </view>
