@@ -20,11 +20,27 @@
 }
 .media-item.add {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 60rpx;
+  font-size: 46rpx;
   color: #b8bcc4;
   border: 2rpx dashed #d9dce1;
+}
+.add-t {
+  font-size: 20rpx;
+  margin-top: 4rpx;
+}
+.size {
+  position: absolute;
+  left: 8rpx;
+  bottom: 8rpx;
+  padding: 0 8rpx;
+  border-radius: 6rpx;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 18rpx;
+  line-height: 26rpx;
 }
 .del {
   position: absolute;
