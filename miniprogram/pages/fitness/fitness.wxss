@@ -47,3 +47,106 @@
   margin-top: 16rpx;
   background: #f0f1f4;
 }
+
+/* ---------- 节段人体图 ---------- */
+.seg-tabs {
+  display: flex;
+  margin-bottom: 20rpx;
+}
+.seg-tab {
+  padding: 10rpx 36rpx;
+  margin-right: 12rpx;
+  border-radius: 26rpx;
+  background: #f0f1f4;
+  color: #5c6370;
+  font-size: 26rpx;
+}
+.seg-tab.on {
+  background: #ff6a3d;
+  color: #fff;
+}
+
+.body-map {
+  position: relative;
+  height: 520rpx;
+  margin: 0 auto;
+  width: 420rpx;
+}
+.seg-head {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 88rpx;
+  height: 88rpx;
+  margin-left: -44rpx;
+  border-radius: 50%;
+  background: #e6e9ee;
+}
+.seg {
+  position: absolute;
+  border-radius: 14rpx;
+  background: #eef3f7;
+  border: 2rpx solid #dbe4ec;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.seg-v {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1f2329;
+}
+.seg-u {
+  font-size: 18rpx;
+  color: #8a8f99;
+  margin-left: 2rpx;
+}
+.seg-n {
+  font-size: 20rpx;
+  color: #8a8f99;
+}
+.seg-la, .seg-ra {
+  top: 120rpx;
+  width: 96rpx;
+  height: 180rpx;
+}
+.seg-la { left: 0; }
+.seg-ra { right: 0; }
+.seg-tr {
+  left: 50%;
+  top: 108rpx;
+  width: 190rpx;
+  height: 210rpx;
+  margin-left: -95rpx;
+}
+.seg-ll, .seg-rl {
+  top: 336rpx;
+  width: 104rpx;
+  height: 180rpx;
+}
+.seg-ll { left: 62rpx; }
+.seg-rl { right: 62rpx; }
+
+.seg-summary {
+  margin-top: 16rpx;
+}
+.seg-line {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 0;
+  font-size: 26rpx;
+}
+.seg-line text:first-child {
+  width: 100rpx;
+  color: #5c6370;
+}
+.seg-badge {
+  padding: 2rpx 16rpx;
+  border-radius: 8rpx;
+  margin-right: 12rpx;
+  font-size: 22rpx;
+}
+.seg-badge.ok { background: #e8f7ee; color: #1a9a4b; }
+.seg-badge.warn { background: #fff1eb; color: #ff6a3d; }

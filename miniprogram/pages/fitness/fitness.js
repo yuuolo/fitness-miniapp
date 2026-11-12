@@ -27,12 +27,54 @@ const METRICS = [
   { key: 'fatFreeMass', name: '去脂体重', unit: 'kg' }
 ]
 
+const SEG_META = [
+  { key: 'leftArm', name: '左上肢', cls: 'seg-la' },
+  { key: 'rightArm', name: '右上肢', cls: 'seg-ra' },
+  { key: 'trunk', name: '躯干', cls: 'seg-tr' },
+  { key: 'leftLeg', name: '左下肢', cls: 'seg-ll' },
+  { key: 'rightLeg', name: '右下肢', cls: 'seg-rl' }
+]
+
+// 左右差 ≤ 0.3kg 视为均衡；只做自身左右对比，不套用人群标准
+function segJudge(diff) {
+  if (diff == null) return ''
+  return diff <= 0.3 ? '均衡' : '不均衡'
+}
+
+function buildSeg(b) {
+  if (!b) return null
+  const mk = src => {
+    const s = src || {}
+    const has = SEG_META.some(m => s[m.key] != null)
+    if (!has) return null
+    const armDiff = (s.leftArm != null && s.rightArm != null) ? Math.abs(s.leftArm - s.rightArm) : null
+    const legDiff = (s.leftLeg != null && s.rightLeg != null) ? Math.abs(s.leftLeg - s.rightLeg) : null
+    return {
+      cells: SEG_META.map(m => ({
+        key: m.key,
+        name: m.name,
+        cls: m.cls,
+        value: s[m.key] == null ? '-' : s[m.key]
+      })),
+      arms: segJudge(armDiff),
+      legs: segJudge(legDiff),
+      armDiff: armDiff == null ? null : Math.round(armDiff * 10) / 10,
+      legDiff: legDiff == null ? null : Math.round(legDiff * 10) / 10
+    }
+  }
+  const fat = mk(b.segmentFat)
+  const muscle = mk(b.segmentMuscle)
+  if (!fat && !muscle) return null
+  return { fat, muscle }
+}
+
 Page({
   data: {
     loaded: false, f: null, isPublic: false,
     hasBody: false, score: 0, scoreDetail: [],
     metrics: [], bestList: [], bodyList: [], actList: [],
-    periods: PERIODS, days: 30, trend: null, trendList: []
+    periods: PERIODS, days: 30, trend: null, trendList: [],
+    segTab: 'fat', seg: null, segCurrent: null
   },
 
   onShow() {
@@ -46,11 +88,19 @@ Page({
   load() {
     return api.call('myFitness').then(f => {
       const latest = f.latestBody || null
+      // 最新一条可能没填节段，往前找最近一条有节段数据的
+      const hasSeg = x => !!x && !!x.segmentFat && Object.keys(x.segmentFat).length > 0
+      const segSource = hasSeg(latest) ? latest : ((f.bodyHistory || []).find(hasSeg) || null)
+      const seg = buildSeg(segSource)
+      const segTab = seg && !seg[this.data.segTab] ? (seg.fat ? 'fat' : 'muscle') : this.data.segTab
       this.setData({
         loaded: true,
         f,
         isPublic: f.isBodyPublic,
         hasBody: !!latest,
+        seg,
+        segTab,
+        segCurrent: seg ? seg[segTab] : null,
         score: latest && latest.score != null ? latest.score : 0,
         scoreDetail: (latest && latest.detail) || [],
         // 有值的指标才展示，避免满屏空行
@@ -96,6 +146,13 @@ Page({
         }))
       })
     }, () => {})
+  },
+
+  pickSegTab(e) {
+    const segTab = e.currentTarget.dataset.tab
+    const seg = this.data.seg
+    if (!seg || !seg[segTab] || segTab === this.data.segTab) return
+    this.setData({ segTab, segCurrent: seg[segTab] })
   },
 
   pickPeriod(e) {

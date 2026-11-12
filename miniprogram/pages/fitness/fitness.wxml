@@ -35,6 +35,36 @@
       <image wx:if="{{f.latestBody.reportImage}}" class="report" src="{{f.latestBody.reportImage}}" mode="aspectFill" />
     </view>
 
+    <view wx:if="{{seg}}" class="section-title">节段分析</view>
+    <view wx:if="{{seg}}" class="card">
+      <view class="seg-tabs">
+        <view wx:if="{{seg.fat}}" class="seg-tab {{segTab === 'fat' ? 'on' : ''}}" data-tab="fat" bindtap="pickSegTab">脂肪</view>
+        <view wx:if="{{seg.muscle}}" class="seg-tab {{segTab === 'muscle' ? 'on' : ''}}" data-tab="muscle" bindtap="pickSegTab">肌肉</view>
+      </view>
+
+      <view class="body-map">
+        <view class="seg-head"></view>
+        <view wx:for="{{segCurrent.cells}}" wx:key="key" class="seg {{item.cls}}">
+          <view class="seg-v">{{item.value}}<text class="seg-u">kg</text></view>
+          <view class="seg-n">{{item.name}}</view>
+        </view>
+      </view>
+
+      <view class="seg-summary">
+        <view class="seg-line">
+          <text>上肢</text>
+          <text class="seg-badge {{segCurrent.arms === '均衡' ? 'ok' : 'warn'}}">{{segCurrent.arms || '数据不足'}}</text>
+          <text wx:if="{{segCurrent.armDiff !== null}}" class="muted">左右差 {{segCurrent.armDiff}} kg</text>
+        </view>
+        <view class="seg-line">
+          <text>下肢</text>
+          <text class="seg-badge {{segCurrent.legs === '均衡' ? 'ok' : 'warn'}}">{{segCurrent.legs || '数据不足'}}</text>
+          <text wx:if="{{segCurrent.legDiff !== null}}" class="muted">左右差 {{segCurrent.legDiff}} kg</text>
+        </view>
+      </view>
+      <view class="muted mt">只做自身左右对比（相差 ≤ 0.3kg 记为均衡），不代表人群标准。</view>
+    </view>
+
     <view class="section-title">数据变化</view>
     <view class="card">
       <view class="row">
