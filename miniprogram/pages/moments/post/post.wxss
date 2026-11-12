@@ -1,0 +1,41 @@
+.content {
+  width: 100%;
+  min-height: 180rpx;
+  font-size: 30rpx;
+  line-height: 1.6;
+}
+.media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+.media-cell {
+  position: relative;
+}
+.media-item {
+  width: 210rpx;
+  height: 210rpx;
+  border-radius: 12rpx;
+  background: #f0f1f4;
+}
+.media-item.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60rpx;
+  color: #b8bcc4;
+  border: 2rpx dashed #d9dce1;
+}
+.del {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 44rpx;
+  height: 44rpx;
+  line-height: 40rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 30rpx;
+}

@@ -432,6 +432,55 @@ async function step(name, fn) {
     await bad(BOB, 'memberFitness', { openid: CAROL }, '没有权限')
   })
 
+  await step('健身友圈：发文、列表、点赞、删除权限', async () => {
+    clock = Date.parse('2026-11-02T08:00:00+08:00')
+    await bad(BOB, 'postMoment', { content: '' }, '写点什么')
+    const m1 = await ok(BOB, 'postMoment', { content: '今天卧推破了 80kg' })
+    assert.strictEqual(m1.type, 'text')
+    assert.strictEqual(m1.isMine, true)
+    // 云存储 fileID 才收，普通字符串会被过滤掉
+    await bad(BOB, 'postMoment', { media: [{ fileID: 'http://x/y.mp4', type: 'video' }] }, '写点什么')
+    clock += 60e3
+    const m2 = await ok(BOB, 'postMoment', {
+      content: '深蹲 100kg',
+      media: [{ fileID: 'cloud://env.bucket/demo.mp4', type: 'video', duration: 12 }]
+    })
+    assert.strictEqual(m2.type, 'video')
+    assert.strictEqual(m2.media.length, 1)
+
+    const feed = await ok(CAROL, 'momentList')
+    assert.strictEqual(feed.list.length, 2)
+    assert.strictEqual(feed.list[0]._id, m2._id, '应按时间倒序')
+    assert.strictEqual(feed.list[0].isMine, false)
+
+    const liked = await ok(CAROL, 'likeMoment', { id: m2._id })
+    assert.strictEqual(liked.liked, true)
+    assert.strictEqual(liked.likeCount, 1)
+    const unliked = await ok(CAROL, 'likeMoment', { id: m2._id, like: false })
+    assert.strictEqual(unliked.likeCount, 0)
+
+    // 别人不能删；作者可以删
+    await bad(CAROL, 'deleteMoment', { id: m1._id }, '只能删除自己的')
+    await ok(BOB, 'deleteMoment', { id: m1._id })
+    const after = await ok(BOB, 'momentList')
+    assert.strictEqual(after.list.length, 1)
+    await bad(BOB, 'momentDetail', { id: m1._id }, '不存在或已删除')
+  })
+
+  await step('健身友圈：教练可以帮会员代拍', async () => {
+    const m = await ok(CAROL, 'postMoment', {
+      openid: BOB,
+      content: '教练帮拍的训练记录',
+      media: [{ fileID: 'cloud://env.bucket/demo2.jpg', type: 'image' }]
+    })
+    assert.strictEqual(m.openid, BOB)
+    assert.strictEqual(m.isMine, false)
+    assert.strictEqual(m.coachName, '卡罗', '应记录代拍教练')
+    // 普通会员不能指定别人
+    const self = await ok(DAVE, 'postMoment', { openid: BOB, content: '想冒名发一条' })
+    assert.strictEqual(self.openid, DAVE, '会员指定别人时应退回自己')
+  })
+
   console.log('\n全部 ' + passed + ' 组场景通过')
 })().catch(e => {
   console.error('\n✗ ' + e.message)

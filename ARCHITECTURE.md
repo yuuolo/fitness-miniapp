@@ -400,6 +400,33 @@ members (openid)
 页面：`pages/fitness/fitness`（我的身体数据）、`pages/rank/rank`（排行榜）、
 `pages/staff/fitness/fitness`（员工代录）。
 
+### 7.4 健身友圈（moment.js）
+
+| 集合 | 关键字段 |
+| --- | --- |
+| `moments` | `openid`, `authorName`, `content`, `media[]`, `type`(`video`/`image`/`text`), `coachId`, `coachName`, `likedBy[]`, `status`(`normal`/`deleted`), `date`, `createdAt` |
+
+`media` 项为 `{ fileID, type, duration, thumb }`，`fileID` 必须是云存储的 `cloud://` 地址，
+普通 URL 会被过滤掉；视频和图片都由小程序先 `wx.cloud.uploadFile` 上传，云函数只收 fileID。
+
+| action | 权限 | 说明 |
+| --- | --- | --- |
+| `postMoment` | member | 发自己的；教练/前台可带 `openid` 帮会员代拍，记 `coachName` |
+| `momentList` | member | 按 `createdAt` 倒序分页，`before` 游标，每页 20 |
+| `momentDetail` | member | 单条详情 |
+| `deleteMoment` | 作者或 staff | 软删除（`status='deleted'`） |
+| `likeMoment` | member | 点赞开关，读改写 `likedBy` 数组 |
+
+页面：`pages/moments/moments`（列表，tabBar）、`pages/moments/post/post`（发布，含代拍选择）、
+`pages/moments/detail/detail`（详情 + 分享）。
+
+**分享限制**：小程序没有任何 API 能直接发朋友圈。详情页实现 `onShareTimeline`，
+用户只能通过右上角菜单「分享到朋友圈」；朋友圈打开为单页模式，不能跳转 tabBar 或其他页面。
+`onShareAppMessage` + `open-type="share"` 按钮用于转发给好友。
+
+> 注：`<video>` 不能直接使用云文件 ID，列表与详情都用 `wx.cloud.getTempFileURL` 换临时链接；
+> `<image>` 可以直接用 `cloud://`。
+
 ---
 
 ## 8. 并发与一致性

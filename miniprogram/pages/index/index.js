@@ -2,7 +2,10 @@ const api = require('../../utils/api')
 const fmt = require('../../utils/format')
 
 Page({
-  data: { loaded: false, initialized: true, me: null, cards: [], bookings: [] },
+  data: {
+    loaded: false, initialized: true, me: null, cards: [], bookings: [],
+    rankTop: [], rankMe: null, rankTotal: 0, rankName: '卧推'
+  },
 
   onShow() {
     this.load()
@@ -21,7 +24,20 @@ Page({
         cards: res.cards.map(fmt.decorateCard),
         bookings: res.todayBookings.map(fmt.decorateBooking)
       })
+      this.loadRank()
     })
+  },
+
+  // 首页展示卧推绝对重量榜前十
+  loadRank() {
+    return api.call('leaderboard', { lift: 'bench', metric: 'absolute' }, { silent: true }).then(r => {
+      this.setData({
+        rankTop: (r.top || []).slice(0, 5),
+        rankMe: r.me,
+        rankTotal: r.total,
+        rankName: r.liftName
+      })
+    }, () => {})
   },
 
   openEntry() {
@@ -38,6 +54,10 @@ Page({
 
   goCards() {
     wx.navigateTo({ url: '/pages/cards/cards' })
+  },
+
+  goRank() {
+    wx.navigateTo({ url: '/pages/rank/rank' })
   },
 
   goMine() {

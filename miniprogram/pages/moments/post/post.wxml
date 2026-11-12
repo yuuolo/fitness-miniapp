@@ -1,0 +1,33 @@
+<view class="page">
+  <view class="card">
+    <textarea class="content" value="{{content}}" bindinput="onContent" maxlength="500"
+      placeholder="今天练了什么？体重体脂有变化吗？" auto-height />
+    <view class="muted mt">{{content.length}}/500</view>
+  </view>
+
+  <view class="card">
+    <view class="media">
+      <view wx:for="{{media}}" wx:key="index" class="media-cell">
+        <video wx:if="{{item.type === 'video'}}" class="media-item" src="{{item.tempFilePath}}" object-fit="cover"></video>
+        <image wx:else class="media-item" src="{{item.tempFilePath}}" mode="aspectFill" />
+        <view class="del" catchtap="remove" data-index="{{index}}">×</view>
+      </view>
+      <view wx:if="{{media.length < 9}}" class="media-item add" bindtap="choose">＋</view>
+    </view>
+    <view class="muted mt">最多 9 个，视频限 30 秒，会自动压缩。可以现场拍，也能从相册选。</view>
+  </view>
+
+  <view wx:if="{{canCoach}}" class="card">
+    <view class="form-row">
+      <text class="label">为谁发布</text>
+      <picker range="{{members}}" range-key="name" value="{{memberIndex}}" bindchange="onMember">
+        <view class="{{memberIndex >= 0 ? 'picker-text' : 'placeholder'}}">
+          {{memberIndex >= 0 ? members[memberIndex].name : '默认发给我自己'}}
+        </view>
+      </picker>
+    </view>
+    <view class="muted mt">教练或前台可以帮会员拍并代发，动态会记在你名下。</view>
+  </view>
+
+  <button class="btn block" bindtap="submit" disabled="{{submitting}}">发布</button>
+</view>

@@ -1,0 +1,22 @@
+.media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+.media-item {
+  width: 218rpx;
+  height: 218rpx;
+  border-radius: 12rpx;
+  background: #f0f1f4;
+}
+.like {
+  font-size: 26rpx;
+  color: #8a8f99;
+  padding: 4rpx 20rpx;
+  border-radius: 24rpx;
+  background: #f0f1f4;
+}
+.like.on {
+  color: #ff6a3d;
+  background: #fff1eb;
+}

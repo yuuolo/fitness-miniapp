@@ -1,0 +1,34 @@
+<view class="page" wx:if="{{m}}">
+  <view class="card">
+    <view class="between">
+      <view>
+        <text class="title">{{m.authorName}}</text>
+        <text wx:if="{{m.coachName}}" class="tag">教练 {{m.coachName}} 代拍</text>
+      </view>
+      <text class="muted">{{m.date}}</text>
+    </view>
+    <view wx:if="{{m.content}}" class="content mt">{{m.content}}</view>
+  </view>
+
+  <view wx:if="{{m.media.length}}" class="card">
+    <block wx:for="{{m.media}}" wx:for-item="md" wx:key="fileID">
+      <video wx:if="{{md.type === 'video'}}" class="full-media" src="{{md.url || md.fileID}}"
+        object-fit="contain" show-center-play-btn enable-play-gesture></video>
+      <image wx:else class="full-media" src="{{md.fileID}}" mode="widthFix"
+        data-index="{{index}}" bindtap="previewMedia" />
+    </block>
+  </view>
+
+  <view class="card">
+    <view class="between">
+      <view class="like {{m.liked ? 'on' : ''}}" bindtap="like">{{m.liked ? '♥ 已赞' : '♡ 点赞'}} {{m.likeCount}}</view>
+      <button wx:if="{{m.canDelete}}" class="btn gray" bindtap="remove">删除</button>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="muted">分享方式：点右上角「···」→ 转发给朋友 / 分享到朋友圈。</view>
+    <button class="btn block mt" open-type="share">转发给朋友</button>
+    <view class="muted mt">小程序无法直接调起「发朋友圈」，只能用系统菜单里的「分享到朋友圈」，且打开后是单页模式。</view>
+  </view>
+</view>

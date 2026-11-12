@@ -1,0 +1,39 @@
+<view class="page">
+  <view class="between section-title">
+    <text>健身友圈</text>
+    <button class="btn" bindtap="goPost">发一条</button>
+  </view>
+
+  <view wx:if="{{loaded && !list.length}}" class="card">
+    <view class="muted">还没有人发动态。训练完随手拍一段，或者让教练帮你拍。</view>
+  </view>
+
+  <view wx:for="{{list}}" wx:key="_id" class="card">
+    <view class="between" bindtap="goDetail" data-id="{{item._id}}">
+      <view>
+        <text class="title">{{item.authorName}}</text>
+        <text wx:if="{{item.coachName}}" class="tag">教练 {{item.coachName}} 代拍</text>
+      </view>
+      <text class="muted">{{item.date}}</text>
+    </view>
+
+    <view wx:if="{{item.content}}" class="mt" bindtap="goDetail" data-id="{{item._id}}">{{item.content}}</view>
+
+    <view wx:if="{{item.media.length}}" class="media mt" bindtap="goDetail" data-id="{{item._id}}">
+      <block wx:for="{{item.media}}" wx:for-item="md" wx:key="fileID">
+        <video wx:if="{{md.type === 'video'}}" class="media-item" src="{{md.url || md.fileID}}" object-fit="cover" show-center-play-btn></video>
+        <image wx:else class="media-item" src="{{md.fileID}}" mode="aspectFill" />
+      </block>
+    </view>
+
+    <view class="between mt">
+      <text class="muted">{{item.time}}</text>
+      <view class="like {{item.liked ? 'on' : ''}}" catchtap="like" data-id="{{item._id}}">
+        {{item.liked ? '♥' : '♡'}} {{item.likeCount}}
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="muted" style="text-align: center; padding: 24rpx">加载中…</view>
+  <view wx:elif="{{loaded && !hasMore && list.length}}" class="muted" style="text-align: center; padding: 24rpx">没有更多了</view>
+</view>

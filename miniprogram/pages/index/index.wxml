@@ -20,6 +20,25 @@
       <view class="q" bindtap="goVenues"><view class="q-t">娱乐预约</view><view class="muted">攀岩 蹦床 台球</view></view>
     </view>
 
+    <view class="between section-title">
+      <text>{{rankName}}排行榜</text>
+      <text class="muted" bindtap="goRank">查看全部 ›</text>
+    </view>
+    <view class="card" bindtap="goRank">
+      <view wx:if="{{!rankTop.length}}" class="muted">还没有人上榜，教练录入成绩后这里就会出现</view>
+      <view wx:for="{{rankTop}}" wx:key="openid" class="list-item">
+        <text class="muted" style="width: 64rpx">{{item.rank}}</text>
+        <view class="grow">
+          <view>{{item.name}} <text wx:if="{{item.isMe}}" class="tag orange">我</text></view>
+          <view wx:if="{{item.weight}}" class="muted">{{item.weight}} kg · 评分 {{item.bodyScore}}</view>
+        </view>
+        <text class="price">{{item.oneRM}} kg</text>
+      </view>
+      <view wx:if="{{rankTop.length}}" class="muted mt">
+        {{rankMe ? '我的排名第 ' + rankMe.rank + ' 名' : '我还未上榜'}} · 共 {{rankTotal}} 人
+      </view>
+    </view>
+
     <view class="section-title">我的会员卡</view>
     <view class="card" bindtap="goCards">
       <view wx:if="{{!cards.length}}" class="muted">还没有会员卡，请到前台办理</view>

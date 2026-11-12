@@ -9,7 +9,8 @@ const handlers = Object.assign(
   require('./booking'),
   require('./entry'),
   require('./admin'),
-  require('./fitness')
+  require('./fitness'),
+  require('./moment')
 )
 
 // 首次调用自动建会员档案；系统未初始化（集合不存在）时返回 null
