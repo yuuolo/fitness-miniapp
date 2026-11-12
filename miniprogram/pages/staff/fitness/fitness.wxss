@@ -1,0 +1,12 @@
+.sub-title {
+  font-size: 26rpx;
+  color: #8a8f99;
+  margin: 24rpx 0 8rpx;
+}
+
+.report {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 12rpx;
+  background: #f0f1f4;
+}

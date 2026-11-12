@@ -10,17 +10,74 @@
 
   <view class="section-title">录入身体数据</view>
   <view class="card">
+    <view class="form-row"><text class="label">测量日期</text><input value="{{body.date}}" data-field="date" bindinput="onBodyInput" placeholder="默认今天，如 2026-09-18" /></view>
     <view class="form-row"><text class="label">体重(kg)</text><input type="digit" value="{{body.weight}}" data-field="weight" bindinput="onBodyInput" placeholder="必填" /></view>
-    <view class="form-row"><text class="label">身高(cm)</text><input type="digit" value="{{body.height}}" data-field="height" bindinput="onBodyInput" placeholder="首次填写后会自动沿用" /></view>
+    <view class="form-row"><text class="label">身高(cm)</text><input type="digit" value="{{body.height}}" data-field="height" bindinput="onBodyInput" placeholder="首次填写后沿用" /></view>
     <view class="form-row"><text class="label">体脂率(%)</text><input type="digit" value="{{body.bodyFat}}" data-field="bodyFat" bindinput="onBodyInput" placeholder="选填" /></view>
-    <view class="form-row"><text class="label">肌肉量(kg)</text><input type="digit" value="{{body.muscle}}" data-field="muscle" bindinput="onBodyInput" placeholder="选填" /></view>
-    <view class="form-row"><text class="label">内脏脂肪</text><input type="number" value="{{body.visceral}}" data-field="visceral" bindinput="onBodyInput" placeholder="选填，1–30" /></view>
+    <view class="form-row"><text class="label">心率(次/分)</text><input type="number" value="{{body.heartRate}}" data-field="heartRate" bindinput="onBodyInput" placeholder="选填" /></view>
+    <view class="form-row"><text class="label">内脏脂肪</text><input type="digit" value="{{body.visceral}}" data-field="visceral" bindinput="onBodyInput" placeholder="选填，1–30" /></view>
     <view class="form-row">
       <text class="label">性别</text>
       <picker range="{{genders}}" range-key="label" value="{{genderIndex}}" bindchange="onGender">
         <view class="picker-text">{{genders[genderIndex].label}} ›</view>
       </picker>
     </view>
+
+    <view class="between mt" bindtap="toggleDevice">
+      <text class="muted">设备报告指标（身体成分 / 代谢 / 节段）</text>
+      <text class="muted">{{showDevice ? '收起 ▲' : '展开 ▼'}}</text>
+    </view>
+
+    <block wx:if="{{showDevice}}">
+      <view class="sub-title">身体成分</view>
+      <view class="form-row"><text class="label">肌肉量(kg)</text><input type="digit" value="{{body.muscle}}" data-field="muscle" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">肌肉率(%)</text><input type="digit" value="{{body.muscleRate}}" data-field="muscleRate" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">蛋白质量(kg)</text><input type="digit" value="{{body.protein}}" data-field="protein" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">蛋白质率(%)</text><input type="digit" value="{{body.proteinRate}}" data-field="proteinRate" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">体水分量(kg)</text><input type="digit" value="{{body.water}}" data-field="water" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">身体水分(%)</text><input type="digit" value="{{body.waterRate}}" data-field="waterRate" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">骨盐量(kg)</text><input type="digit" value="{{body.boneMass}}" data-field="boneMass" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">骨盐率(%)</text><input type="digit" value="{{body.boneRate}}" data-field="boneRate" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">脂肪量(kg)</text><input type="digit" value="{{body.fatMass}}" data-field="fatMass" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">骨骼肌量(kg)</text><input type="digit" value="{{body.skeletalMuscle}}" data-field="skeletalMuscle" bindinput="onBodyInput" /></view>
+
+      <view class="sub-title">代谢与评估</view>
+      <view class="form-row"><text class="label">腰臀比</text><input type="digit" value="{{body.waistHipRatio}}" data-field="waistHipRatio" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">身体年龄</text><input type="number" value="{{body.bodyAge}}" data-field="bodyAge" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">骨骼肌指数</text><input type="digit" value="{{body.skeletalMuscleIndex}}" data-field="skeletalMuscleIndex" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">建议热量(kcal)</text><input type="number" value="{{body.recommendedCalories}}" data-field="recommendedCalories" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">基础代谢(kcal)</text><input type="number" value="{{body.bmr}}" data-field="bmr" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">去脂体重(kg)</text><input type="digit" value="{{body.fatFreeMass}}" data-field="fatFreeMass" bindinput="onBodyInput" /></view>
+      <view class="form-row"><text class="label">设备得分</text><input type="number" value="{{body.deviceScore}}" data-field="deviceScore" bindinput="onBodyInput" /></view>
+
+      <view class="sub-title">体态</view>
+      <view class="form-row"><text class="label">身体形态</text><input value="{{body.bodyShape}}" data-field="bodyShape" bindinput="onBodyInput" placeholder="如 倒三角型" /></view>
+      <view class="form-row"><text class="label">身体类型</text><input value="{{body.bodyType}}" data-field="bodyType" bindinput="onBodyInput" placeholder="如 肥胖 / 标准" /></view>
+      <view class="form-row"><text class="label">设备名称</text><input value="{{body.deviceName}}" data-field="deviceName" bindinput="onBodyInput" placeholder="如 米家体成分秤 S800" /></view>
+
+      <view class="sub-title">节段脂肪(kg)</view>
+      <view class="form-row" wx:for="{{segKeys}}" wx:key="key">
+        <text class="label">{{item.name}}</text>
+        <input type="digit" value="{{body.segmentFat[item.key]}}" data-field="segmentFat.{{item.key}}" bindinput="onBodyInput" />
+      </view>
+
+      <view class="sub-title">节段肌肉(kg)</view>
+      <view class="form-row" wx:for="{{segKeys}}" wx:key="key">
+        <text class="label">{{item.name}}</text>
+        <input type="digit" value="{{body.segmentMuscle[item.key]}}" data-field="segmentMuscle.{{item.key}}" bindinput="onBodyInput" />
+      </view>
+    </block>
+
+    <view class="sub-title">体测报告照片</view>
+    <view wx:if="{{body.reportImage}}" class="between">
+      <image class="report" src="{{body.reportImage}}" mode="aspectFill" bindtap="previewReport" />
+      <view class="row">
+        <button class="btn gray" bindtap="clearReport">移除</button>
+      </view>
+    </view>
+    <button wx:else class="btn ghost" bindtap="chooseReport" disabled="{{uploading}}">拍照 / 选择报告图片</button>
+    <view class="muted mt">可选。把设备出的报告拍下来存档，方便以后对照。</view>
+
     <button class="btn block mt" bindtap="submitBody">保存身体数据</button>
   </view>
 
@@ -51,7 +108,6 @@
     <view class="form-row"><text class="label">消耗(千卡)</text><input type="number" value="{{activity.calories}}" data-field="calories" bindinput="onActivityInput" placeholder="选填" /></view>
     <view class="form-row"><text class="label">平均心率</text><input type="number" value="{{activity.avgHr}}" data-field="avgHr" bindinput="onActivityInput" placeholder="选填" /></view>
     <button class="btn block mt" bindtap="submitActivity">保存运动数据</button>
-    <view class="muted mt">同一天同一来源只保留一条，设备重复同步会覆盖而不是新增</view>
   </view>
 
   <view class="section-title">身体数据历史</view>
@@ -60,18 +116,9 @@
     <view wx:for="{{f.bodyHistory}}" wx:key="_id" class="list-item">
       <view class="grow">
         <view>{{item.date}} <text class="tag">{{item.bmi}} BMI</text></view>
-        <view class="muted">评分 {{item.score == null ? '-' : item.score}}</view>
+        <view class="muted">评分 {{item.score == null ? '-' : item.score}}{{item.deviceScore ? ' · 设备 ' + item.deviceScore + ' 分' : ''}}</view>
       </view>
       <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
-    </view>
-  </view>
-
-  <view class="section-title">力量成绩历史</view>
-  <view class="card">
-    <view wx:if="{{!f.strengthHistory.length}}" class="muted">暂无记录</view>
-    <view wx:for="{{f.strengthHistory}}" wx:key="_id" class="list-item">
-      <text class="grow">{{item.date}} {{item.lift}}</text>
-      <text class="muted">{{item.weight}} kg × {{item.reps}} → 1RM {{item.oneRM}}</text>
     </view>
   </view>
 </view>

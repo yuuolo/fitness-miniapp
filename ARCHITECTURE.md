@@ -369,7 +369,7 @@ members (openid)
 
 | 集合 | 关键字段 |
 | --- | --- |
-| `body_records` | `openid`, `date`, `weight`, `height`, `bodyFat`, `muscle`, `visceral`, `bmi`, `score`, `detail`, `source`, `operator`, `createdAt` |
+| `body_records` | `openid`, `date`, `measuredAt`, `weight`, `height`, `bmi`, `bodyFat`, `heartRate`, `muscle`, `muscleRate`, `protein`, `proteinRate`, `water`, `waterRate`, `boneMass`, `boneRate`, `fatMass`, `skeletalMuscle`, `visceral`, `waistHipRatio`, `bodyAge`, `skeletalMuscleIndex`, `recommendedCalories`, `bmr`, `fatFreeMass`, `bodyShape`, `bodyType`, `segmentFat{}`, `segmentMuscle{}`, `deviceScore`, `deviceName`, `reportImage`, `score`, `detail`, `source`, `operator`, `createdAt` |
 | `strength_records` | `openid`, `lift`(`bench`/`squat`/`deadlift`/`ohp`/`pullup`), `weight`, `reps`, `oneRM`, `date`, `operator`, `createdAt` |
 | `activity_records` | `_id = ar_{openid}_{date}_{source}`、`type`、`steps`、`duration`、`calories`、`avgHr`、`source` |
 
@@ -396,6 +396,16 @@ members (openid)
 | `memberFitness` | staff | 任意会员档案（未公开者隐去身体指标） |
 | `leaderboard` | member | 双榜 + 我的排名 |
 | `setBodyPublic` | member | 自愿公开开关 |
+| `bodyTrend` | member/staff | 按时间段返回身体数据变化（`days` 7–365，含 `delta`） |
+
+**体测设备报告**：`saveBodyRecord` 除体重外全部选填，可录入米家 S800 这类体测报告的完整指标
+（身体成分 11 项、代谢与评估 7 项、体态 3 项、节段脂肪/肌肉各 5 段），并支持上传报告照片
+（`reportImage`，仅收 `cloud://` fileID）。
+系统评分（`score`）与设备自评分（`deviceScore`）**两套并存**，公式不同，界面上分别标注。
+
+**历史与趋势**：每次录入都是一条 `body_records`，天然形成历史版本；`members.latestBody` 冗余最新一份供
+首页/排行榜直接读取。`bodyTrend({ openid, days })` 取区间内全部记录，返回时间序列与该区间首尾的
+`delta`（体重、体脂、肌肉量、内脏脂肪、BMI、评分）。会员端可按 7/30/90/365 天切换。
 
 页面：`pages/fitness/fitness`（我的身体数据）、`pages/rank/rank`（排行榜）、
 `pages/staff/fitness/fitness`（员工代录）。

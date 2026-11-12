@@ -1,5 +1,5 @@
 const {
-  db, cnDate, fail, need, getDoc, memberLabel
+  db, _, DAY, cnDate, dayStart, fail, need, getDoc, memberLabel, ROLE_LEVEL
 } = require('./common')
 
 // 可排行的力量动作
@@ -36,6 +36,12 @@ function int(v, min, max, label) {
   const n = Number(v)
   if (!Number.isInteger(n) || n < min || n > max) fail(label + '需为 ' + min + '–' + max + ' 的整数')
   return n
+}
+
+function text(v, max, label) {
+  const s = String(v === undefined || v === null ? '' : v).trim()
+  if (s.length > max) fail(label + '不能超过 ' + max + ' 个字')
+  return s
 }
 
 // Epley 公式：由「重量 × 次数」估算单次最大重量
@@ -122,6 +128,47 @@ async function refreshScore(member, bestLift) {
 
 // ---------- 身体数据 ----------
 
+// 体测设备（如米家 S800 体脂秤）报告上的指标，全部选填，只有体重必填
+// 顺序：字段名、最小值、最大值、中文名
+const BODY_NUM_FIELDS = [
+  ['bodyFat', 1, 70, '体脂率(%)'],
+  ['heartRate', 30, 220, '心率(次/分)'],
+  ['muscle', 1, 150, '肌肉量(kg)'],
+  ['muscleRate', 1, 100, '肌肉率(%)'],
+  ['protein', 0.5, 50, '蛋白质量(kg)'],
+  ['proteinRate', 1, 100, '蛋白质率(%)'],
+  ['water', 1, 100, '体水分量(kg)'],
+  ['waterRate', 1, 100, '身体水分(%)'],
+  ['boneMass', 0.2, 20, '骨盐量(kg)'],
+  ['boneRate', 0.2, 20, '骨盐率(%)'],
+  ['fatMass', 0.5, 150, '脂肪量(kg)'],
+  ['skeletalMuscle', 0.5, 100, '骨骼肌量(kg)'],
+  ['visceral', 1, 30, '内脏脂肪等级'],
+  ['waistHipRatio', 0.5, 2, '腰臀比'],
+  ['bodyAge', 10, 100, '身体年龄'],
+  ['skeletalMuscleIndex', 1, 200, '骨骼肌指数'],
+  ['recommendedCalories', 500, 10000, '建议热量摄入(kcal)'],
+  ['bmr', 500, 5000, '基础代谢率(kcal)'],
+  ['fatFreeMass', 5, 200, '去脂体重(kg)'],
+  ['deviceScore', 0, 100, '设备身体得分']
+]
+
+const SEGMENTS = ['leftArm', 'rightArm', 'trunk', 'leftLeg', 'rightLeg']
+const SEGMENT_NAMES = {
+  leftArm: '左上肢', rightArm: '右上肢', trunk: '躯干', leftLeg: '左下肢', rightLeg: '右下肢'
+}
+
+function readSegments(raw, label) {
+  const out = {}
+  if (!raw || typeof raw !== 'object') return out
+  SEGMENTS.forEach(k => {
+    const v = raw[k]
+    if (v === undefined || v === '' || v === null) return
+    out[k] = num(v, 0, 100, label + SEGMENT_NAMES[k] + '(kg)')
+  })
+  return out
+}
+
 async function saveBodyRecord({ me, data }) {
   need(me, 'staff')
   const target = await getDoc('members', data.openid)
@@ -131,31 +178,103 @@ async function saveBodyRecord({ me, data }) {
   const weight = num(data.weight, 20, 300, '体重(kg)')
   const height = data.height ? num(data.height, 80, 250, '身高(cm)') : (target.height || 0)
   if (!height) fail('请填写身高(cm)')
-  const bodyFat = data.bodyFat ? num(data.bodyFat, 1, 70, '体脂率(%)') : 0
-  const muscle = data.muscle ? num(data.muscle, 1, 150, '肌肉量(kg)') : 0
-  const visceral = data.visceral ? num(data.visceral, 1, 30, '内脏脂肪等级') : 0
   const gender = data.gender === 'female' || data.gender === 'male' ? data.gender : (target.gender || '')
   const date = data.date || cnDate(now)
   const bmi = bmiOf(weight, height)
-  const scored = scoreBody({ gender, weight, height, bodyFat, sbdTotal: sbdOf(target.bestLift) })
 
-  await db.collection('body_records').add({
-    data: {
-      openid: target._id, date, weight, height, bodyFat, muscle, visceral, bmi,
-      score: scored.score, detail: scored.detail,
-      source: data.source || 'staff', operator: me._id, createdAt: now
-    }
+  // 设备报告上的扩展指标
+  const extra = {}
+  BODY_NUM_FIELDS.forEach(f => {
+    const v = data[f[0]]
+    if (v === undefined || v === '' || v === null) return
+    extra[f[0]] = num(v, f[1], f[2], f[3])
   })
 
-  const latestBody = {
-    weight, height, bodyFat, muscle, visceral, bmi,
-    score: scored.score, detail: scored.detail, date, measuredAt: now
-  }
+  const segmentFat = readSegments(data.segmentFat, '节段脂肪·')
+  const segmentMuscle = readSegments(data.segmentMuscle, '节段肌肉·')
+  const bodyShape = text(data.bodyShape, 20, '身体形态')
+  const bodyType = text(data.bodyType, 20, '身体类型')
+  const deviceName = text(data.deviceName, 30, '设备名称')
+  // 报告照片：只存云存储 fileID
+  const rawReport = String(data.reportImage || '')
+  const reportImage = /^cloud:\/\//.test(rawReport) ? rawReport : ''
+
+  const scored = scoreBody({
+    gender,
+    weight,
+    height,
+    bodyFat: extra.bodyFat || 0,
+    sbdTotal: sbdOf(target.bestLift)
+  })
+
+  const record = Object.assign({
+    openid: target._id,
+    date,
+    measuredAt: now,
+    weight,
+    height,
+    bmi,
+    gender,
+    segmentFat,
+    segmentMuscle,
+    bodyShape,
+    bodyType,
+    deviceName,
+    reportImage,
+    score: scored.score,
+    detail: scored.detail,
+    source: data.source || 'staff',
+    operator: me._id,
+    createdAt: now
+  }, extra)
+
+  await db.collection('body_records').add({ data: record })
+
+  // 会员档案上保留最新一份，首页/排行榜/好友列表直接读这里，不用 join 历史表
+  const latestBody = Object.assign({}, record)
+  delete latestBody.operator
+  delete latestBody.createdAt
+  delete latestBody.openid
   await db.collection('members').doc(target._id).update({
     data: { gender, height, latestBody }
   })
 
   return Object.assign({ memberName: memberLabel(target) }, latestBody)
+}
+
+// 一段时间内的身体数据变化，供趋势图/变化对比用
+async function bodyTrend({ me, data }) {
+  need(me, 'member')
+  const asStaff = (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.staff
+  const openid = data.openid && asStaff ? data.openid : me._id
+  const days = Math.min(Math.max(Number(data.days) || 30, 7), 365)
+  const from = dayStart(cnDate(Date.now() - (days - 1) * DAY))
+
+  const list = (await db.collection('body_records')
+    .where({ openid, measuredAt: _.gte(from) })
+    .orderBy('measuredAt', 'asc').limit(200).get()).data
+
+  const metrics = ['weight', 'bodyFat', 'muscle', 'visceral', 'bmi', 'score']
+  const first = list[0]
+  const last = list[list.length - 1]
+  const delta = {}
+  if (first && last && list.length > 1) {
+    metrics.forEach(k => {
+      if (first[k] != null && last[k] != null) delta[k] = round(last[k] - first[k], 1)
+    })
+  }
+
+  return {
+    days,
+    from: cnDate(from),
+    count: list.length,
+    points: list.map(r => {
+      const p = { date: r.date, measuredAt: r.measuredAt }
+      metrics.forEach(k => { p[k] = r[k] == null ? null : r[k] })
+      return p
+    }),
+    delta
+  }
 }
 
 // ---------- 力量成绩 ----------
@@ -320,7 +439,7 @@ async function setBodyPublic({ me, data }) {
 
 module.exports = {
   saveBodyRecord, saveStrength, saveActivity,
-  myFitness, memberFitness, leaderboard, setBodyPublic,
+  myFitness, memberFitness, leaderboard, setBodyPublic, bodyTrend,
   // 供内部/测试复用
   scoreBody, oneRM, bmiOf, LIFTS
 }

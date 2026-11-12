@@ -1,21 +1,62 @@
 <view class="page">
   <view wx:if="{{loaded && !hasBody}}" class="card">
     <view class="title">还没有身体数据</view>
-    <view class="muted mt">身体数据由前台或教练测量后录入。录入后会在这里看到体重、体脂率和身体评分。</view>
+    <view class="muted mt">身体数据由前台或教练用体测设备测量后录入。录入后会在这里看到体重、体脂率和身体评分。</view>
   </view>
 
   <block wx:else>
     <view class="card">
       <view class="between">
         <text class="title">身体评分</text>
-        <text class="tag orange">{{score}} 分</text>
+        <view class="row">
+          <text wx:if="{{f.latestBody.deviceScore}}" class="tag">设备 {{f.latestBody.deviceScore}} 分</text>
+          <text class="tag orange">{{score}} 分</text>
+        </view>
       </view>
-      <view class="muted mt">{{f.latestBody.date}} 测量 · 体重 {{f.latestBody.weight}} kg · 体脂 {{f.latestBody.bodyFat || '-'}}%</view>
+      <view class="muted mt">{{f.latestBody.date}} 测量{{f.latestBody.deviceName ? ' · ' + f.latestBody.deviceName : ''}}</view>
       <view wx:for="{{scoreDetail}}" wx:key="key" class="form-row">
         <text class="label">{{item.label}}</text>
         <text class="grow">{{item.score}} / {{item.max}}</text>
       </view>
       <view class="muted mt">评分 = 体脂率 40 + 相对力量 40 + 体重指数 20，缺项自动归一</view>
+    </view>
+
+    <view wx:if="{{metrics.length}}" class="section-title">身体指标</view>
+    <view wx:if="{{metrics.length}}" class="card">
+      <view class="grid">
+        <view wx:for="{{metrics}}" wx:key="key" class="grid-cell">
+          <view class="grid-v">{{item.value}}<text wx:if="{{item.unit}}" class="grid-u">{{item.unit}}</text></view>
+          <view class="muted">{{item.name}}</view>
+        </view>
+      </view>
+      <view wx:if="{{f.latestBody.bodyShape || f.latestBody.bodyType}}" class="muted mt">
+        体态：{{f.latestBody.bodyShape || '-'}} · {{f.latestBody.bodyType || '-'}}
+      </view>
+      <image wx:if="{{f.latestBody.reportImage}}" class="report" src="{{f.latestBody.reportImage}}" mode="aspectFill" />
+    </view>
+
+    <view class="section-title">数据变化</view>
+    <view class="card">
+      <view class="row">
+        <view wx:for="{{periods}}" wx:key="days" class="period {{days === item.days ? 'on' : ''}}"
+          data-days="{{item.days}}" bindtap="pickPeriod">{{item.label}}</view>
+      </view>
+      <view wx:if="{{trend && trend.count < 2}}" class="muted mt">这个时间段内只有 {{trend.count}} 条记录，至少 2 次测量才能看变化。</view>
+      <block wx:else>
+        <view wx:if="{{trend.hasDelta}}" class="mt">
+          <text class="muted">体重</text>
+          <text class="delta {{trend.dWeight > 0 ? 'up' : 'down'}}">{{trend.dWeight > 0 ? '+' : ''}}{{trend.dWeight}} kg</text>
+          <text wx:if="{{trend.dFat !== null}}" class="muted"> · 体脂 </text>
+          <text wx:if="{{trend.dFat !== null}}" class="delta {{trend.dFat > 0 ? 'up' : 'down'}}">{{trend.dFat > 0 ? '+' : ''}}{{trend.dFat}}%</text>
+          <text wx:if="{{trend.dScore !== null}}" class="muted"> · 评分 </text>
+          <text wx:if="{{trend.dScore !== null}}" class="delta {{trend.dScore > 0 ? 'down' : 'up'}}">{{trend.dScore > 0 ? '+' : ''}}{{trend.dScore}}</text>
+        </view>
+        <view class="muted mt">{{trend.from}} 起共 {{trend.count}} 次测量</view>
+        <view wx:for="{{trendList}}" wx:key="date" class="list-item">
+          <text class="grow">{{item.date}}</text>
+          <text class="muted">{{item.weight}} kg · {{item.bodyFat}}% · {{item.score}} 分</text>
+        </view>
+      </block>
     </view>
 
     <view class="card">
@@ -46,21 +87,9 @@
       <view wx:for="{{bodyList}}" wx:key="id" class="list-item">
         <view class="grow">
           <view>{{item.date}}</view>
-          <view class="muted">BMI {{item.bmi}} · 评分 {{item.score}}</view>
+          <view class="muted">BMI {{item.bmi}} · 评分 {{item.score}}{{item.deviceScore ? ' · 设备 ' + item.deviceScore : ''}}</view>
         </view>
         <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
-      </view>
-    </view>
-
-    <view class="section-title">最近运动</view>
-    <view class="card">
-      <view wx:if="{{!actList.length}}" class="muted">暂无记录</view>
-      <view wx:for="{{actList}}" wx:key="id" class="list-item">
-        <view class="grow">
-          <view>{{item.date}}</view>
-          <view class="muted">{{item.duration}} 分钟 · {{item.calories}} 千卡</view>
-        </view>
-        <text class="muted">{{item.steps}} 步</text>
       </view>
     </view>
   </block>

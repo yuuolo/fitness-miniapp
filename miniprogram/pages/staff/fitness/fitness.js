@@ -6,16 +6,49 @@ const GENDERS = [
   { value: '', label: '不填' }
 ]
 
-const EMPTY_BODY = { weight: '', height: '', bodyFat: '', muscle: '', visceral: '' }
+// 与云函数 fitness.js 的 BODY_NUM_FIELDS 对应，这里只负责采集
+const SEG_KEYS = [
+  { key: 'leftArm', name: '左上肢' },
+  { key: 'rightArm', name: '右上肢' },
+  { key: 'trunk', name: '躯干' },
+  { key: 'leftLeg', name: '左下肢' },
+  { key: 'rightLeg', name: '右下肢' }
+]
+
+const EMPTY_BODY = {
+  weight: '', height: '', bodyFat: '', heartRate: '', visceral: '', muscle: '',
+  muscleRate: '', protein: '', proteinRate: '', water: '', waterRate: '',
+  boneMass: '', boneRate: '', fatMass: '', skeletalMuscle: '',
+  waistHipRatio: '', bodyAge: '', skeletalMuscleIndex: '', recommendedCalories: '',
+  bmr: '', fatFreeMass: '', deviceScore: '',
+  bodyShape: '', bodyType: '', deviceName: '', reportImage: '', date: '',
+  segmentFat: { leftArm: '', rightArm: '', trunk: '', leftLeg: '', rightLeg: '' },
+  segmentMuscle: { leftArm: '', rightArm: '', trunk: '', leftLeg: '', rightLeg: '' }
+}
+
 const EMPTY_STRENGTH = { weight: '', reps: '' }
 const EMPTY_ACTIVITY = { steps: '', duration: '', calories: '', avgHr: '' }
+
+const RAW_FIELDS = [
+  'weight', 'height', 'bodyFat', 'heartRate', 'visceral', 'muscle',
+  'muscleRate', 'protein', 'proteinRate', 'water', 'waterRate',
+  'boneMass', 'boneRate', 'fatMass', 'skeletalMuscle',
+  'waistHipRatio', 'bodyAge', 'skeletalMuscleIndex', 'recommendedCalories',
+  'bmr', 'fatFreeMass', 'deviceScore',
+  'bodyShape', 'bodyType', 'deviceName', 'reportImage', 'date'
+]
 
 Page({
   data: {
     id: '', f: null, loaded: false,
     genders: GENDERS, genderIndex: 2,
     lifts: [], liftIndex: 0, actionTypes: [], typeIndex: 0,
-    body: EMPTY_BODY, strength: EMPTY_STRENGTH, activity: EMPTY_ACTIVITY
+    segKeys: SEG_KEYS,
+    showDevice: false,
+    uploading: false,
+    body: EMPTY_BODY,
+    strength: EMPTY_STRENGTH,
+    activity: EMPTY_ACTIVITY
   },
 
   onLoad(query) {
@@ -34,6 +67,10 @@ Page({
         genderIndex: gi < 0 ? 2 : gi
       })
     }, () => this.setData({ loaded: true }))
+  },
+
+  toggleDevice() {
+    this.setData({ showDevice: !this.data.showDevice })
   },
 
   onBodyInput(e) {
@@ -60,20 +97,69 @@ Page({
     this.setData({ typeIndex: Number(e.detail.value) })
   },
 
+  // 拍/选一张体测报告照片，传到云存储，只把 fileID 交给云函数
+  chooseReport() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      sizeType: ['compressed'],
+      success: res => {
+        const file = (res.tempFiles || [])[0]
+        if (!file) return
+        this.setData({ uploading: true })
+        wx.showLoading({ title: '上传中', mask: true })
+        const ext = (file.tempFilePath.match(/\.[a-zA-Z0-9]+$/) || ['.jpg'])[0]
+        wx.cloud.uploadFile({
+          cloudPath: 'body-reports/' + Date.now() + ext,
+          filePath: file.tempFilePath,
+          success: up => {
+            wx.hideLoading()
+            this.setData({ 'body.reportImage': up.fileID, uploading: false })
+            wx.showToast({ title: '报告已上传' })
+          },
+          fail: () => {
+            wx.hideLoading()
+            this.setData({ uploading: false })
+            wx.showToast({ title: '上传失败', icon: 'none' })
+          }
+        })
+      }
+    })
+  },
+
+  clearReport() {
+    this.setData({ 'body.reportImage': '' })
+  },
+
+  previewReport() {
+    const fid = this.data.body.reportImage
+    if (!fid) return
+    wx.previewImage({ current: fid, urls: [fid] })
+  },
+
   submitBody() {
     const b = this.data.body
+    if (!b.weight) return wx.showToast({ title: '体重必填', icon: 'none' })
+    const payload = { openid: this.data.id }
+    RAW_FIELDS.forEach(k => {
+      if (b[k] !== '' && b[k] !== undefined && b[k] !== null) payload[k] = b[k]
+    })
     const gender = GENDERS[this.data.genderIndex].value
-    api.call('saveBodyRecord', {
-      openid: this.data.id,
-      weight: Number(b.weight),
-      height: Number(b.height) || undefined,
-      bodyFat: Number(b.bodyFat) || undefined,
-      muscle: Number(b.muscle) || undefined,
-      visceral: Number(b.visceral) || undefined,
-      gender: gender || undefined
-    }, { loading: '保存中' }).then(r => {
+    if (gender) payload.gender = gender
+    // 节段数据有填才传
+    const segFat = {}
+    const segMus = {}
+    SEG_KEYS.forEach(s => {
+      if (b.segmentFat[s.key] !== '') segFat[s.key] = b.segmentFat[s.key]
+      if (b.segmentMuscle[s.key] !== '') segMus[s.key] = b.segmentMuscle[s.key]
+    })
+    if (Object.keys(segFat).length) payload.segmentFat = segFat
+    if (Object.keys(segMus).length) payload.segmentMuscle = segMus
+
+    api.call('saveBodyRecord', payload, { loading: '保存中' }).then(r => {
       wx.showToast({ title: '已录入，评分 ' + r.score })
-      this.setData({ body: EMPTY_BODY })
+      this.setData({ body: EMPTY_BODY, showDevice: false })
       this.load()
     })
   },

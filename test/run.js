@@ -481,6 +481,57 @@ async function step(name, fn) {
     assert.strictEqual(self.openid, DAVE, '会员指定别人时应退回自己')
   })
 
+  await step('体测设备报告：完整指标录入与历史版本', async () => {
+    clock = Date.parse('2026-09-18T09:00:00+08:00')
+    const r = await ok(ADMIN, 'saveBodyRecord', {
+      openid: DAVE,
+      weight: 77, height: 170, gender: 'male', bodyFat: 27.9, heartRate: 144,
+      muscle: 52.6, muscleRate: 68.3, protein: 10.8, proteinRate: 14,
+      water: 41.1, waterRate: 53.4, boneMass: 2.9, boneRate: 3.8,
+      fatMass: 21.5, skeletalMuscle: 30, visceral: 9,
+      waistHipRatio: 0.9, bodyAge: 39, skeletalMuscleIndex: 79,
+      recommendedCalories: 2275, bmr: 1569, fatFreeMass: 55.5,
+      bodyShape: '倒三角型', bodyType: '肥胖', deviceScore: 75,
+      deviceName: '米家体成分秤 S800',
+      reportImage: 'cloud://env.bucket/report.jpg'
+    })
+    assert.strictEqual(r.weight, 77)
+    assert.strictEqual(r.bmi, 26.6)
+    assert.strictEqual(r.bodyAge, 39)
+    assert.strictEqual(r.bodyType, '肥胖')
+    assert.strictEqual(r.deviceScore, 75)
+    assert.strictEqual(r.reportImage, 'cloud://env.bucket/report.jpg')
+    assert.ok(r.score > 0, '系统自己的评分也要算出来')
+
+    // 非 cloud:// 的报告图应被丢弃
+    clock += 1000
+    const r2 = await ok(ADMIN, 'saveBodyRecord', {
+      openid: DAVE, weight: 76, reportImage: 'http://evil/x.jpg'
+    })
+    assert.strictEqual(r2.reportImage, '')
+    assert.strictEqual(r2.height, 170, '身高沿用上一次')
+
+    const fit = await ok(DAVE, 'myFitness')
+    assert.strictEqual(fit.bodyHistory.length, 2, '应有 2 个历史版本')
+    assert.strictEqual(fit.latestBody.weight, 76)
+  })
+
+  await step('身体数据趋势：按时间段算变化量', async () => {
+    clock = Date.parse('2026-09-18T09:00:00+08:00')
+    const t30 = await ok(DAVE, 'bodyTrend', { days: 30 })
+    assert.strictEqual(t30.count, 2)
+    assert.strictEqual(t30.points.length, 2)
+    // 77 -> 76，体重应该是 -1
+    assert.strictEqual(t30.delta.weight, -1)
+    assert.ok(t30.from)
+    // 超出范围的天数会被夹到 365
+    const t0 = await ok(DAVE, 'bodyTrend', { days: 9999 })
+    assert.strictEqual(t0.days, 365)
+    // 员工可以查任意会员
+    const byStaff = await ok(ADMIN, 'bodyTrend', { openid: DAVE, days: 30 })
+    assert.strictEqual(byStaff.count, 2)
+  })
+
   console.log('\n全部 ' + passed + ' 组场景通过')
 })().catch(e => {
   console.error('\n✗ ' + e.message)
