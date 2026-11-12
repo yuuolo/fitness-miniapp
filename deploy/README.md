@@ -46,11 +46,51 @@
 
 ## 一键部署
 
+### 第 0 步：部署前准备（配免密 + 装 Docker）
+
+在本机执行一次，之后就不用再输密码：
+
+```powershell
+# Windows
+cd deploy\scripts
+.\prepare.ps1 -Server root@1.2.3.4
+```
+
+```bash
+# macOS / Linux
+bash deploy/scripts/prepare.sh root@1.2.3.4
+```
+
+它会依次做这些事（可重复执行，已完成的会跳过）：
+
+1. 检查 ssh / ssh-keygen
+2. 本地没有密钥就生成 `~/.ssh/id_ed25519_gym`
+3. 把公钥追加到服务器 `authorized_keys`（**只要求输一次密码**）
+4. 往 `~/.ssh/config` 写一个 `Host gym` 别名，`ssh gym` 直接连
+5. 用 `BatchMode` 验证免密真的通了，不通立刻报错退出
+6. 把 `setup-server.sh` 推到服务器并执行：装 Docker、装 compose 插件、
+   设置开机自启、把你加入 docker 组、放行 22/80/443、最后验收版本
+
+常用参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `-Server user@host` | 必填，SSH 目标 |
+| `-Port 2222` | 非 22 端口时指定 |
+| `-Alias gym` | ssh 别名，默认 `gym` |
+| `-KeyPath <path>` | 自定义密钥路径 |
+| `-SkipDocker` | 只配免密，不动服务器 |
+
+> Windows 若提示找不到 `ssh`：设置 → 应用 → 可选功能 → 添加「OpenSSH 客户端」。
+
+### 第 1 步：上传并启动
+
 ```bash
 # 1. 上传本目录到服务器
-scp -r deploy/ user@your-server:/opt/gym
+scp -r deploy/ gym:/opt/gym/       # gym 是上一步配好的别名
 
 # 2. 服务器上执行
+ssh gym
 cd /opt/gym
 cp .env.example .env
 vi .env          # 填 DOMAIN / POSTGRES_PASSWORD / WX_APPID / WX_SECRET
