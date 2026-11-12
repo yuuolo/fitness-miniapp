@@ -188,13 +188,34 @@ Page({
 
   async drawPoster(node, m, qrPath, coverPath) {
     const dpr = (wx.getSystemInfoSync().pixelRatio) || 2
+    const maxTextWidth = W - 96
+
+    // 先量一遍文字，按内容算海报高度，避免内容少时中间大片空白
     node.width = W * dpr
     node.height = H * dpr
-    const ctx = node.getContext('2d')
+    let ctx = node.getContext('2d')
+    ctx.scale(dpr, dpr)
+    ctx.font = '30px sans-serif'
+    const allLines = m.content ? wrapText(ctx, m.content, maxTextWidth) : []
+    const shownLines = allLines.slice(0, 6)
+
+    const cover = await loadImage(node, coverPath)
+    const coverH = cover ? 430 : 0
+
+    let need = 244                      // 标题 + 作者 + 分割线
+    if (m.coachName) need += 40
+    if (shownLines.length) need += shownLines.length * 46 + 40
+    if (coverH) need += coverH + 24
+    need += 250                         // 底部区
+    const ph = Math.max(760, Math.round(need))
+
+    node.width = W * dpr
+    node.height = ph * dpr
+    ctx = node.getContext('2d')
     ctx.scale(dpr, dpr)
 
     ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, W, H)
+    ctx.fillRect(0, 0, W, ph)
     ctx.fillStyle = '#ff6a3d'
     ctx.fillRect(0, 0, W, 10)
 
@@ -227,53 +248,48 @@ Page({
     ctx.stroke()
     y += 48
 
-    if (m.content) {
+    if (shownLines.length) {
       ctx.fillStyle = '#1f2329'
       ctx.font = '30px sans-serif'
-      const lines = wrapText(ctx, m.content, W - 96)
-      const maxLines = 6
-      const shown = lines.slice(0, maxLines)
-      shown.forEach((ln, i) => ctx.fillText(ln, 48, y + i * 46))
-      y += shown.length * 46
-      if (lines.length > maxLines) ctx.fillText('…', 48, y + 26)
-      y += 34
-    }
-
-    const cover = await loadImage(node, coverPath)
-    if (cover) {
-      const ih = Math.min(430, H - y - 300)
-      if (ih > 160) {
-        drawCover(ctx, cover, 48, y, W - 96, ih)
-        y += ih + 24
+      shownLines.forEach((ln, i) => ctx.fillText(ln, 48, y + i * 46))
+      y += shownLines.length * 46
+      if (allLines.length > 6) {
+        ctx.fillStyle = '#8a8f99'
+        ctx.fillText('…', 48, y + 26)
       }
+      y += 40
     }
 
-    const footY = H - 220
+    if (cover) {
+      drawCover(ctx, cover, 48, y, W - 96, coverH)
+      y += coverH + 24
+    }
+
+    const qr = await loadImage(node, qrPath)
+    const footY = ph - 230
     ctx.strokeStyle = '#f0f1f4'
+    ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(48, footY)
     ctx.lineTo(W - 48, footY)
     ctx.stroke()
 
+    // 有码说扫码，没码说打开小程序，只画一行，不能两个分支都画
     ctx.fillStyle = '#1f2329'
     ctx.font = 'bold 28px sans-serif'
-    ctx.fillText('扫码查看我的训练记录', 48, footY + 72)
+    ctx.fillText(qr ? '扫码查看我的训练记录' : '打开小程序查看我的训练记录', 48, footY + 72)
 
     ctx.fillStyle = '#8a8f99'
     ctx.font = '24px sans-serif'
     ctx.fillText('♥ ' + (m.likeCount || 0) + ' 人点赞', 48, footY + 116)
 
-    const qr = await loadImage(node, qrPath)
     const qs = 160
     const qx = W - 48 - qs
-    const qy = H - 48 - qs
+    const qy = ph - 48 - qs
     if (qr) {
       ctx.drawImage(qr, qx, qy, qs, qs)
-      ctx.fillStyle = '#1f2329'
-      ctx.font = 'bold 28px sans-serif'
-      ctx.fillText('扫码查看我的训练记录', 48, footY + 72)
     } else {
-      // 个人主体未认证时拿不到小程序码，这里退化成文字引导，不留空白
+      // 个人主体未认证时拿不到小程序码，退化成文字引导
       ctx.strokeStyle = '#e6e9ee'
       ctx.lineWidth = 2
       ctx.strokeRect(qx, qy, qs, qs)
@@ -281,9 +297,6 @@ Page({
       ctx.font = '22px sans-serif'
       ctx.fillText('微信搜一搜', qx + 34, qy + 66)
       ctx.fillText('打开小程序', qx + 34, qy + 102)
-      ctx.fillStyle = '#1f2329'
-      ctx.font = 'bold 28px sans-serif'
-      ctx.fillText('打开小程序查看我的训练记录', 48, footY + 72)
     }
 
     wx.canvasToTempFilePath({
