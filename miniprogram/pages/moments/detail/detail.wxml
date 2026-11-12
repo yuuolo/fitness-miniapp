@@ -29,6 +29,9 @@
   <view class="card">
     <button class="btn block" bindtap="makePoster">生成分享海报</button>
     <view class="muted mt">海报里带这张动态的内容和专属小程序码，保存到相册后发朋友圈即可。</view>
+    <view wx:if="{{isStaff}}" class="muted mt" bindtap="uploadPosterQr">
+      <text class="link">上传小程序码</text>（个人主体未认证时微信不生成动态码，可在这里传一张后台下载的静态码）
+    </view>
   </view>
 
   <view class="card">

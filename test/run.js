@@ -1,6 +1,6 @@
 // 本地业务流程测试：node test/run.js
 const assert = require('assert')
-const { store, ctx, sent, unsubscribed } = require('./mock-cloud')
+const { store, ctx, sent, unsubscribed, setWxacodeFail } = require('./mock-cloud')
 const api = require('../cloudfunctions/api/index')
 const templates = require('../cloudfunctions/api/templates')
 
@@ -448,6 +448,23 @@ async function step(name, fn) {
     await ok(BOB, 'deleteMoment', { id: m._id })
   })
 
+  await step('海报降级：未认证主体用静态小程序码兜底', async () => {
+    const m = await ok(BOB, 'postMoment', { content: '兜底测试' })
+    // 只有员工能设置静态码
+    await bad(BOB, 'setPosterQr', { fileID: 'cloud://env.bucket/wxacode.jpg' }, '没有权限')
+    await bad(ADMIN, 'setPosterQr', { fileID: 'http://x/y.jpg' }, '请先上传')
+    await ok(ADMIN, 'setPosterQr', { fileID: 'cloud://env.bucket/wxacode.jpg' })
+
+    // 模拟个人主体未认证，动态码生成失败
+    setWxacodeFail(true)
+    const p = await ok(BOB, 'momentPoster', { id: m._id })
+    assert.strictEqual(p.fileID, 'cloud://env.bucket/wxacode.jpg')
+    assert.strictEqual(p.static, true)
+    setWxacodeFail(false)
+
+    await ok(BOB, 'deleteMoment', { id: m._id })
+  })
+
   await step('员工可查看会员完整档案', async () => {
     const all = await ok(ADMIN, 'memberFitness', { openid: BOB })
     assert.strictEqual(all.latestBody.weight, 80)
@@ -560,5 +577,6 @@ async function step(name, fn) {
   console.error('\n✗ ' + e.message)
   process.exit(1)
 })
+
 
 

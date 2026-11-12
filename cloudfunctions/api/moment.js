@@ -160,12 +160,27 @@ async function momentPoster({ me, data }) {
     fileID = up.fileID
   } catch (e) {
     console.warn('wxacode.getUnlimited failed', e.errCode, e.errMsg || e.message)
-    // 把错误码和原因带出来，方便定位是权限问题还是参数问题
+    // 个人主体未认证时拿不到动态小程序码，退回到管理员手工上传的静态码
+    const fallback = await getDoc('config', 'posterQr')
+    if (fallback && fallback.fileID) {
+      return { fileID: fallback.fileID, cached: false, static: true }
+    }
     fail('小程序码生成失败(' + (e.errCode || 'unknown') + ')：' + (e.errMsg || e.message || ''))
   }
 
   await db.collection('moments').doc(m._id).update({ data: { posterQr: fileID } })
   return { fileID, cached: false }
+}
+
+// 管理员上传一张静态小程序码，作为未认证主体的兜底入口
+async function setPosterQr({ me, data }) {
+  need(me, 'staff')
+  const fileID = String(data.fileID || '')
+  if (!/^cloud:\/\//.test(fileID)) fail('请先上传一张小程序码图片')
+  await db.collection('config').doc('posterQr').set({
+    data: { fileID, updatedAt: Date.now(), operator: me._id }
+  })
+  return { fileID }
 }
 
 // 扫海报上的码进来时用短码找动态
@@ -180,5 +195,5 @@ async function momentByShort({ me, data }) {
 
 module.exports = {
   postMoment, momentList, momentDetail, deleteMoment, likeMoment,
-  momentPoster, momentByShort
+  momentPoster, momentByShort, setPosterQr
 }

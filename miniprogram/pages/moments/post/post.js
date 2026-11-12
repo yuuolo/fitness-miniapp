@@ -87,6 +87,8 @@ Page({
   compressVideo(file) {
     const rawSize = file.size || 0
     const duration = Math.round(file.duration || 0)
+    // 选视频时微信会给一张封面图，海报要用，别丢
+    const thumbPath = file.thumbTempFilePath || ''
     if (duration > MAX_DURATION + 1) {
       return wx.showModal({
         title: '视频太长',
@@ -104,7 +106,7 @@ Page({
           showCancel: false
         })
       }
-      return this.pushMedia({ tempFilePath: file.tempFilePath, type: 'video', duration, size: rawSize })
+      return this.pushMedia({ tempFilePath: file.tempFilePath, type: 'video', duration, size: rawSize, thumbPath })
     }
 
     wx.showLoading({ title: '压缩中', mask: true })
@@ -127,7 +129,8 @@ Page({
           tempFilePath: r.tempFilePath,
           type: 'video',
           duration: Math.round(r.duration || duration),
-          size
+          size,
+          thumbPath
         })
       },
       fail: () => {
@@ -140,7 +143,7 @@ Page({
           })
         }
         // 压缩失败但原文件可接受，就传原文件
-        this.pushMedia({ tempFilePath: file.tempFilePath, type: 'video', duration, size: rawSize })
+        this.pushMedia({ tempFilePath: file.tempFilePath, type: 'video', duration, size: rawSize, thumbPath })
       }
     })
   },
@@ -185,16 +188,26 @@ Page({
   uploadAll() {
     const media = this.data.media
     if (!media.length) return Promise.resolve([])
-    const tasks = media.map((m, i) => new Promise((resolve, reject) => {
-      const ext = (m.tempFilePath.match(/\.[a-zA-Z0-9]+$/) || ['.bin'])[0]
-      const cloudPath = 'moments/' + Date.now() + '_' + i + ext
+    const upload = (cloudPath, filePath) => new Promise((resolve, reject) => {
       wx.cloud.uploadFile({
         cloudPath,
-        filePath: m.tempFilePath,
-        success: res => resolve({ fileID: res.fileID, type: m.type, duration: m.duration || 0 }),
-        fail: () => reject(new Error('第 ' + (i + 1) + ' 个文件上传失败'))
+        filePath,
+        success: res => resolve(res.fileID),
+        fail: () => reject(new Error('文件上传失败'))
       })
-    }))
+    })
+    const tasks = media.map((m, i) => {
+      const ext = (m.tempFilePath.match(/\.[a-zA-Z0-9]+$/) || ['.bin'])[0]
+      const base = 'moments/' + Date.now() + '_' + i
+      return upload(base + ext, m.tempFilePath).then(fileID => {
+        const item = { fileID, type: m.type, duration: m.duration || 0 }
+        if (m.type !== 'video' || !m.thumbPath) return item
+        // 视频封面单独传一份，海报和列表预览都能用
+        return upload(base + '_thumb.jpg', m.thumbPath)
+          .then(thumb => Object.assign(item, { thumb }))
+          .catch(() => item)
+      })
+    })
     return Promise.all(tasks)
   },
 

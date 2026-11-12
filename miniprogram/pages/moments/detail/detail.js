@@ -47,10 +47,15 @@ function loadImage(canvas, src) {
 }
 
 Page({
-  data: { m: null, loaded: false, error: '', posterTip: '' },
+  data: { m: null, loaded: false, error: '', isStaff: false },
 
   onLoad(query) {
     const q = query || {}
+    // 判断能否上传静态小程序码（员工/教练才行）
+    api.call('home', {}, { silent: true }).then(res => {
+      const role = res.me && res.me.role
+      this.setData({ isStaff: !!role && role !== 'member' })
+    }, () => {})
     // 扫海报上的小程序码进来：scene 形如 s=xxxxxxxxxx
     if (q.scene) {
       const scene = decodeURIComponent(q.scene)
@@ -157,8 +162,13 @@ Page({
 
   getCoverPath() {
     const m = this.data.m
-    const img = (m.media || []).find(x => x.type === 'image')
-    return img ? this.downloadFile(img.fileID) : Promise.resolve('')
+    const list = m.media || []
+    const img = list.find(x => x.type === 'image')
+    if (img) return this.downloadFile(img.fileID)
+    // 只有视频时用发帖时存的封面图
+    const vid = list.find(x => x.type === 'video' && x.thumb)
+    if (vid) return this.downloadFile(vid.thumb)
+    return Promise.resolve('')
   },
 
   makePoster() {
@@ -309,6 +319,38 @@ Page({
         wx.hideLoading()
         this.posterBusy = false
         wx.showToast({ title: '导出图片失败', icon: 'none' })
+      }
+    })
+  },
+
+  // 个人主体未认证拿不到动态小程序码，管理员可以传一张静态码兜底
+  uploadPosterQr() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album'],
+      sizeType: ['compressed'],
+      success: res => {
+        const f = (res.tempFiles || [])[0]
+        if (!f) return
+        wx.showLoading({ title: '上传中', mask: true })
+        wx.cloud.uploadFile({
+          cloudPath: 'posters/wxacode_static.jpg',
+          filePath: f.tempFilePath,
+          success: up => {
+            api.call('setPosterQr', { fileID: up.fileID }, { silent: true }).then(() => {
+              wx.hideLoading()
+              wx.showToast({ title: '已设置为海报小程序码' })
+            }, err => {
+              wx.hideLoading()
+              wx.showToast({ title: err.message || '设置失败', icon: 'none' })
+            })
+          },
+          fail: () => {
+            wx.hideLoading()
+            wx.showToast({ title: '上传失败', icon: 'none' })
+          }
+        })
       }
     })
   },

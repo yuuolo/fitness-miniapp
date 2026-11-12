@@ -129,6 +129,10 @@ const db = {
 const sent = []
 const unsubscribed = new Set()
 
+// 模拟个人主体未认证时 wxacode 调用失败
+let wxacodeFails = false
+function setWxacodeFail(v) { wxacodeFails = v }
+
 const sdk = {
   DYNAMIC_CURRENT_ENV: 'test',
   init() {},
@@ -152,6 +156,11 @@ const sdk = {
     },
     wxacode: {
       async getUnlimited(params) {
+        if (wxacodeFails) {
+          const e = new Error('personal entity not verified')
+          e.errCode = 85412
+          throw e
+        }
         return { buffer: Buffer.from('PNG:' + (params.scene || '')), contentType: 'image/jpeg' }
       }
     }
@@ -167,4 +176,4 @@ Module._load = function (request, parent, isMain) {
   return origLoad.call(this, request, parent, isMain)
 }
 
-module.exports = { store, ctx, sent, unsubscribed }
+module.exports = { store, ctx, sent, unsubscribed, setWxacodeFail }
