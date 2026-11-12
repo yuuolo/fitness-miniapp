@@ -20,3 +20,8 @@ Thumbs.db
 
 # 自建后端的真实环境变量（不要提交密钥）
 deploy/.env
+
+# 开发者工具自动生成的多端应用脚手架，本项目是纯微信小程序
+project.miniapp.json
+miniprogram/app.miniapp.json
+i18n/

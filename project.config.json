@@ -22,7 +22,7 @@
     "localPlugins": false,
     "disableUseStrict": false,
     "useCompilerPlugins": false,
-    "condition": true,
+    "condition": false,
     "babelSetting": {
       "ignore": [],
       "disablePlugins": [],
@@ -30,13 +30,10 @@
     }
   },
   "condition": {},
-  "simulatorPluginLibVersion": {
-    "wxext14566970e7e9f62": "2.27.3"
-  },
+  "simulatorPluginLibVersion": {},
   "packOptions": {
     "ignore": [],
     "include": []
   },
-  "editorSetting": {},
-  "projectArchitecture": "multiPlatform"
+  "editorSetting": {}
 }
