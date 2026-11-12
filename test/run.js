@@ -365,6 +365,73 @@ async function step(name, fn) {
     assert.strictEqual((await timer()).cardReminders, 1)
   })
 
+  await step('身体数据：前台录入、自动评分、只能员工录入', async () => {
+    clock = Date.parse('2026-11-02T08:00:00+08:00')
+    const r = await ok(ADMIN, 'saveBodyRecord', {
+      openid: BOB, weight: 80, height: 180, bodyFat: 18, gender: 'male'
+    })
+    assert.strictEqual(r.bmi, 24.7)
+    assert.ok(r.score >= 90 && r.score <= 100, '评分应接近满分，实际 ' + r.score)
+    assert.ok(r.detail.length >= 2)
+    const mine = await ok(BOB, 'myFitness')
+    assert.strictEqual(mine.latestBody.weight, 80)
+    assert.strictEqual(mine.bodyHistory.length, 1)
+    await bad(BOB, 'saveBodyRecord', { openid: BOB, weight: 80 }, '没有权限')
+  })
+
+  await step('力量成绩：1RM 换算与最佳成绩', async () => {
+    const s = await ok(ADMIN, 'saveStrength', { openid: BOB, lift: 'bench', weight: 80, reps: 1 })
+    assert.strictEqual(s.oneRM, 80)
+    assert.strictEqual(s.improved, true)
+    assert.ok(s.bodyScore > 0 && s.bodyScore <= 100, '有力量数据后分数应重算')
+    // 60kg × 5 次 → Epley 1RM = 70
+    const c = await ok(ADMIN, 'saveStrength', { openid: CAROL, lift: 'bench', weight: 60, reps: 5 })
+    assert.strictEqual(c.oneRM, 70)
+    // 更差的成绩不应覆盖最佳
+    const worse = await ok(ADMIN, 'saveStrength', { openid: BOB, lift: 'bench', weight: 60, reps: 1 })
+    assert.strictEqual(worse.improved, false)
+    assert.strictEqual(worse.best.oneRM, 80)
+  })
+
+  await step('排行榜：绝对重量榜 + 相对体重榜，且尊重隐私', async () => {
+    const abs = await ok(BOB, 'leaderboard', { lift: 'bench', metric: 'absolute' })
+    assert.strictEqual(abs.total, 2)
+    assert.strictEqual(abs.top[0].isMe, true)
+    assert.strictEqual(abs.top[0].oneRM, 80)
+    assert.strictEqual(abs.me.rank, 1)
+    // 未公开身体数据时，体重不外泄
+    assert.strictEqual(abs.top[0].weight, null)
+    assert.strictEqual(abs.top[0].bodyScore, null)
+    // 未公开者不进相对体重榜
+    const rel0 = await ok(BOB, 'leaderboard', { lift: 'bench', metric: 'relative' })
+    assert.strictEqual(rel0.total, 0)
+    // 公开后进入相对榜：80 / 80 = 1.0
+    await ok(BOB, 'setBodyPublic', { isPublic: true })
+    const rel = await ok(BOB, 'leaderboard', { lift: 'bench', metric: 'relative' })
+    assert.strictEqual(rel.total, 1)
+    assert.strictEqual(rel.top[0].relative, 1)
+    const abs2 = await ok(BOB, 'leaderboard', { lift: 'bench', metric: 'absolute' })
+    assert.strictEqual(abs2.top[0].weight, 80)
+  })
+
+  await step('运动数据：同一天同来源幂等覆盖', async () => {
+    const a = await ok(ADMIN, 'saveActivity', { openid: BOB, steps: 8000, type: 'walk' })
+    assert.strictEqual(a.steps, 8000)
+    assert.strictEqual(a.typeName, '步行')
+    await ok(ADMIN, 'saveActivity', { openid: BOB, steps: 12000, duration: 40, calories: 220, type: 'walk' })
+    const fit = await ok(BOB, 'myFitness')
+    assert.strictEqual(fit.activity.length, 1, '同一天同来源应覆盖而不是新增')
+    assert.strictEqual(fit.activity[0].steps, 12000)
+    await bad(ADMIN, 'saveActivity', { openid: BOB }, '至少填写')
+  })
+
+  await step('员工可查看会员完整档案', async () => {
+    const all = await ok(ADMIN, 'memberFitness', { openid: BOB })
+    assert.strictEqual(all.latestBody.weight, 80)
+    assert.strictEqual(all.bodyHistory.length, 1)
+    await bad(BOB, 'memberFitness', { openid: CAROL }, '没有权限')
+  })
+
   console.log('\n全部 ' + passed + ' 组场景通过')
 })().catch(e => {
   console.error('\n✗ ' + e.message)

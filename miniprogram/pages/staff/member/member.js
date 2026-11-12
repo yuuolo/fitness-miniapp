@@ -54,6 +54,12 @@ Page({
     })
   },
 
+  // ---------- 身体数据 ----------
+
+  goFitness() {
+    wx.navigateTo({ url: '/pages/staff/fitness/fitness?id=' + this.id })
+  },
+
   // ---------- 办卡 ----------
 
   toggleOpen() {

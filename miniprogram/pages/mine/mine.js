@@ -60,6 +60,14 @@ Page({
     wx.navigateTo({ url: '/pages/bookings/bookings' })
   },
 
+  goFitness() {
+    wx.navigateTo({ url: '/pages/fitness/fitness' })
+  },
+
+  goRank() {
+    wx.navigateTo({ url: '/pages/rank/rank' })
+  },
+
   goStaff() {
     wx.navigateTo({ url: '/pages/staff/index/index' })
   },

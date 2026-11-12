@@ -1,0 +1,77 @@
+<view class="page" wx:if="{{f}}">
+  <view class="card">
+    <view class="between">
+      <text class="title">{{f.memberName}}</text>
+      <text wx:if="{{f.latestBody && f.latestBody.score != null}}" class="tag orange">评分 {{f.latestBody.score}}</text>
+    </view>
+    <view class="muted mt">{{f.gender === 'female' ? '女' : (f.gender === 'male' ? '男' : '性别未填')}} · 身高 {{f.height || '-'}} cm · 深蹲卧推硬拉合计 {{f.sbdTotal || 0}} kg</view>
+    <view class="muted mt">{{f.isBodyPublic ? '该会员已公开身体数据' : '该会员未公开，其他会员看不到其体重体脂'}}</view>
+  </view>
+
+  <view class="section-title">录入身体数据</view>
+  <view class="card">
+    <view class="form-row"><text class="label">体重(kg)</text><input type="digit" value="{{body.weight}}" data-field="weight" bindinput="onBodyInput" placeholder="必填" /></view>
+    <view class="form-row"><text class="label">身高(cm)</text><input type="digit" value="{{body.height}}" data-field="height" bindinput="onBodyInput" placeholder="首次填写后会自动沿用" /></view>
+    <view class="form-row"><text class="label">体脂率(%)</text><input type="digit" value="{{body.bodyFat}}" data-field="bodyFat" bindinput="onBodyInput" placeholder="选填" /></view>
+    <view class="form-row"><text class="label">肌肉量(kg)</text><input type="digit" value="{{body.muscle}}" data-field="muscle" bindinput="onBodyInput" placeholder="选填" /></view>
+    <view class="form-row"><text class="label">内脏脂肪</text><input type="number" value="{{body.visceral}}" data-field="visceral" bindinput="onBodyInput" placeholder="选填，1–30" /></view>
+    <view class="form-row">
+      <text class="label">性别</text>
+      <picker range="{{genders}}" range-key="label" value="{{genderIndex}}" bindchange="onGender">
+        <view class="picker-text">{{genders[genderIndex].label}} ›</view>
+      </picker>
+    </view>
+    <button class="btn block mt" bindtap="submitBody">保存身体数据</button>
+  </view>
+
+  <view class="section-title">录入力量成绩</view>
+  <view class="card">
+    <view class="form-row">
+      <text class="label">动作</text>
+      <picker range="{{lifts}}" range-key="name" value="{{liftIndex}}" bindchange="onLift">
+        <view class="picker-text">{{lifts[liftIndex].name}} ›</view>
+      </picker>
+    </view>
+    <view class="form-row"><text class="label">重量(kg)</text><input type="digit" value="{{strength.weight}}" data-field="weight" bindinput="onStrengthInput" placeholder="如 80" /></view>
+    <view class="form-row"><text class="label">次数</text><input type="number" value="{{strength.reps}}" data-field="reps" bindinput="onStrengthInput" placeholder="如 5，1 次为实测" /></view>
+    <button class="btn block mt" bindtap="submitStrength">保存成绩</button>
+    <view class="muted mt">用 Epley 公式换算 1RM：重量 × (1 + 次数 ÷ 30)</view>
+  </view>
+
+  <view class="section-title">录入运动数据</view>
+  <view class="card">
+    <view class="form-row">
+      <text class="label">类型</text>
+      <picker range="{{actionTypes}}" range-key="name" value="{{typeIndex}}" bindchange="onType">
+        <view class="picker-text">{{actionTypes[typeIndex].name}} ›</view>
+      </picker>
+    </view>
+    <view class="form-row"><text class="label">步数</text><input type="number" value="{{activity.steps}}" data-field="steps" bindinput="onActivityInput" placeholder="选填" /></view>
+    <view class="form-row"><text class="label">时长(分钟)</text><input type="number" value="{{activity.duration}}" data-field="duration" bindinput="onActivityInput" placeholder="选填" /></view>
+    <view class="form-row"><text class="label">消耗(千卡)</text><input type="number" value="{{activity.calories}}" data-field="calories" bindinput="onActivityInput" placeholder="选填" /></view>
+    <view class="form-row"><text class="label">平均心率</text><input type="number" value="{{activity.avgHr}}" data-field="avgHr" bindinput="onActivityInput" placeholder="选填" /></view>
+    <button class="btn block mt" bindtap="submitActivity">保存运动数据</button>
+    <view class="muted mt">同一天同一来源只保留一条，设备重复同步会覆盖而不是新增</view>
+  </view>
+
+  <view class="section-title">身体数据历史</view>
+  <view class="card">
+    <view wx:if="{{!f.bodyHistory.length}}" class="muted">暂无记录</view>
+    <view wx:for="{{f.bodyHistory}}" wx:key="_id" class="list-item">
+      <view class="grow">
+        <view>{{item.date}} <text class="tag">{{item.bmi}} BMI</text></view>
+        <view class="muted">评分 {{item.score == null ? '-' : item.score}}</view>
+      </view>
+      <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
+    </view>
+  </view>
+
+  <view class="section-title">力量成绩历史</view>
+  <view class="card">
+    <view wx:if="{{!f.strengthHistory.length}}" class="muted">暂无记录</view>
+    <view wx:for="{{f.strengthHistory}}" wx:key="_id" class="list-item">
+      <text class="grow">{{item.date}} {{item.lift}}</text>
+      <text class="muted">{{item.weight}} kg × {{item.reps}} → 1RM {{item.oneRM}}</text>
+    </view>
+  </view>
+</view>

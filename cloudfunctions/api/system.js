@@ -5,7 +5,8 @@ const { db, DAY, HOUR, cnDate, dayStart, fail, getDoc } = require('./common')
 // 而是存在 member_cards.pending 字段上（见 booking.js）
 const COLLECTIONS = [
   'config', 'members', 'card_types', 'member_cards', 'card_logs', 'offline_payments',
-  'schedules', 'bookings', 'venues', 'venue_slots', 'entry_logs', 'points_logs'
+  'schedules', 'bookings', 'venues', 'venue_slots', 'entry_logs', 'points_logs',
+  'body_records', 'strength_records', 'activity_records'
 ]
 
 async function isInitialized() {

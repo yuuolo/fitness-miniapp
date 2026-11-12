@@ -74,6 +74,7 @@ cloudfunctions/api/
   booking.js              listSchedules、bookSchedule、cancelBooking、myBookings、
                           listVenues、venueSlots、bookVenue
   entry.js                entryCode（生成 HMAC 二维码）、verifyEntry（核销）
+  fitness.js              身体数据、力量成绩、运动数据、排行榜、隐私开关
   admin.js                19 个员工/管理员操作（344 行，最重）
   cron.js                 定时任务三件事
   notify.js               subscribeMessage.send 封装
@@ -363,6 +364,41 @@ members (openid)
   ├─1:N─ points_logs
   └─1:N─ offline_payments
 ```
+
+### 7.3 身体与运动数据（fitness.js）
+
+| 集合 | 关键字段 |
+| --- | --- |
+| `body_records` | `openid`, `date`, `weight`, `height`, `bodyFat`, `muscle`, `visceral`, `bmi`, `score`, `detail`, `source`, `operator`, `createdAt` |
+| `strength_records` | `openid`, `lift`(`bench`/`squat`/`deadlift`/`ohp`/`pullup`), `weight`, `reps`, `oneRM`, `date`, `operator`, `createdAt` |
+| `activity_records` | `_id = ar_{openid}_{date}_{source}`、`type`、`steps`、`duration`、`calories`、`avgHr`、`source` |
+
+`members` 上额外冗余：`gender`、`height`、`latestBody`、`bestLift`、`sbdTotal`、`isBodyPublic`。
+冗余是为了排行榜不必逐条 join 历史表。
+
+**1RM**：Epley 公式 `重量 × (1 + 次数/30)`；记 1 次时即实测值。
+
+**身体评分**（0–100，缺项按已有项归一化到百分制）：
+- 体脂率 40 分：男 15–20%、女 22–27% 满分，每偏离 1% 扣 8%
+- 相对力量 40 分：`(卧推+深蹲+硬拉 1RM) ÷ 体重`，男 3.0 倍 / 女 2.2 倍满分
+- 体重指数 20 分：BMI 18.5–24 满分
+
+**排行榜**：`leaderboard({ lift, metric })`，`absolute` 比 1RM，`relative` 比 `1RM ÷ 体重`。
+隐私按「自愿公开」：`isBodyPublic` 默认 false；未公开者响应里不下发 `weight`/`bodyFat`/`bmi`，
+且**不进相对体重榜**——否则可由「1RM ÷ 相对值」反推出体重。
+
+| action | 权限 | 说明 |
+| --- | --- | --- |
+| `saveBodyRecord` | staff | 录入身体数据，自动算 BMI 与评分 |
+| `saveStrength` | staff | 录入成绩，换算 1RM，刷新最佳与评分 |
+| `saveActivity` | staff | 录入运动数据（同日同来源覆盖） |
+| `myFitness` | member | 本人完整档案 |
+| `memberFitness` | staff | 任意会员档案（未公开者隐去身体指标） |
+| `leaderboard` | member | 双榜 + 我的排名 |
+| `setBodyPublic` | member | 自愿公开开关 |
+
+页面：`pages/fitness/fitness`（我的身体数据）、`pages/rank/rank`（排行榜）、
+`pages/staff/fitness/fitness`（员工代录）。
 
 ---
 

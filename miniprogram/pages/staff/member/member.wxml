@@ -10,6 +10,16 @@
     </view>
   </view>
 
+  <view class="card">
+    <view class="list-item" bindtap="goFitness">
+      <view class="grow">
+        <view>身体数据与力量成绩</view>
+        <view class="muted">{{member.latestBody && member.latestBody.score != null ? '身体评分 ' + member.latestBody.score : '尚未录入'}}</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+  </view>
+
   <view class="between section-title">
     <text>会员卡</text>
     <button class="btn" bindtap="toggleOpen">{{opening ? '收起' : '办卡'}}</button>

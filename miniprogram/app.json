@@ -7,6 +7,8 @@
     "pages/entry/entry",
     "pages/cards/cards",
     "pages/bookings/bookings",
+    "pages/fitness/fitness",
+    "pages/rank/rank",
     "pages/staff/index/index",
     "pages/staff/schedule/schedule",
     "pages/staff/roster/roster",
@@ -14,7 +16,8 @@
     "pages/staff/members/members",
     "pages/staff/member/member",
     "pages/staff/card-types/card-types",
-    "pages/staff/venues/venues"
+    "pages/staff/venues/venues",
+    "pages/staff/fitness/fitness"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",

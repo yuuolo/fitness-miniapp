@@ -1,0 +1,67 @@
+<view class="page">
+  <view wx:if="{{loaded && !hasBody}}" class="card">
+    <view class="title">还没有身体数据</view>
+    <view class="muted mt">身体数据由前台或教练测量后录入。录入后会在这里看到体重、体脂率和身体评分。</view>
+  </view>
+
+  <block wx:else>
+    <view class="card">
+      <view class="between">
+        <text class="title">身体评分</text>
+        <text class="tag orange">{{score}} 分</text>
+      </view>
+      <view class="muted mt">{{f.latestBody.date}} 测量 · 体重 {{f.latestBody.weight}} kg · 体脂 {{f.latestBody.bodyFat || '-'}}%</view>
+      <view wx:for="{{scoreDetail}}" wx:key="key" class="form-row">
+        <text class="label">{{item.label}}</text>
+        <text class="grow">{{item.score}} / {{item.max}}</text>
+      </view>
+      <view class="muted mt">评分 = 体脂率 40 + 相对力量 40 + 体重指数 20，缺项自动归一</view>
+    </view>
+
+    <view class="card">
+      <view class="between">
+        <view>
+          <view>公开身体数据</view>
+          <view class="muted mt">开启后别人能在排行榜看到你的体重和身体评分</view>
+        </view>
+        <switch checked="{{isPublic}}" bindchange="togglePublic" />
+      </view>
+    </view>
+
+    <view class="between section-title">
+      <text>力量最佳</text>
+      <button class="btn ghost" bindtap="goRank">排行榜</button>
+    </view>
+    <view class="card">
+      <view wx:for="{{bestList}}" wx:key="key" class="list-item">
+        <text class="grow">{{item.name}}</text>
+        <text wx:if="{{item.has}}" class="price">{{item.oneRM}} kg</text>
+        <text wx:else class="muted">暂无成绩</text>
+      </view>
+    </view>
+
+    <view class="section-title">身体数据历史</view>
+    <view class="card">
+      <view wx:if="{{!bodyList.length}}" class="muted">暂无记录</view>
+      <view wx:for="{{bodyList}}" wx:key="id" class="list-item">
+        <view class="grow">
+          <view>{{item.date}}</view>
+          <view class="muted">BMI {{item.bmi}} · 评分 {{item.score}}</view>
+        </view>
+        <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
+      </view>
+    </view>
+
+    <view class="section-title">最近运动</view>
+    <view class="card">
+      <view wx:if="{{!actList.length}}" class="muted">暂无记录</view>
+      <view wx:for="{{actList}}" wx:key="id" class="list-item">
+        <view class="grow">
+          <view>{{item.date}}</view>
+          <view class="muted">{{item.duration}} 分钟 · {{item.calories}} 千卡</view>
+        </view>
+        <text class="muted">{{item.steps}} 步</text>
+      </view>
+    </view>
+  </block>
+</view>
