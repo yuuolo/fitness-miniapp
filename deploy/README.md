@@ -117,7 +117,14 @@ scp deploy/scripts/run-http-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-http-te
 
 # 3. 全 action 冒烟测试（50 个 action 用空参数各打一遍，确保没有 500）
 scp deploy/scripts/run-smoke-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-smoke-tests.sh'
+
+# 4. 订阅消息链路验证（用真实凭据换 token，配假模板 ID 触发发送）
+scp deploy/scripts/notify-drill.sh gym:/tmp/ && ssh gym 'bash /tmp/notify-drill.sh'
 ```
+
+第 4 项期望日志出现 `subscribeMessage.send failed ... 40003 invalid openid`：
+说明 access_token 已拿到、请求体被微信接受、只是测试用的 openid 不是真实用户；
+同时预约本身仍然成功，证明发送失败不影响业务。
 
 HTTP 测试会临时起一个 `gym-http-test` 容器（不占生产端口、只连 `gym_http` 库），
 通过 `DEV_LOGIN_TOKEN` 令牌绕过微信换取 openid。**生产环境不设置该变量时这条通道完全不生效**，
