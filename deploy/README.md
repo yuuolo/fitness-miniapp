@@ -114,6 +114,9 @@ scp deploy/scripts/run-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-tests.sh'
 
 # 2. HTTP 层端到端测试（20 项断言，真打 /api、/api/upload、/api/media）
 scp deploy/scripts/run-http-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-http-tests.sh'
+
+# 3. 全 action 冒烟测试（50 个 action 用空参数各打一遍，确保没有 500）
+scp deploy/scripts/run-smoke-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-smoke-tests.sh'
 ```
 
 HTTP 测试会临时起一个 `gym-http-test` 容器（不占生产端口、只连 `gym_http` 库），
@@ -154,6 +157,21 @@ HTTP 测试会临时起一个 `gym-http-test` 容器（不占生产端口、只�
 4. 旧实现保留在 `miniprogram/utils/api-cloud.js`，回滚时把页面的 `require('../../utils/api')` 指回它即可。
 
 **还需要在微信后台做**：服务器域名里加 `https://gym.novrein.com`，否则真机请求会被拦截。
+
+## 备份与恢复
+
+```bash
+# 手动备份（输出到 /opt/gym/backups，默认保留 14 份）
+ssh gym 'bash /opt/gym/scripts/backup.sh'
+
+# 每天 04:17 自动备份（在服务器上执行一次即可）
+ssh gym '(crontab -l 2>/dev/null; echo "17 4 * * * bash /opt/gym/scripts/backup.sh >> /opt/gym/backups/cron.log 2>&1") | crontab -'
+
+# 恢复某个备份
+ssh gym 'gunzip -c /opt/gym/backups/gym-XXXX.sql.gz | docker compose -f /opt/gym/docker-compose.yml exec -T db psql -U postgres -d gym'
+```
+
+备份脚本会校验 gzip 完整性并自动清理旧文件，建议正式上线前把定时备份开起来。
 
 ## 常见问题
 
