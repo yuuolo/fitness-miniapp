@@ -171,14 +171,34 @@ HTTP 测试会临时起一个 `gym-http-test` 容器（不占生产端口、只�
 # 手动备份（输出到 /opt/gym/backups，默认保留 14 份）
 ssh gym 'bash /opt/gym/scripts/backup.sh'
 
-# 每天 04:17 自动备份（在服务器上执行一次即可）
-ssh gym '(crontab -l 2>/dev/null; echo "17 4 * * * bash /opt/gym/scripts/backup.sh >> /opt/gym/backups/cron.log 2>&1") | crontab -'
-
 # 恢复某个备份
 ssh gym 'gunzip -c /opt/gym/backups/gym-XXXX.sql.gz | docker compose -f /opt/gym/docker-compose.yml exec -T db psql -U postgres -d gym'
 ```
 
-备份脚本会校验 gzip 完整性并自动清理旧文件，建议正式上线前把定时备份开起来。
+### 每日自动备份
+
+服务器**没有安装 cron**，用的是 systemd timer（不额外装包，且关机错过时间会在开机后补跑）：
+
+```bash
+# 查看是否在跑
+ssh gym 'systemctl list-timers gym-backup.timer'
+
+# 立即手动跑一次（便于验证）
+ssh gym 'sudo systemctl start gym-backup.service && journalctl -u gym-backup.service -n 20'
+
+# 查看历史
+ssh gym 'journalctl -u gym-backup.service --since today'
+
+# 关掉自动备份
+ssh gym 'sudo systemctl disable --now gym-backup.timer'
+```
+
+当前配置：**北京时间每天 04:17**（`OnCalendar=*-*-* 04:17:00 Asia/Shanghai`，带最多 5 分钟随机延迟）。
+服务器时钟是 UTC，所以实际触发时间在 UTC 20:17 左右 —— 定时器里写的是显式时区，不用手动换算。
+
+单元文件在 `/etc/systemd/system/gym-backup.{service,timer}`，日志追加到 `/opt/gym/backups/cron.log`。
+
+备份脚本会校验 gzip 完整性并自动清理旧文件，建议正式上线前确认定时器处于 `active` 状态。
 
 ## 常见问题
 

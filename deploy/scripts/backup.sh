@@ -4,8 +4,10 @@
 # 手动执行：
 #   ssh gym 'bash /opt/gym/scripts/backup.sh'
 #
-# 每天自动备份（在服务器上执行一次）：
-#   ssh gym '(crontab -l 2>/dev/null; echo "17 4 * * * bash /opt/gym/scripts/backup.sh >> /opt/gym/backups/cron.log 2>&1") | crontab -'
+# 已配置为 systemd timer 每天北京时间 04:17 自动执行（服务器没装 cron）：
+#   ssh gym 'systemctl list-timers gym-backup.timer'      # 查看下次运行时间
+#   ssh gym 'sudo systemctl start gym-backup.service'      # 立即跑一次
+#   ssh gym 'journalctl -u gym-backup.service --since today'
 #
 # 恢复：
 #   ssh gym 'gunzip -c /opt/gym/backups/gym-XXXX.sql.gz | docker compose -f /opt/gym/docker-compose.yml exec -T db psql -U postgres -d gym'
