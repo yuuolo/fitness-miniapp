@@ -1,7 +1,7 @@
 // 定时任务（等价云开发定时触发器）：自动记缺席、开课前提醒、会员卡到期提醒
 const { query, tx } = require('./db')
 const {
-  MIN, HOUR, DAY, cnDate, cnDateTime, cnHour,
+  MIN, HOUR, DAY, cnDate, cnDateTime, cnHour, wxTime, wxDate,
   addCardLog, recordNoShow, releaseLessonPending
 } = require('./common')
 const { notify } = require('./notify')
@@ -59,9 +59,9 @@ async function remindClasses(now) {
     if (!claimed.length) break
     for (const b of claimed) {
       const sent = await notify('classReminder', b.openid, {
-        title: b.title,
-        time: cnDateTime(b.start_at),
-        place: b.room || '请准时到店'
+        who: b.member_name || '会员',
+        time: wxTime(b.start_at),
+        place: b.room || '店内'
       })
       if (sent) count++
     }
@@ -90,9 +90,12 @@ async function remindExpiringCards(now) {
     if (!claimed.length) break
     for (const c of claimed) {
       const tip = c.kind === 'period' ? '续卡请到前台办理' : '还剩 ' + c.remain_times + ' 次，记得来练'
+      const m = (await query('select nick_name, phone from members where openid = $1', [c.openid])).rows[0]
+      const who = (m && m.nick_name) || (m && m.phone ? '会员' + String(m.phone).slice(-4) : '会员')
       const sent = await notify('cardExpire', c.openid, {
+        who,
         cardName: c.name,
-        expireDate: cnDate(c.expire_at),
+        expireDate: wxDate(c.expire_at),
         tip
       })
       if (sent) count++

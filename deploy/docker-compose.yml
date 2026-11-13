@@ -22,6 +22,15 @@ services:
       WX_APPID: ${WX_APPID}
       WX_SECRET: ${WX_SECRET}
       PORT: 3000
+      # 订阅消息（模板 ID 留空则不发送该类通知）
+      WX_TPL_BOOKING_SUCCESS: ${WX_TPL_BOOKING_SUCCESS:-}
+      WX_TPL_CLASS_REMINDER: ${WX_TPL_CLASS_REMINDER:-}
+      WX_TPL_CARD_EXPIRE: ${WX_TPL_CARD_EXPIRE:-}
+      WX_MP_STATE: ${WX_MP_STATE:-developer}
+      # 课前提醒里的「场地地址」，按门店实际填写
+      SHOP_ADDRESS: ${SHOP_ADDRESS:-前台签到}
+      # 上传文件对外地址前缀（小程序要能直接访问）
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://gym.novrein.com}
     depends_on:
       db:
         condition: service_healthy

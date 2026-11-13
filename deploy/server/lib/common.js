@@ -20,6 +20,22 @@ function cnHour(ms) {
   return new Date(ms + TZ_OFFSET).getUTCHours()
 }
 
+// 微信订阅消息里 time 类型要求「2026年11月13日 09:00」这种格式，
+// character_string 类型不能带中文，所以另给一个纯数字版本。
+function wxTime(ms) {
+  return new Date(ms + TZ_OFFSET).toISOString()
+    .replace(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}).*$/, '$1年$2月$3日 $4:$5')
+}
+
+function wxDate(ms) {
+  return new Date(ms + TZ_OFFSET).toISOString().slice(0, 10).replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$1年$2月$3日')
+}
+
+// character_string 只允许字母数字和符号，给一个短格式
+function shortTime(ms) {
+  return cnDateTime(ms)
+}
+
 function dayStart(dateStr) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr || '')) fail('日期格式不正确')
   return Date.parse(dateStr + 'T00:00:00+08:00')
@@ -355,7 +371,7 @@ async function releaseLessonPending(executor, cardId) {
 
 module.exports = {
   MIN, HOUR, DAY, TZ_OFFSET,
-  cnDate, cnDateTime, cnHour, dayStart, BizError, fail, need,
+  cnDate, cnDateTime, cnHour, wxTime, wxDate, shortTime, dayStart, BizError, fail, need,
   ROLE_LEVEL, ROLE_NAMES, newId, memberLabel, cardUsable, pickEntryCard,
   memberRow, cardTypeRow, cardRow, cardLogRow, paymentRow, scheduleRow, bookingRow,
   venueRow, entryLogRow, pointsLogRow, bodyRow, strengthRow, activityRow, momentRow,

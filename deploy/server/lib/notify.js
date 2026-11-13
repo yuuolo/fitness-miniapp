@@ -37,11 +37,13 @@ async function accessToken() {
   return token.value
 }
 
-// 订阅消息的 thing 类字段最多 20 个字
+// 订阅消息字段长度限制：thing 类最多 20 字，character_string 最多 32 位，time 不能截断
 function wrap(fields) {
   const data = {}
   Object.keys(fields || {}).forEach(k => {
-    data[k] = { value: String(fields[k] === undefined ? '' : fields[k]).slice(0, 20) }
+    const limit = k.indexOf('thing') === 0 ? 20 : 32
+    const raw = fields[k] === undefined || fields[k] === null ? '' : String(fields[k])
+    data[k] = { value: raw.slice(0, limit) }
   })
   return data
 }

@@ -1,8 +1,8 @@
 // 约课 / 娱乐项目预约
 const { query, tx } = require('./db')
 const {
-  MIN, HOUR, DAY, cnDate, cnDateTime, dayStart, fail, need,
-  cardUsable, cardRow, scheduleRow, bookingRow, venueRow
+  MIN, HOUR, DAY, cnDate, cnDateTime, shortTime, dayStart, fail, need,
+  cardUsable, cardRow, scheduleRow, bookingRow, venueRow, memberLabel
 } = require('./common')
 const { notify } = require('./notify')
 
@@ -107,7 +107,8 @@ async function bookSchedule({ openid, me, data }) {
 
   notify('bookingSuccess', openid, {
     title: s.courseName + '（' + s.coachName + '）',
-    time: cnDateTime(s.startAt),
+    time: shortTime(s.startAt),
+    who: memberLabel(me),
     place: s.room || '前台签到'
   }).catch(err => console.warn('notify failed', err.message))
   return { bookingId: id }
@@ -226,7 +227,8 @@ async function bookVenue({ openid, me, data }) {
 
   notify('bookingSuccess', openid, {
     title: venue.name,
-    time: cnDateTime(startAt),
+    time: shortTime(startAt),
+    who: memberLabel(me),
     place: '到店付款 ' + (venue.price / 100) + ' 元'
   }).catch(err => console.warn('notify failed', err.message))
   return { bookingId: id }

@@ -85,9 +85,36 @@ deploy/
 | `WX_TPL_BOOKING_SUCCESS` | 预约成功通知模板 ID，留空则不发送 |
 | `WX_TPL_CLASS_REMINDER` | 开课前提醒模板 ID |
 | `WX_TPL_CARD_EXPIRE` | 会员卡到期提醒模板 ID |
-| `WX_MP_STATE` | `trial`（体验版）/ `formal`（正式版）/ `developer` |
+| `WX_MP_STATE` | 跳转版本：`developer`（开发版）/ `trial`（体验版）/ `formal`（正式版） |
+| `SHOP_ADDRESS` | 课前提醒里的「场地地址」 |
 | `PUBLIC_BASE_URL` | 上传文件对外地址前缀，默认 `https://gym.novrein.com` |
 | `DEV_LOGIN_TOKEN` | **仅测试用**：设置后可用 `code=dev:<openid>` + 请求头 `x-dev-token` 绕过微信登录。生产不要设置 |
+
+> 这些变量必须在 `docker-compose.yml` 的 `server.environment` 里显式传递才会进入容器；
+> 新增变量时记得同步改 compose 文件，否则容器里读不到（表现为「配置了但不起作用」）。
+
+### 订阅消息字段名必须与模板一致
+
+`server/lib/templates.js` 里的 keyword（`thing8`、`character_string5`、`time4` …）必须与
+小程序后台模板里的字段名**逐字一致**，否则微信会返回 `47003 argument invalid`。
+
+用这个接口核对自己模板的真实字段名：
+
+```bash
+# 需要 access_token，可用 scripts 里的方式取
+curl "https://api.weixin.qq.com/wxaapi/newtmpl/gettemplate?access_token=<AT>"
+```
+
+当前三个模板的实际字段：
+
+| 模板 | 字段 |
+| --- | --- |
+| 预约成功通知 | `thing8` 预约业务、`character_string5` 预约时段、`thing11` 预约人、`thing10` 预约地点 |
+| 预约开始提醒 | `thing6` 预约人、`thing1` 温馨提醒、`thing2` 场地名称、`thing3` 场地地址、`time4` 开始时间 |
+| 会员即将到期 | `thing1` 用户名、`thing2` 温馨提示、`thing6` 会员类型、`time3` 到期时间 |
+
+类型规则：`thing` ≤20 字；`character_string` ≤32 位且不能含中文；`time` 必须是
+`2026年11月13日 09:00` 这种格式（`common.js` 的 `wxTime` / `wxDate` 负责转换）。
 
 改完 `.env` 需要 `docker compose up -d --force-recreate server` 让容器读到新值。
 
