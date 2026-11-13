@@ -120,6 +120,10 @@ scp deploy/scripts/run-smoke-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-smoke-
 
 # 4. 订阅消息链路验证（用真实凭据换 token，配假模板 ID 触发发送）
 scp deploy/scripts/notify-drill.sh gym:/tmp/ && ssh gym 'bash /tmp/notify-drill.sh'
+
+# 5. 真实图片上传/下载演练（字节级比对）
+scp 某张照片.jpg gym:/tmp/real.jpg
+scp deploy/scripts/upload-drill.sh gym:/tmp/ && ssh gym 'bash /tmp/upload-drill.sh /tmp/real.jpg'
 ```
 
 第 4 项期望日志出现 `subscribeMessage.send failed ... 40003 invalid openid`：
