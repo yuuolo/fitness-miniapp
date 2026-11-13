@@ -132,6 +132,19 @@ tabBar 图标文件是否缺失、wxml 引用的字段有没有拼错、小程�
 node scripts/check.selftest.js
 ```
 
+### 小程序自动化回归（模拟器里真跑）
+
+用微信开发者工具的自动化接口驱动小程序，详见 [scripts/automator/README.md](scripts/automator/README.md)。
+覆盖：真实 `wx.login` → 自建后端建档、订阅模板读取、8 个页面打开、点击预约、发友圈、
+入场码生成 + 前台扫码核验扣次。
+
+```bash
+cd scripts/automator
+$env:NODE_PATH = "$PWD\node_modules"
+node regression.js      # 页面级
+node interaction.js     # 交互级（真点按钮）
+```
+
 ### 自建后端（当前）
 
 两套测试，都在独立测试库上跑，不碰生产数据：
