@@ -54,6 +54,23 @@ function fail(msg) {
   throw new BizError(msg)
 }
 
+// ---------- 仅测试可用：带令牌的本地登录通道 ----------
+// 生产环境不设置 DEV_LOGIN_TOKEN 时这段代码完全不生效；
+// 测试时用 code='dev:<openid>' + 请求头 x-dev-token 绕过微信换取 openid。
+const DEV_LOGIN_TOKEN = process.env.DEV_LOGIN_TOKEN
+
+function devLogin(req, code) {
+  if (!DEV_LOGIN_TOKEN) return null
+  if (req.get('x-dev-token') !== DEV_LOGIN_TOKEN) return null
+  const value = String(code || '')
+  return value.startsWith('dev:') ? value.slice(4) : null
+}
+
+function resolveOpenid(req, code) {
+  const dev = devLogin(req, code)
+  return dev ? Promise.resolve(dev) : code2openid(code)
+}
+
 // 首次调用自动建会员档案
 async function ensureMember(openid) {
   const existing = await getMember(openid)
@@ -105,7 +122,7 @@ app.post('/api/upload', express.raw({ type: () => true, limit: UPLOAD_LIMIT }), 
     const ext = String(req.query.ext || '').replace(/^\./, '').toLowerCase()
     const mime = MIME_BY_EXT[ext]
     if (!mime) return res.json({ code: 400, msg: '不支持的文件类型' })
-    const openid = await code2openid(req.query.code)
+    const openid = await resolveOpenid(req, req.query.code)
     const bytes = Buffer.isBuffer(req.body) ? req.body : null
     if (!bytes || !bytes.length) return res.json({ code: 400, msg: '没有收到文件内容' })
     if (bytes.length > UPLOAD_LIMIT) return res.json({ code: 400, msg: '文件超过 12MB' })
@@ -144,7 +161,7 @@ app.post('/api', async (req, res) => {
       ? handlers[action]
       : null
     if (!fn) return res.json({ code: 404, msg: '未知操作' })
-    const openid = await code2openid(code)
+    const openid = await resolveOpenid(req, code)
     const me = await ensureMember(openid)
     const result = await fn({ openid, me, data: data || {} })
     res.json({ code: 0, data: result === undefined ? null : result })

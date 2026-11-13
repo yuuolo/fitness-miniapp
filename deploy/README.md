@@ -87,6 +87,7 @@ deploy/
 | `WX_TPL_CARD_EXPIRE` | 会员卡到期提醒模板 ID |
 | `WX_MP_STATE` | `trial`（体验版）/ `formal`（正式版）/ `developer` |
 | `PUBLIC_BASE_URL` | 上传文件对外地址前缀，默认 `https://gym.novrein.com` |
+| `DEV_LOGIN_TOKEN` | **仅测试用**：设置后可用 `code=dev:<openid>` + 请求头 `x-dev-token` 绕过微信登录。生产不要设置 |
 
 改完 `.env` 需要 `docker compose up -d --force-recreate server` 让容器读到新值。
 
@@ -103,13 +104,21 @@ ssh gym 'tar -xzf /tmp/deploy.tar.gz -C /opt/gym && cd /opt/gym && docker compos
 
 首次启动会自动建表（`schema.sql` 幂等执行）并写入管理员之外的示例数据（点「初始化系统」才写）。
 
-### 跑集成测试
+### 跑测试
+
+两套测试，都只在测试库上跑，**不会碰生产库**：
 
 ```bash
-ssh gym 'bash /tmp/run-tests.sh'
+# 1. 业务逻辑集成测试（55 项断言，直连 gym_test 库）
+scp deploy/scripts/run-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-tests.sh'
+
+# 2. HTTP 层端到端测试（20 项断言，真打 /api、/api/upload、/api/media）
+scp deploy/scripts/run-http-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-http-tests.sh'
 ```
 
-它会在 `gym_test` 库上重建镜像并执行 `server/test/run.js`，**不会碰生产库**。
+HTTP 测试会临时起一个 `gym-http-test` 容器（不占生产端口、只连 `gym_http` 库），
+通过 `DEV_LOGIN_TOKEN` 令牌绕过微信换取 openid。**生产环境不设置该变量时这条通道完全不生效**，
+并且请求头令牌不匹配会被当成普通请求走微信校验。
 
 ## 接口
 

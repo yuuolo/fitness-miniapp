@@ -118,13 +118,21 @@ ssh gym 'bash /tmp/run-tests.sh'    # 会自动建 gym_test 库、重建镜像�
 
 ### 自建后端（当前）
 
-直连 PostgreSQL 跑完整业务流程，覆盖权限、名额、扣次、入场码防伪、缺席限制、排行榜、友圈和定时任务：
+两套测试，都在独立测试库上跑，不碰生产数据：
+
+```bash
+# 业务逻辑（55 项断言）
+scp deploy/scripts/run-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-tests.sh'
+
+# HTTP 层端到端（20 项断言：登录、JSON 协议、上传、媒体、错误映射）
+scp deploy/scripts/run-http-tests.sh gym:/tmp/ && ssh gym 'bash /tmp/run-http-tests.sh'
+```
+
+也可以本地直连测试库跑业务逻辑部分：
 
 ```bash
 DATABASE_URL=postgres://postgres:pw@127.0.0.1:5432/gym_test node deploy/server/test/run.js
 ```
-
-会清空目标库的业务表，只对测试库执行。
 
 ### 旧云开发后端
 
