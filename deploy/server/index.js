@@ -1,18 +1,18 @@
-// 自建后端骨架：与云函数同款 { action, data } 协议
-// 已实现登录换 openid、ping、bodyTrend、saveBodyRecord；其余按同样格式往里加
-const express = require('express')
+// 自建后端入口：与云函数同款的 { action, data, code } → { code, msg, data } 协议
+const fs = require('fs')
+const path = require('path')
 const https = require('https')
-const { Pool } = require('pg')
+const express = require('express')
+
+const { query, one, pool, ensureSchema } = require('./lib/db')
+const { BizError, getMember } = require('./lib/common')
 
 const PORT = Number(process.env.PORT || 3000)
 const APPID = process.env.WX_APPID
 const SECRET = process.env.WX_SECRET
-const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 
-class BizError extends Error {}
-function fail(msg) {
-  throw new BizError(msg)
-}
+// ---------- 登录：wx.login 的 code 换 openid（同一 code 5 分钟内复用）----------
+const sessionCache = new Map()
 
 function getJson(url) {
   return new Promise((resolve, reject) => {
@@ -35,82 +35,118 @@ function getJson(url) {
   })
 }
 
-// wx.login 的 code 换 openid。同一 code 5 分钟内复用，避免重复请求微信接口
-const sessionCache = new Map()
-
 async function code2openid(code) {
   if (!code) fail('缺少登录 code')
   const hit = sessionCache.get(code)
   if (hit && hit.expire > Date.now()) return hit.openid
-  const url = 'https://api.weixin.qq.com/sns/jscode2session?appid=' + APPID +
-    '&secret=' + SECRET +
-    '&js_code=' + encodeURIComponent(code) +
-    '&grant_type=authorization_code'
+  const url = 'https://api.weixin.qq.com/sns/jscode2session?appid=' + encodeURIComponent(APPID)
+    + '&secret=' + encodeURIComponent(SECRET)
+    + '&js_code=' + encodeURIComponent(code)
+    + '&grant_type=authorization_code'
   const r = await getJson(url)
   if (!r.openid) fail('登录失败：' + (r.errmsg || '未知错误'))
   sessionCache.set(code, { openid: r.openid, expire: Date.now() + 5 * 60e3 })
-  // 首次登录自动建档
-  await pool.query(
-    'insert into members (openid) values ($1) on conflict (openid) do nothing',
-    [r.openid]
-  )
+  if (sessionCache.size > 5000) sessionCache.clear()
   return r.openid
 }
 
-const handlers = {
-  async ping() {
-    return { ok: true, time: Date.now() }
-  },
-
-  // 对应云开发的 bodyTrend
-  async bodyTrend({ openid, data }) {
-    const days = Math.min(Math.max(Number(data.days) || 30, 7), 365)
-    const { rows } = await pool.query(
-      `select date, weight, body_fat, muscle, visceral, bmi, score, measured_at
-         from body_records
-        where openid = $1 and measured_at >= now() - ($2 || ' days')::interval
-        order by measured_at asc
-        limit 200`,
-      [openid, String(days)]
-    )
-    return { days, count: rows.length, points: rows }
-  },
-
-  // 对应云开发的 saveBodyRecord
-  async saveBodyRecord({ openid, data }) {
-    const weight = Number(data.weight)
-    if (!Number.isFinite(weight) || weight < 20 || weight > 300) fail('体重需在 20–300 之间')
-    const { rows } = await pool.query(
-      `insert into body_records
-         (openid, date, weight, height, body_fat, muscle, visceral, bmi, score)
-       values ($1, coalesce($2, current_date), $3, $4, $5, $6, $7, $8, $9)
-       returning id, date, weight, bmi, score`,
-      [
-        openid,
-        data.date || null,
-        weight,
-        data.height || null,
-        data.bodyFat || null,
-        data.muscle || null,
-        data.visceral || null,
-        data.bmi || null,
-        data.score || null
-      ]
-    )
-    return rows[0]
-  }
+function fail(msg) {
+  throw new BizError(msg)
 }
 
+// 首次调用自动建会员档案
+async function ensureMember(openid) {
+  const existing = await getMember(openid)
+  if (existing) return existing
+  await query(
+    'insert into members (openid, created_at) values ($1, $2) on conflict (openid) do nothing',
+    [openid, Date.now()]
+  )
+  return getMember(openid)
+}
+
+// ---------- action 路由 ----------
+// 这些导出是内部工具/纯函数，不是可调用 action
+const INTERNAL_EXPORTS = new Set([
+  'LIFTS', 'bmiOf', 'oneRM', 'scoreBody', 'publicMe', 'isInitialized',
+  'markNoShows', 'remindClasses', 'remindExpiringCards'
+])
+const MODULES = ['system', 'member', 'booking', 'entry', 'admin', 'fitness', 'moment']
+const handlers = {}
+for (const name of MODULES) {
+  const file = path.join(__dirname, 'lib', name + '.js')
+  if (!fs.existsSync(file)) {
+    console.warn('action module not installed yet:', name)
+    continue
+  }
+  const mod = require(file)
+  for (const [key, value] of Object.entries(mod)) {
+    if (INTERNAL_EXPORTS.has(key)) continue
+    if (typeof value !== 'function') continue
+    handlers[key] = value
+  }
+}
+console.log('actions (' + Object.keys(handlers).length + '):', Object.keys(handlers).sort().join(', '))
+
 const app = express()
-app.use(express.json({ limit: '1mb' }))
+app.use(express.json({ limit: '2mb' }))
+
+app.get('/health', (req, res) => res.json({ ok: true }))
+
+// ---------- 上传：小程序读成 ArrayBuffer 直接 POST 二进制，避免引入 multipart 依赖 ----------
+const UPLOAD_LIMIT = 12 * 1024 * 1024
+const MIME_BY_EXT = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+  gif: 'image/gif', mp4: 'video/mp4', mov: 'video/quicktime'
+}
+
+app.post('/api/upload', express.raw({ type: () => true, limit: UPLOAD_LIMIT }), async (req, res) => {
+  try {
+    const ext = String(req.query.ext || '').replace(/^\./, '').toLowerCase()
+    const mime = MIME_BY_EXT[ext]
+    if (!mime) return res.json({ code: 400, msg: '不支持的文件类型' })
+    const openid = await code2openid(req.query.code)
+    const bytes = Buffer.isBuffer(req.body) ? req.body : null
+    if (!bytes || !bytes.length) return res.json({ code: 400, msg: '没有收到文件内容' })
+    if (bytes.length > UPLOAD_LIMIT) return res.json({ code: 400, msg: '文件超过 12MB' })
+
+    const id = require('crypto').randomBytes(16).toString('hex')
+    await query('insert into media (id, mime, bytes, created_at) values ($1, $2, $3, $4)',
+      [id, mime, bytes, Date.now()])
+    await ensureMember(openid)
+    const base = process.env.PUBLIC_BASE_URL || 'https://gym.novrein.com'
+    res.json({ code: 0, data: { fileID: base + '/api/media/' + id, bytes: bytes.length, mime } })
+  } catch (e) {
+    if (e instanceof BizError) return res.json({ code: 400, msg: e.message })
+    console.error('upload failed', e)
+    res.json({ code: 500, msg: '上传失败' })
+  }
+})
+
+// 自建存储的静态图片（比如分享海报用的小程序码）
+app.get('/api/media/:id', async (req, res) => {
+  try {
+    const { rows } = await query('select mime, bytes from media where id = $1', [req.params.id])
+    if (!rows.length) return res.status(404).end()
+    res.setHeader('content-type', rows[0].mime || 'application/octet-stream')
+    res.setHeader('cache-control', 'public, max-age=31536000, immutable')
+    res.end(rows[0].bytes)
+  } catch (e) {
+    console.error('media read failed', e)
+    res.status(500).end()
+  }
+})
 
 app.post('/api', async (req, res) => {
   const { action, data, code } = req.body || {}
   try {
-    const fn = Object.prototype.hasOwnProperty.call(handlers, action) ? handlers[action] : null
-    if (typeof fn !== 'function') return res.json({ code: 404, msg: '未知操作' })
+    const fn = Object.prototype.hasOwnProperty.call(handlers, action) && typeof handlers[action] === 'function'
+      ? handlers[action]
+      : null
+    if (!fn) return res.json({ code: 404, msg: '未知操作' })
     const openid = await code2openid(code)
-    const result = await fn({ openid, data: data || {} })
+    const me = await ensureMember(openid)
+    const result = await fn({ openid, me, data: data || {} })
     res.json({ code: 0, data: result === undefined ? null : result })
   } catch (e) {
     if (e instanceof BizError) return res.json({ code: 400, msg: e.message })
@@ -119,13 +155,42 @@ app.post('/api', async (req, res) => {
   }
 })
 
-app.get('/health', async (req, res) => {
-  try {
-    await pool.query('select 1')
-    res.json({ ok: true })
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message })
+// 内部定时任务：每 15 分钟跑一次（等价云开发定时触发器）
+function startCron() {
+  const file = path.join(__dirname, 'lib', 'cron.js')
+  if (!fs.existsSync(file)) return
+  const { runCron } = require(file)
+  let running = false
+  const tick = async () => {
+    if (running) return
+    running = true
+    try {
+      const result = await runCron(Date.now())
+      console.log('cron', new Date().toISOString(), JSON.stringify(result))
+    } catch (e) {
+      console.error('cron failed', e)
+    } finally {
+      running = false
+    }
   }
-})
+  setInterval(tick, 15 * 60e3)
+  setTimeout(tick, 30e3)
+  console.log('cron scheduler started (every 15 min)')
+}
 
-app.listen(PORT, () => console.log('listening on ' + PORT))
+ensureSchema()
+  .then(() => {
+    app.listen(PORT, () => console.log('listening on ' + PORT))
+    startCron()
+  })
+  .catch(err => {
+    console.error('schema init failed', err)
+    process.exit(1)
+  })
+
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.on(signal, () => {
+    console.log('shutting down', signal)
+    pool.end().finally(() => process.exit(0))
+  })
+}

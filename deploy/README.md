@@ -1,147 +1,159 @@
 # 自建后端部署包
 
-把业务从「微信云开发」迁到自己的服务器。小程序只当入口。
+把业务从「微信云开发」迁到自己的服务器。**已完成全量迁移**：小程序调用的 49 个 action 全部由自建后端实现，
+云函数版本保留在仓库 `cloudfunctions/` 目录用于回滚。
 
 > **两个"备案"要分清**
 >
-> - **域名 ICP 备案**：自建后端必须。你们已有，这条路已通。
+> - **域名 ICP 备案**：自建后端必须。`novrein.com` 已完成。
 > - **小程序备案**：小程序自己的备案（微信公众平台 → 设置 → 基本设置 → 小程序备案），
 >   和域名备案是两件事，2023 年 9 月起新小程序发布前必须完成。**没做的话仍只能发体验版。**
 >
 > 另外：小程序 `request` 合法域名必须 HTTPS、不能带端口、不能用 IP。
 
-> **如果服务器上已经有 nginx 占着 80/443**，Caddy 会起不来。二选一：
-> 1. 停掉原 nginx（`systemctl stop nginx && systemctl disable nginx`），让 Caddy 接管；
-> 2. 或不用 Caddy，把 `server` 容器端口映射出来，自己用 nginx 反代（把 `caddy` 服务删掉，
->    `server` 加 `ports: ["127.0.0.1:3000:3000"]`，nginx 里 `proxy_pass http://127.0.0.1:3000;`）。
+## 当前生产环境
+
+```
+小程序
+  → https://gym.novrein.com   (前置 nginx，内网 192.168.1.3，*.novrein.com 证书)
+  → http://192.168.1.31:80    (docker: gym-server → 3000)
+  → postgres:16               (docker: gym-db，卷 gym_pgdata)
+```
+
+| 项 | 值 |
+| --- | --- |
+| 主机 | `ssh gym`（`gym@192.168.1.31`，Ubuntu 24.04，4C/8G/292G） |
+| 部署目录 | `/opt/gym` |
+| 配置文件 | `/opt/gym/.env`（600，含 Postgres 密码与微信凭据） |
+| 反向代理 | 由前置 nginx 负责，容器内 **caddy 不启动** |
+| 健康检查 | `https://gym.novrein.com/health` → `{"ok":true}` |
+| 定时任务 | 服务进程内每 15 分钟跑一次（等价云开发触发器），无需额外 cron |
+
+因为前置 nginx 已经占用了 80/443 并签发证书，这里不用 Caddy：
+
+```yaml
+# docker-compose.override.yml
+services:
+  server:
+    ports:
+      - "0.0.0.0:80:3000"
+```
 
 ## 软硬件要求
 
-### 最低配置（单店、几百会员）
-
-| 项 | 要求 | 说明 |
+| 项 | 最低 | 说明 |
 | --- | --- | --- |
-| CPU | 1–2 核 | 一个 Node 进程足够 |
-| 内存 | 2 GB 起，建议 4 GB | Docker + Postgres + 构建余量 |
-| 磁盘 | 40 GB SSD | 数据库 + 图片；**视频不要放这里** |
-| 带宽 | 3–5 Mbps | 视频走对象存储/CDN，不占服务器带宽 |
-| 系统 | Ubuntu 22.04 / Debian 12 | 其他 Linux 也行，命令略有差异 |
+| CPU / 内存 | 2 核 / 2 GB | 当前机器 4 核 8 GB，余量充足 |
+| 磁盘 | 40 GB SSD | 数据库 + 上传的图片；视频建议后续接对象存储 |
+| 系统 | Ubuntu 22.04 / 24.04 | 其他 Linux 也行，命令略有差异 |
+| 软件 | Docker 24+ / Compose v2 | 服务器已装 Docker 29.1.3 + Compose 2.40.3 |
 
-### 软件
+## 目录结构
 
-| 组件 | 版本 | 用途 |
-| --- | --- | --- |
-| Docker | 24+ | 运行容器 |
-| Docker Compose | v2 | 一键编排 |
-| Node.js | 20 LTS | 镜像内自带，无需装 |
-| PostgreSQL | 16 | 镜像内自带 |
-| Caddy | 2 | 反向代理 + **自动申请 HTTPS 证书** |
-
-### 你还需要准备
-
-1. 一台云服务器（腾讯云轻量 / 阿里云 ECS 都行，2核4G 首年通常几百块）
-2. 一个**已备案**的域名，解析到服务器 IP
-3. 小程序 AppID 和 AppSecret（mp.weixin.qq.com → 开发管理 → 开发设置）
-4. 安全组放行 **80 / 443** 端口
-
-## 一键部署
-
-### 第 0 步：部署前准备（配免密 + 装 Docker）
-
-在本机执行一次，之后就不用再输密码：
-
-```powershell
-# Windows
-cd deploy\scripts
-.\prepare.ps1 -Server root@1.2.3.4
+```
+deploy/
+  docker-compose.yml            db + server（+ 可选的 caddy）
+  docker-compose.override.yml   server 映射到宿主机 80，caddy 不启动
+  Caddyfile                     备用：没有现成反代时由 Caddy 自动申请证书
+  .env.example                  环境变量样例
+  server/
+    index.js                    HTTP 入口：登录、action 路由、上传、媒体、定时任务
+    schema.sql                  PostgreSQL 表结构（幂等，启动时自动执行）
+    lib/system.js               初始化与示例数据
+    lib/member.js               资料、我的卡、积分、首页
+    lib/booking.js              约课、娱乐预约、取消
+    lib/entry.js                入场码生成与核验
+    lib/admin.js                员工与管理员操作
+    lib/fitness.js              身体/力量/运动数据、排行榜
+    lib/moment.js               健身友圈、海报小程序码
+    lib/cron.js                 定时任务
+    lib/notify.js               订阅消息
+    lib/templates.js            订阅消息模板映射
+    lib/common.js / db.js       公共工具、行映射、连接池
+    test/run.js                 集成测试（55 项断言）
+  client-api-http.js            早期示例封装（已由 miniprogram/utils/api.js 取代）
+  scripts/                      prepare.ps1 / setup-server.sh 等部署辅助脚本
 ```
 
-```bash
-# macOS / Linux
-bash deploy/scripts/prepare.sh root@1.2.3.4
-```
+## 环境变量（/opt/gym/.env）
 
-它会依次做这些事（可重复执行，已完成的会跳过）：
-
-1. 检查 ssh / ssh-keygen
-2. 本地没有密钥就生成 `~/.ssh/id_ed25519_gym`
-3. 把公钥追加到服务器 `authorized_keys`（**只要求输一次密码**）
-4. 往 `~/.ssh/config` 写一个 `Host gym` 别名，`ssh gym` 直接连
-5. 用 `BatchMode` 验证免密真的通了，不通立刻报错退出
-6. 把 `setup-server.sh` 推到服务器并执行：装 Docker、装 compose 插件、
-   设置开机自启、把你加入 docker 组、放行 22/80/443、最后验收版本
-
-常用参数：
-
-| 参数 | 说明 |
+| 变量 | 说明 |
 | --- | --- |
-| `-Server user@host` | 必填，SSH 目标 |
-| `-Port 2222` | 非 22 端口时指定 |
-| `-Alias gym` | ssh 别名，默认 `gym` |
-| `-KeyPath <path>` | 自定义密钥路径 |
-| `-SkipDocker` | 只配免密，不动服务器 |
+| `DOMAIN` | 对外域名（仅 Caddy 方案使用） |
+| `POSTGRES_PASSWORD` | 数据库密码，首次部署随机生成 |
+| `WX_APPID` / `WX_SECRET` | 小程序 AppID / AppSecret（登录换 openid 用） |
+| `WX_TPL_BOOKING_SUCCESS` | 预约成功通知模板 ID，留空则不发送 |
+| `WX_TPL_CLASS_REMINDER` | 开课前提醒模板 ID |
+| `WX_TPL_CARD_EXPIRE` | 会员卡到期提醒模板 ID |
+| `WX_MP_STATE` | `trial`（体验版）/ `formal`（正式版）/ `developer` |
+| `PUBLIC_BASE_URL` | 上传文件对外地址前缀，默认 `https://gym.novrein.com` |
 
-> Windows 若提示找不到 `ssh`：设置 → 应用 → 可选功能 → 添加「OpenSSH 客户端」。
+改完 `.env` 需要 `docker compose up -d --force-recreate server` 让容器读到新值。
 
-### 第 1 步：上传并启动
+## 部署 / 更新
 
 ```bash
-# 1. 上传本目录到服务器
-scp -r deploy/ gym:/opt/gym/       # gym 是上一步配好的别名
+# 1. 打包上传（本地）
+tar -czf /tmp/deploy.tar.gz -C deploy .
+scp /tmp/deploy.tar.gz gym:/tmp/
 
-# 2. 服务器上执行
-ssh gym
-cd /opt/gym
-cp .env.example .env
-vi .env          # 填 DOMAIN / POSTGRES_PASSWORD / WX_APPID / WX_SECRET
-
-# 3. 启动（首次会自动构建镜像、初始化数据库表）
-docker compose up -d --build
-
-# 4. 看日志确认
-docker compose logs -f server
+# 2. 服务器上解压并重建
+ssh gym 'tar -xzf /tmp/deploy.tar.gz -C /opt/gym && cd /opt/gym && docker compose build server && docker compose up -d server'
 ```
 
-启动后访问 `https://你的域名/health` 应返回 `{"ok":true}`。Caddy 会自动签发证书（首次约 30 秒）。
+首次启动会自动建表（`schema.sql` 幂等执行）并写入管理员之外的示例数据（点「初始化系统」才写）。
+
+### 跑集成测试
+
+```bash
+ssh gym 'bash /tmp/run-tests.sh'
+```
+
+它会在 `gym_test` 库上重建镜像并执行 `server/test/run.js`，**不会碰生产库**。
+
+## 接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/health` | 健康检查 |
+| POST | `/api` | 业务入口：`{ action, data, code }` → `{ code, msg, data }` |
+| POST | `/api/upload?ext=jpg&code=...` | 上传文件（请求体是二进制），返回 `{ fileID }` |
+| GET | `/api/media/:id` | 读取上传的文件（长缓存） |
+
+`code` 是小程序 `wx.login()` 拿到的登录凭证，服务端用它换 openid，5 分钟内复用。
+上传支持 `jpg/jpeg/png/webp/gif/mp4/mov`，单文件上限 12 MB。
+
+## 数据库
+
+所有时间字段存 **epoch 毫秒**（bigint），业务日期存 `YYYY-MM-DD` 文本（北京时间），
+与旧云开发返回给小程序的字段完全一致，所以小程序侧不需要改数据格式。
+
+主要表：`members`、`card_types`、`member_cards`、`card_logs`、`offline_payments`、
+`schedules`、`bookings`、`venues`、`venue_slots`、`entry_logs`、`points_logs`、
+`body_records`、`strength_records`、`activity_records`、`moments`、`media`、`config`。
+
+`schema.sql` 全部使用 `create table if not exists` / `alter table ... add column if not exists`，
+可以重复执行，旧库升级时不会丢数据。
 
 ## 小程序侧切换
 
-1. 把 `client-api-http.js` 拷到 `miniprogram/utils/api-http.js`，改掉里面的 `BASE`
-2. 在页面里把 `require('../../utils/api')` 换成 `require('../../utils/api-http')`（接口签名保持一致：`call(action, data)`）
-3. 小程序后台 → 开发管理 → 开发设置 → **服务器域名** → request 合法域名填你的域名
-4. 开发者工具里需要勾掉「不校验合法域名」再测
+已完成，无需再改：
 
-## 当前实现范围
+1. `miniprogram/utils/api.js` 改成 `wx.request` 调 `https://gym.novrein.com/api`，并带 `upload()`/`download()`。
+2. 所有 `wx.cloud.uploadFile` / `getTempFileURL` / `downloadFile` 调用已替换。
+3. `miniprogram/app.js` 不再 `wx.cloud.init`。
+4. 旧实现保留在 `miniprogram/utils/api-cloud.js`，回滚时把页面的 `require('../../utils/api')` 指回它即可。
 
-这个包是**能跑起来的骨架**，不是全量迁移：
-
-| 已实现 | 说明 |
-| --- | --- |
-| `POST /api` | 与云函数同款 `{ action, data }` 协议，统一 `{ code, msg, data }` 返回 |
-| 登录 | `wx.login` 的 code 换 openid，5 分钟缓存 |
-| `ping` | 连通性自测 |
-| `bodyTrend` | 按时间段查身体数据（对应云开发同名 action） |
-| `saveBodyRecord` | 写一条身体数据 |
-| 数据库 | 建表 + 索引脚本，容器首次启动自动执行 |
-| HTTPS | Caddy 自动签发、自动续期 |
-
-待迁移：会员卡、预约、入场码、排行榜、友圈、云函数里的定时任务（需换成服务器 cron 或系统定时器）。
-
-## 视频放哪
-
-**不要放服务器磁盘**。用对象存储：
-
-- 腾讯云 COS / 阿里云 OSS：100 GB 存储约几块钱/月
-- 配 CDN 后下行流量便宜很多
-- 小程序 `wx.uploadFile` 直传对象存储（需要后端签发临时密钥）
-
-视频转码（压缩、截封面）建议用对象存储自带的数据处理能力，不要在 2 核服务器上跑 ffmpeg。
+**还需要在微信后台做**：服务器域名里加 `https://gym.novrein.com`，否则真机请求会被拦截。
 
 ## 常见问题
 
 | 现象 | 原因 |
 | --- | --- |
-| Caddy 启动后证书失败 | 域名没解析到本机，或 80/443 没放行，或域名未备案 |
-| 小程序报「不在合法域名列表」 | 服务器域名没配，或用了 http/端口 |
-| `/api` 返回 500 | 看 `docker compose logs server`，多半是数据库连不上 |
-| 数据库密码改了但连不上 | `pgdata` 卷已初始化过，改密码要删卷重建：`docker compose down -v` |
+| `/api` 返回 `登录失败：invalid appid` | `.env` 里 AppID/AppSecret 不对，或改完没重建容器 |
+| `/api` 返回 `登录失败：invalid code` | 正常，说明服务端确实去微信换 openid 了（用假 code 测试时会看到） |
+| 小程序报「不在合法域名列表」 | 后台服务器域名没配，或用了 http/端口/IP |
+| 上传失败 | 文件超过 12MB，或扩展名不在白名单 |
+| `/api` 返回 500 | `docker compose logs server`，多半是数据库连接问题 |
+| 改了数据库密码连不上 | `pgdata` 卷已初始化，改密码要删卷重建：`docker compose down -v`（**会清空数据**） |
+| 容器起不来，日志报 `column ... does not exist` | `schema.sql` 与旧库不兼容，需要补 `alter table` 或重建库 |

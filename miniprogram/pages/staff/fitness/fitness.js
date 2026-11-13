@@ -97,7 +97,7 @@ Page({
     this.setData({ typeIndex: Number(e.detail.value) })
   },
 
-  // 拍/选一张体测报告照片，传到云存储，只把 fileID 交给云函数
+  // 拍/选一张体测报告照片，传到自建后端，只把图片地址交给服务端
   chooseReport() {
     wx.chooseMedia({
       count: 1,
@@ -110,19 +110,14 @@ Page({
         this.setData({ uploading: true })
         wx.showLoading({ title: '上传中', mask: true })
         const ext = (file.tempFilePath.match(/\.[a-zA-Z0-9]+$/) || ['.jpg'])[0]
-        wx.cloud.uploadFile({
-          cloudPath: 'body-reports/' + Date.now() + ext,
-          filePath: file.tempFilePath,
-          success: up => {
-            wx.hideLoading()
-            this.setData({ 'body.reportImage': up.fileID, uploading: false })
-            wx.showToast({ title: '报告已上传' })
-          },
-          fail: () => {
-            wx.hideLoading()
-            this.setData({ uploading: false })
-            wx.showToast({ title: '上传失败', icon: 'none' })
-          }
+        api.upload(file.tempFilePath, ext).then(fileID => {
+          wx.hideLoading()
+          this.setData({ 'body.reportImage': fileID, uploading: false })
+          wx.showToast({ title: '报告已上传' })
+        }, () => {
+          wx.hideLoading()
+          this.setData({ uploading: false })
+          wx.showToast({ title: '上传失败', icon: 'none' })
         })
       }
     })

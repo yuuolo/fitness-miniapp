@@ -84,23 +84,16 @@ Page({
     }, err => this.setData({ loaded: true, error: err.message }))
   },
 
-  // video 组件不能直接吃云文件 ID，换成临时链接
+  // 自建后端返回的就是 https 地址，video 组件可以直接用
   resolveVideo(m) {
-    const ids = (m.media || []).filter(x => x.type === 'video').map(x => x.fileID)
-    if (!ids.length) return
-    wx.cloud.getTempFileURL({
-      fileList: ids,
-      success: res => {
-        const map = {}
-        ;(res.fileList || []).forEach(f => { if (f.tempFileURL) map[f.fileID] = f.tempFileURL })
-        this.setData({
-          m: Object.assign({}, this.data.m, {
-            media: m.media.map(x => x.type === 'video'
-              ? Object.assign({}, x, { url: map[x.fileID] || '' })
-              : x)
-          })
-        })
-      }
+    const hasVideo = (m.media || []).some(x => x.type === 'video')
+    if (!hasVideo) return
+    this.setData({
+      m: Object.assign({}, m, {
+        media: (m.media || []).map(x => x.type === 'video'
+          ? Object.assign({}, x, { url: /^https?:\/\//.test(x.fileID) ? x.fileID : '' })
+          : x)
+      })
     })
   },
 
@@ -144,14 +137,7 @@ Page({
   // ---------- 生成分享海报 ----------
 
   downloadFile(fileID) {
-    if (!fileID) return Promise.resolve('')
-    return new Promise(resolve => {
-      wx.cloud.downloadFile({
-        fileID,
-        success: r => resolve(r.tempFilePath),
-        fail: () => resolve('')
-      })
-    })
+    return api.download(fileID)
   },
 
   getQrPath() {
@@ -334,22 +320,18 @@ Page({
         const f = (res.tempFiles || [])[0]
         if (!f) return
         wx.showLoading({ title: '上传中', mask: true })
-        wx.cloud.uploadFile({
-          cloudPath: 'posters/wxacode_static.jpg',
-          filePath: f.tempFilePath,
-          success: up => {
-            api.call('setPosterQr', { fileID: up.fileID }, { silent: true }).then(() => {
-              wx.hideLoading()
-              wx.showToast({ title: '已设置为海报小程序码' })
-            }, err => {
-              wx.hideLoading()
-              wx.showToast({ title: err.message || '设置失败', icon: 'none' })
-            })
-          },
-          fail: () => {
+        const ext = (f.tempFilePath.match(/\.[a-zA-Z0-9]+$/) || ['.jpg'])[0]
+        api.upload(f.tempFilePath, ext).then(fileID => {
+          return api.call('setPosterQr', { fileID }, { silent: true }).then(() => {
             wx.hideLoading()
-            wx.showToast({ title: '上传失败', icon: 'none' })
-          }
+            wx.showToast({ title: '已设置为海报小程序码' })
+          }, err => {
+            wx.hideLoading()
+            wx.showToast({ title: err.message || '设置失败', icon: 'none' })
+          })
+        }, () => {
+          wx.hideLoading()
+          wx.showToast({ title: '上传失败', icon: 'none' })
         })
       }
     })

@@ -1,6 +1,10 @@
 # 健身娱乐系统 · 第一阶段
 
-微信小程序 + 微信云开发。这一阶段**不接在线支付**：会员在前台线下付款，由前台在小程序里开卡。后端用云函数，不需要自己的服务器和域名，适合在完成 ICP 备案前用**体验版**在店内试运营。
+微信小程序 + **自建后端**（Node + Express + PostgreSQL，Docker 部署在店内服务器，HTTPS 走 `https://gym.novrein.com`）。
+这一阶段**不接在线支付**：会员在前台线下付款，由前台在小程序里开卡。
+
+> 后端已从「微信云开发」全量迁移到自建服务（2026-11）。云函数版本仍保留在 `cloudfunctions/` 作为回滚参考，
+> 小程序侧云开发封装保留为 `miniprogram/utils/api-cloud.js`。
 
 ## 功能
 
@@ -22,54 +26,125 @@
 ## 目录
 
 ```
-miniprogram/            小程序前端
-  pages/                会员页面：首页、约课、娱乐、我的、入场码、会员卡、我的预约
-  pages/staff/          员工页面：工作台、排课、上课名单、娱乐核销、会员、卡种、娱乐项目
-  utils/api.js          调用云函数的封装
-cloudfunctions/api/     后端云函数（按 action 路由）
-  booking.js            约课、娱乐预约、取消
-  entry.js              入场码生成与核验
-  admin.js              员工和管理员操作
-  system.js             初始化与示例数据
-  cron.js               定时任务：自动记缺席、课前提醒、到期提醒
-  templates.js          订阅消息模板 ID 与字段映射
-  config.json           定时触发器（每 15 分钟）和订阅消息权限
-test/                   本地测试：用内存数据库模拟云开发
+miniprogram/                小程序前端
+  pages/                    会员页面：首页、约课、娱乐、我的、入场码、会员卡、我的预约、健身数据、友圈
+  pages/staff/              员工页面：工作台、排课、上课名单、娱乐核销、会员、卡种、娱乐项目、录入数据
+  utils/api.js              调用自建后端（https://gym.novrein.com/api）+ 文件上传
+  utils/api-cloud.js        旧版云开发封装（回滚用，正常不再引用）
+
+deploy/                     自建后端部署包（当前生产）
+  docker-compose.yml        db(Postgres 16) + server(Node 20)
+  docker-compose.override.yml  把 server 映射到宿主机 80，交给前置 nginx 反代
+  Caddyfile                 备用：没有现成反代时由 Caddy 自动签发证书
+  server/index.js           HTTP 入口：登录换 openid、action 路由、上传、媒体读取、定时任务
+  server/lib/*.js           业务模块（按云函数一一对应）
+    system.js               初始化与示例数据
+    member.js               资料、我的卡、积分、首页
+    booking.js              约课、娱乐预约、取消
+    entry.js                入场码生成与核验
+    admin.js                员工与管理员操作
+    fitness.js              身体/力量/运动数据、排行榜、隐私
+    moment.js               健身友圈、分享海报小程序码
+    cron.js                 定时任务：自动记缺席、课前提醒、到期提醒
+    notify.js               订阅消息发送（access_token 缓存）
+    templates.js            订阅消息模板 ID 与字段映射
+  server/schema.sql         PostgreSQL 表结构（幂等，启动时自动执行）
+  server/test/run.js        后端集成测试（直连测试库，55 项断言）
+  scripts/                  部署辅助脚本
+
+cloudfunctions/api/         旧云开发后端（保留用于回滚，不再部署）
+test/                       旧云开发本地测试（内存数据库模拟）
 ```
 
 ## 部署步骤
 
-1. **注册小程序**：在 [mp.weixin.qq.com](https://mp.weixin.qq.com) 注册小程序（建议用门店的企业或个体工商户主体，后续开通支付时会用到），拿到 AppID。
-2. **导入项目**：用微信开发者工具导入本目录，把 `project.config.json` 里的 `appid` 改成你的 AppID（游客模式不能使用云开发）。
-3. **开通云开发**：在开发者工具里点「云开发」开通环境，然后把环境 ID 填进 `miniprogram/config.js`。只有一个环境的话可以留空。
-4. **部署云函数**：右键 `cloudfunctions/api`，选择「上传并部署：云端安装依赖」。
-5. **调整超时时间**：在云开发控制台 →「云函数」→ `api` →「版本与配置」，把超时时间改成 20 秒（默认只有 3 秒）。
-6. **上传定时触发器**：右键 `cloudfunctions/api/config.json`，选择「上传触发器」。之后系统每 15 分钟自动执行一次定时任务。
-7. **配置订阅消息（可选）**：在小程序后台「功能 → 订阅消息」中，从公共模板库选用三个模板：预约成功通知、课程开始提醒、会员卡到期提醒。然后把模板 ID 同时填到两个地方：
-   - `cloudfunctions/api/templates.js`：同时按模板详情里的字段名（如 `thing1`、`time2`）修改对应的 `fields`
-   - `miniprogram/config.js`
+### 1. 服务器准备（一次性，已完成）
 
-   改完重新部署云函数。哪个模板 ID 留空，就不发送那一类消息。正式发布后，把 `templates.js` 里的 `miniprogramState` 改成 `formal`。
-8. **初始化系统**：编译运行后，店长打开「我的」页面，点「初始化系统」。第一个点击的人会成为管理员，系统会自动写入示例卡种、娱乐项目和未来 3 天的团课。
-9. **添加员工**：让员工先打开一次小程序，并在「我的」里填写昵称和手机号。然后管理员进入「员工工作台 → 会员与办卡」，搜索到这名员工，在详情页把角色改成教练、前台或管理员。
-10. **店内试用**：在开发者工具里点「上传」，然后在小程序后台把这个版本设为体验版，并在「成员管理 → 体验成员」里添加员工和种子会员。
+```bash
+ssh gym                       # 见 deploy/scripts/prepare.ps1 配好的免密别名
+```
 
-备案完成之前不能发布正式版，只能用体验版。
+已经装好 Docker 29 + Compose 2，服务器上目录结构：
+
+| 路径 | 内容 |
+| --- | --- |
+| `/opt/gym` | 部署包 + `.env`（数据库密码、微信凭据） |
+| Docker 卷 `gym_pgdata` | Postgres 数据 |
+
+前置 nginx（内网 `192.168.1.3`）已为 `gym.novrein.com` 配置好证书和反代，转发到 `192.168.1.31:80`，
+所以 `caddy` 服务不启动，由 `docker-compose.override.yml` 把 `server` 直接映射到 80。
+
+### 2. 更新后端
+
+```bash
+cd deploy
+tar -czf /tmp/deploy.tar.gz -C . .
+scp /tmp/deploy.tar.gz gym:/tmp/
+ssh gym 'tar -xzf /tmp/deploy.tar.gz -C /opt/gym && cd /opt/gym && docker compose build server && docker compose up -d server'
+```
+
+### 3. 跑集成测试
+
+```bash
+ssh gym 'bash /tmp/run-tests.sh'    # 会自动建 gym_test 库、重建镜像并跑 test/run.js
+```
+
+### 4. 小程序侧
+
+1. 用微信开发者工具导入本目录（`project.config.json` 里已是正式 AppID）。
+2. 小程序后台 → 开发管理 → 开发设置 → **服务器域名** → request 合法域名填 `https://gym.novrein.com`
+   （必须是 HTTPS、不能带端口、不能用 IP；域名需已备案）。
+3. 开发者工具里勾选「不校验合法域名」只用于本地调试，真机必须配好合法域名。
+4. 初始化：店长打开「我的」页面点「初始化系统」，第一个点击的人成为管理员，
+   系统自动写入示例卡种、娱乐项目和未来 3 天的团课。
+
+### 5. 订阅消息（可选）
+
+小程序后台「功能 → 订阅消息」选用三个模板后，把模板 ID 填到：
+
+- 服务端 `/opt/gym/.env`：`WX_TPL_BOOKING_SUCCESS`、`WX_TPL_CLASS_REMINDER`、`WX_TPL_CARD_EXPIRE`（留空则不发送）
+- 小程序 `miniprogram/config.local.js` 的 `templates`（用于向会员申请授权）
+
+`WX_MP_STATE` 控制跳转的小程序版本：体验版 `trial`、正式版 `formal`、开发版 `developer`。
 
 ## 日常使用
 
-- **办卡**：会员在前台付款 → 前台进入「会员与办卡」→ 用手机号搜索 → 点「办卡」→ 选择卡种，填写实收金额和收款方式。每笔收款都记在 `offline_payments` 集合里，方便对账。
+- **办卡**：会员在前台付款 → 前台进入「会员与办卡」→ 用手机号搜索 → 点「办卡」→ 选择卡种，填写实收金额和收款方式。每笔收款都记在 `offline_payments` 表里，方便对账。
 - **入场**：会员打开「出示入场码」→ 前台在工作台点「扫码核验入场」。
 - **娱乐项目**：会员在线预约时段 → 到店付款 → 前台在「娱乐预约核销」里核销（只能核销当天的预约）。
 - **上课**：教练或前台在「排课与签到」里打开课程 → 逐个签到或标记缺席。
 
 ## 本地测试
 
-不需要微信环境，直接用 Node 跑后端的完整业务流程，包括权限、名额、扣次、入场码防伪和缺席限制：
+### 自建后端（当前）
+
+直连 PostgreSQL 跑完整业务流程，覆盖权限、名额、扣次、入场码防伪、缺席限制、排行榜、友圈和定时任务：
+
+```bash
+DATABASE_URL=postgres://postgres:pw@127.0.0.1:5432/gym_test node deploy/server/test/run.js
+```
+
+会清空目标库的业务表，只对测试库执行。
+
+### 旧云开发后端
+
+不需要微信环境，用内存数据库模拟云开发：
 
 ```bash
 node test/run.js
 ```
+
+## 关键运维命令
+
+```bash
+ssh gym 'cd /opt/gym && docker compose ps'          # 容器状态
+ssh gym 'cd /opt/gym && docker compose logs -f server'  # 实时日志
+ssh gym 'cd /opt/gym && docker compose exec -T db psql -U postgres -d gym'  # 进数据库
+curl -s https://gym.novrein.com/health              # 健康检查
+```
+
+数据库密码在 `/opt/gym/.env`（权限 600）。改密码要删卷重建：
+`docker compose down -v` 会清空所有业务数据。
 
 ## 第一阶段没有做的
 
@@ -77,3 +152,4 @@ node test/run.js
 - 闸机等硬件对接（目前由前台用手机扫码代替）
 - 网页版管理后台、经营报表
 - 挑战赛、成就徽章、积分商城
+- 视频转码 / 对象存储（目前上传的文件存在 Postgres 的 `media` 表，单文件上限 12MB，视频建议后续接对象存储）

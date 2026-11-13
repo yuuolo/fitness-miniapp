@@ -188,22 +188,13 @@ Page({
   uploadAll() {
     const media = this.data.media
     if (!media.length) return Promise.resolve([])
-    const upload = (cloudPath, filePath) => new Promise((resolve, reject) => {
-      wx.cloud.uploadFile({
-        cloudPath,
-        filePath,
-        success: res => resolve(res.fileID),
-        fail: () => reject(new Error('文件上传失败'))
-      })
-    })
-    const tasks = media.map((m, i) => {
-      const ext = (m.tempFilePath.match(/\.[a-zA-Z0-9]+$/) || ['.bin'])[0]
-      const base = 'moments/' + Date.now() + '_' + i
-      return upload(base + ext, m.tempFilePath).then(fileID => {
+    const upload = (filePath) => api.upload(filePath)
+    const tasks = media.map((m) => {
+      return upload(m.tempFilePath).then(fileID => {
         const item = { fileID, type: m.type, duration: m.duration || 0 }
         if (m.type !== 'video' || !m.thumbPath) return item
         // 视频封面单独传一份，海报和列表预览都能用
-        return upload(base + '_thumb.jpg', m.thumbPath)
+        return upload(m.thumbPath)
           .then(thumb => Object.assign(item, { thumb }))
           .catch(() => item)
       })

@@ -1,10 +1,11 @@
 {
   "name": "gym-api",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "main": "index.js",
   "dependencies": {
     "express": "^4.19.2",
-    "pg": "^8.12.0"
+    "pg": "^8.12.0",
+    "qrcode": "^1.5.4"
   }
 }

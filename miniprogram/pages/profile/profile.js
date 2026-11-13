@@ -21,18 +21,13 @@ Page({
     this.setData({ uploading: true })
     wx.showLoading({ title: '上传中', mask: true })
     const ext = (url.match(/\.[a-zA-Z0-9]+$/) || ['.jpg'])[0]
-    wx.cloud.uploadFile({
-      cloudPath: 'avatars/' + Date.now() + ext,
-      filePath: url,
-      success: up => {
-        wx.hideLoading()
-        this.setData({ avatar: up.fileID, uploading: false })
-      },
-      fail: () => {
-        wx.hideLoading()
-        this.setData({ uploading: false })
-        wx.showToast({ title: '头像上传失败', icon: 'none' })
-      }
+    api.upload(url, ext).then(fileID => {
+      wx.hideLoading()
+      this.setData({ avatar: fileID, uploading: false })
+    }, () => {
+      wx.hideLoading()
+      this.setData({ uploading: false })
+      wx.showToast({ title: '头像上传失败', icon: 'none' })
     })
   },
 

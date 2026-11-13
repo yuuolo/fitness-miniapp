@@ -1,27 +1,12 @@
 const api = require('../../utils/api')
 
-// 云存储 fileID 给 image 用没问题，video 需要换成临时链接
+// 自建后端存的是 https 地址，video 组件可以直接播；不再需要临时链接
 function resolveVideoUrls(list) {
-  const ids = []
-  list.forEach(m => (m.media || []).forEach(x => {
-    if (x.type === 'video' && x.fileID) ids.push(x.fileID)
-  }))
-  if (!ids.length) return Promise.resolve(list)
-  return new Promise(resolve => {
-    wx.cloud.getTempFileURL({
-      fileList: ids,
-      success: res => {
-        const map = {}
-        ;(res.fileList || []).forEach(f => { if (f.tempFileURL) map[f.fileID] = f.tempFileURL })
-        resolve(list.map(m => Object.assign({}, m, {
-          media: (m.media || []).map(x => x.type === 'video'
-            ? Object.assign({}, x, { url: map[x.fileID] || '' })
-            : x)
-        })))
-      },
-      fail: () => resolve(list)
-    })
-  })
+  return Promise.resolve(list.map(m => Object.assign({}, m, {
+    media: (m.media || []).map(x => x.type === 'video'
+      ? Object.assign({}, x, { url: /^https?:\/\//.test(x.fileID) ? x.fileID : '' })
+      : x)
+  })))
 }
 
 Page({
