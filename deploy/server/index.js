@@ -195,6 +195,17 @@ function startCron() {
   console.log('cron scheduler started (every 15 min)')
 }
 
+// 兜底错误处理：任何未捕获错误都返回 JSON，不把堆栈泄露给客户端
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err)
+  const status = err.status || err.statusCode || 500
+  if (status >= 400 && status < 500) {
+    return res.status(status).json({ code: status, msg: '请求格式不正确' })
+  }
+  console.error('unhandled error', err)
+  res.status(500).json({ code: 500, msg: '服务器开小差了' })
+})
+
 ensureSchema()
   .then(() => {
     app.listen(PORT, () => console.log('listening on ' + PORT))
