@@ -77,11 +77,31 @@ async function main() {
   assert.strictEqual(removed.deleted, true)
   ok('没有成绩的项目可以彻底删除')
 
+  // 管理页要知道「能不能删 / 为什么不能删」，不能等点了才报错
   const adminMe = await load('comp-admin')
+  const protectedCheck = await liftItems.canDelete(await liftItems.getItem('bench'))
+  assert.strictEqual(protectedCheck.deletable, false)
+  assert.ok(protectedCheck.reason.includes('三项'), '原因要说明是三项合计')
+  ok('标准三项标记为不可删除并给出原因')
+
+  const ohpCheck = await liftItems.canDelete(await liftItems.getItem('ohp'))
+  assert.strictEqual(ohpCheck.deletable, true, '没用过的项目应该是可删的')
+  ok('没成绩没竞赛引用的项目标记为可删除')
+
   await expectFail(
     () => liftItems.remove({ me: adminMe, data: { key: 'bench' } }),
-    '标准三项', '卧推/深蹲/硬拉不允许删除（身体评分依赖）'
+    '三项', '卧推/深蹲/硬拉不允许删除（身体评分依赖）'
   )
+
+  // 恢复默认五项：删掉的能补回，隐藏的会重新启用
+  await liftItems.remove({ me: adminMe, data: { key: 'ohp' } })
+  await liftItems.setEnabled({ me: adminMe, data: { key: 'pullup', enabled: false } })
+  const restored = await liftItems.restoreDefaults({ me: adminMe })
+  assert.ok(restored.added.includes('ohp'), '删掉的站姿肩推应被补回')
+  const afterRestore = await liftItems.list()
+  assert.ok(afterRestore.some(i => i.key === 'ohp' && i.enabled), '补回后应启用')
+  assert.ok(afterRestore.some(i => i.key === 'pullup' && i.enabled), '隐藏的引体向上应重新启用')
+  ok('「恢复默认五项」能补回删除的项目并重新启用隐藏的')
 
   // ---------- 2. 计算方式 ----------
   assert.strictEqual(liftItems.computeValue('oneRM', 100, 5), 116.7)

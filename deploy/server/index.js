@@ -314,16 +314,34 @@ app.put('/api/admin/features', requireAdmin, async (req, res) => {
 app.get('/api/admin/lifts', requireAdmin, async (req, res) => {
   try {
     const items = await liftItems.list({ includeDisabled: true })
+    // 带上「能不能删 / 为什么不能删」，管理页直接把原因显示出来
+    const withFlags = []
+    for (const item of items) {
+      const check = await liftItems.canDelete(item)
+      withFlags.push(Object.assign({}, item, {
+        deletable: check.deletable,
+        deleteHint: check.reason
+      }))
+    }
     res.json({
       code: 0,
       data: {
-        items,
+        items: withFlags,
         metrics: Object.entries(liftItems.METRICS).map(([key, v]) => ({ key, name: v.name, unit: v.unit }))
       }
     })
   } catch (e) {
     console.error('admin lifts read failed', e)
     res.json({ code: 500, msg: '读取排行榜项目失败' })
+  }
+})
+
+app.post('/api/admin/lifts/restore', requireAdmin, async (req, res) => {
+  try {
+    const result = await liftItems.restoreDefaults({ me: ADMIN_ME })
+    res.json({ code: 0, data: result })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
   }
 })
 

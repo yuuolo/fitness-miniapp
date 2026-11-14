@@ -321,7 +321,9 @@
       <h2>排行榜项目 <span class="tag">比什么、怎么比</span></h2>
       <div class="hint" style="margin-bottom:10px">
         排行榜按这里的项目排名。可以新增项目（如「农夫行走」），也可以把用不上的隐藏——
-        隐藏后排行榜不再显示，历史成绩仍保留；只有从未产生成绩的项目才能彻底删除。
+        隐藏后排行榜不再显示，历史成绩仍保留。<br>
+        <b>关于删除</b>：① 卧推/深蹲/硬拉是身体评分（三项合计）用的标准项，不能删，只能隐藏；
+        ② 已经有成绩或竞赛在用的项目也不能删，可以隐藏。能删的项目删除按钮是可点的。
       </div>
       <div id="liftList"></div>
 
@@ -337,6 +339,7 @@
       </div>
       <div class="actions">
         <button class="primary" id="liftAddBtn">新增项目</button>
+        <button id="liftRestoreBtn">恢复默认五项</button>
         <button id="liftReloadBtn">刷新</button>
       </div>
       <div class="msg" id="liftMsg"></div>
@@ -750,15 +753,22 @@
     }).join('')
 
     $('liftList').innerHTML = (data.items || []).map(function (it) {
+      var delBtn = it.deletable
+        ? '<button data-del="' + esc(it.key) + '">删除</button>'
+        : '<button data-del="' + esc(it.key) + '" disabled title="' + esc(it.deleteHint) + '">删除</button>'
+      var hint = it.deletable ? '' : '<div class="d" style="color:#d29922">不可删除：' + esc(it.deleteHint) + '</div>'
       return '<div class="feat">' +
         '<div class="grow">' +
         '<div class="name">' + esc(it.name) +
-        '<span class="badge ' + (it.enabled ? 'on' : 'off') + '">' + (it.enabled ? '启用' : '已隐藏') + '</span></div>' +
+        '<span class="badge ' + (it.enabled ? 'on' : 'off') + '">' + (it.enabled ? '启用' : '已隐藏') + '</span>' +
+        (it.deletable ? '' : '<span class="badge">受保护</span>') +
+        '</div>' +
         '<div class="d">' + esc(it.metricName) + ' · 单位 ' + esc(it.unit) + ' · 排序 ' + esc(it.sort) + '</div>' +
+        hint +
         '</div>' +
         '<div class="row" style="gap:8px">' +
         '<button data-toggle="' + esc(it.key) + '">' + (it.enabled ? '隐藏' : '启用') + '</button>' +
-        '<button data-del="' + esc(it.key) + '">删除</button>' +
+        delBtn +
         '</div>' +
         '</div>'
     }).join('')
@@ -776,8 +786,9 @@
 
     Array.prototype.forEach.call($('liftList').querySelectorAll('[data-del]'), function (btn) {
       btn.addEventListener('click', function () {
+        if (this.disabled) return
         var key = this.getAttribute('data-del')
-        if (!confirm('确定删除这个项目？只有从未产生成绩的项目才能删。')) return
+        if (!confirm('确定删除这个项目？删除后排行榜里就没有它了。')) return
         api('/api/admin/lifts/delete', { method: 'POST', body: { key: key } })
           .then(function () { return loadLifts() })
           .then(function () { showMsg($('liftMsg'), '已删除', 'ok') })
@@ -883,6 +894,19 @@
   $('liftReloadBtn').addEventListener('click', function () {
     hideMsg($('liftMsg'))
     loadLifts().catch(function (e) { showMsg($('liftMsg'), e.message, 'err') })
+  })
+
+  $('liftRestoreBtn').addEventListener('click', function () {
+    if (!confirm('把「卧推/深蹲/硬拉/站姿肩推/引体向上」补回来？（已存在的不受影响，隐藏的会重新启用）')) return
+    hideMsg($('liftMsg'))
+    api('/api/admin/lifts/restore', { method: 'POST', body: {} })
+      .then(function (r) {
+        return loadLifts().then(function () {
+          var added = (r && r.added) || []
+          showMsg($('liftMsg'), added.length ? '已补回：' + added.length + ' 项' : '五项都在，没有需要补的', 'ok')
+        })
+      })
+      .catch(function (e) { showMsg($('liftMsg'), e.message, 'err') })
   })
 
   $('logoutBtn').addEventListener('click', function () {

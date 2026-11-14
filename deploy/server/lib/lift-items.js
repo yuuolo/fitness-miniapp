@@ -55,8 +55,14 @@ function computeValue(metric, weight, reps) {
   return round(w * (1 + r / 30), 1)
 }
 
-/** 确保默认项存在（启动时执行一次，幂等） */
+/**
+ * 首次启动时写入默认五项（幂等）。
+ * 只在表为空时写入：否则管理员删掉的项目会在每次重启后被自动补回来。
+ * 想找回删除的项目，用管理页的「恢复默认五项」（restoreDefaults）。
+ */
 async function ensureSeed() {
+  const count = (await query('select count(*)::int as n from lift_items')).rows[0].n
+  if (count > 0) return { seeded: false, count }
   for (const item of DEFAULT_ITEMS) {
     await query(
       `insert into lift_items (key, name, metric, unit, enabled, sort, created_at)
@@ -65,6 +71,7 @@ async function ensureSeed() {
       [item.key, item.name, item.metric, item.unit, item.sort, Date.now()]
     )
   }
+  return { seeded: true, count: DEFAULT_ITEMS.length }
 }
 
 /**
@@ -137,6 +144,22 @@ async function setEnabled({ me, data }) {
 
 // 身体评分（SBD 合计）用的标准三项：不能删除，可以隐藏
 const SBD_KEYS = ['bench', 'squat', 'deadlift']
+const SBD_REASON = '身体评分用的是「卧推+深蹲+硬拉」三项合计，删掉会算不出来；用不上可以隐藏'
+
+/**
+ * 判断一个项目能不能删，以及不能删的原因（管理页直接展示，不用点了才知道）
+ */
+async function canDelete(item) {
+  if (SBD_KEYS.includes(item.key)) return { deletable: false, reason: SBD_REASON }
+
+  const used = (await query('select count(*)::int as n from strength_records where lift = $1', [item.key])).rows[0].n
+  if (used > 0) return { deletable: false, reason: '已经有 ' + used + ' 条成绩，删了历史记录会失去对应项目；可以隐藏' }
+
+  const inComp = (await query('select count(*)::int as n from competitions where lift_key = $1', [item.key])).rows[0].n
+  if (inComp > 0) return { deletable: false, reason: '有 ' + inComp + ' 场竞赛在用这个项目；可以隐藏' }
+
+  return { deletable: true, reason: '' }
+}
 
 /**
  * 删除项目。只有从未产生过成绩、也没有竞赛引用时才允许真删；
@@ -148,28 +171,48 @@ async function remove({ me, data }) {
   const item = await getItem(data.key)
   if (!item) fail('项目不存在')
 
-  if (SBD_KEYS.includes(item.key)) {
-    fail('卧推/深蹲/硬拉是身体评分用的标准三项，不能删除；用不上的话可以隐藏')
-  }
+  const check = await canDelete(item)
+  if (!check.deletable) fail(check.reason)
 
-  const used = (await query('select count(*)::int as n from strength_records where lift = $1', [item.key])).rows[0].n
-  const inComp = (await query('select count(*)::int as n from competitions where lift_key = $1', [item.key])).rows[0].n
-  if (used > 0 || inComp > 0) {
-    fail('这个项目已经有成绩或竞赛在用，不能删除；可以改成「隐藏」')
-  }
   await query('delete from lift_items where key = $1', [item.key])
   return { deleted: true, key: item.key }
+}
+
+/** 把默认五项补回来（删错了 / 想恢复出厂设置） */
+async function restoreDefaults({ me }) {
+  need(me, 'admin')
+  const added = []
+  for (const item of DEFAULT_ITEMS) {
+    const existing = await getItem(item.key)
+    if (existing) {
+      // 已存在但被隐藏的，顺手重新启用
+      if (!existing.enabled) {
+        await query('update lift_items set enabled = true where key = $1', [item.key])
+      }
+      continue
+    }
+    await query(
+      `insert into lift_items (key, name, metric, unit, enabled, sort, created_at)
+       values ($1, $2, $3, $4, true, $5, $6)`,
+      [item.key, item.name, item.metric, item.unit, item.sort, Date.now()]
+    )
+    added.push(item.key)
+  }
+  return { added, items: await list({ includeDisabled: true }) }
 }
 
 module.exports = {
   METRICS,
   DEFAULT_ITEMS,
+  SBD_KEYS,
   computeValue,
   ensureSeed,
   list,
   getItem,
   enabledMap,
+  canDelete,
   save,
   setEnabled,
-  remove
+  remove,
+  restoreDefaults
 }

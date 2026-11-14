@@ -287,14 +287,10 @@ create table if not exists lift_items (
   created_at bigint not null default 0
 );
 
--- 默认五项；已有同名 key 时不动，方便老库升级
-insert into lift_items (key, name, metric, unit, enabled, sort, created_at) values
-  ('bench',    '卧推',   'oneRM', 'kg', true, 10, 0),
-  ('squat',    '深蹲',   'oneRM', 'kg', true, 20, 0),
-  ('deadlift', '硬拉',   'oneRM', 'kg', true, 30, 0),
-  ('ohp',      '站姿肩推', 'oneRM', 'kg', true, 40, 0),
-  ('pullup',   '引体向上', 'reps',  '次', true, 50, 0)
-on conflict (key) do nothing;
+-- 默认项目不在这里插入：schema.sql 每次启动都会执行，
+-- 放在这里会导致管理员删掉的项目被重启自动补回来。
+-- 首次启动的空表初始化由 lib/lift-items.js 的 ensureSeed() 负责，
+-- 想找回删掉的项目用管理页「恢复默认五项」。
 
 -- ---------- 竞赛（教练/店员发起，有起止时间和奖品） ----------
 create table if not exists competitions (

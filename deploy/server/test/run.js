@@ -81,6 +81,8 @@ async function buildEntryCode(openid, ts) {
 async function main() {
   await ensureSchema()
   await query('truncate ' + TABLES.join(', ') + ' restart identity cascade')
+  // 排行榜项目不再由 schema.sql 播种（否则删掉的会被重启补回），测试库要手动初始化
+  await require('../lib/lift-items').ensureSeed()
   console.log('表已清空，开始测试\n')
 
   const ADMIN = 'openid-admin'
