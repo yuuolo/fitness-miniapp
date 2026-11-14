@@ -10,6 +10,7 @@ const storage = require('./lib/storage')
 const manage = require('./lib/manage')
 const features = require('./lib/features')
 const liftItems = require('./lib/lift-items')
+const layout = require('./lib/layout')
 
 // 管理页没有微信登录态，用一个虚拟管理员身份调用需要权限的模块函数
 const ADMIN_ME = { _id: 'admin-page', openid: 'admin-page', role: 'admin', nickName: '管理页', phone: '' }
@@ -348,6 +349,44 @@ app.post('/api/admin/lifts/delete', requireAdmin, async (req, res) => {
   try {
     const result = await liftItems.remove({ me: ADMIN_ME, data: req.body || {} })
     res.json({ code: 0, data: result })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
+// ---------- 首页布局（管理页） ----------
+app.get('/api/admin/layout', requireAdmin, async (req, res) => {
+  try {
+    const current = await layout.get(true)
+    res.json({
+      code: 0,
+      data: {
+        roles: current.roles,
+        updatedAt: current.updatedAt,
+        updatedBy: current.updatedBy,
+        meta: layout.describe()
+      }
+    })
+  } catch (e) {
+    console.error('admin layout read failed', e)
+    res.json({ code: 500, msg: '读取首页布局失败' })
+  }
+})
+
+app.post('/api/admin/layout', requireAdmin, async (req, res) => {
+  try {
+    const saved = await layout.save({ me: ADMIN_ME, data: req.body || {} })
+    res.json({ code: 0, data: { roles: saved.roles, updatedAt: saved.updatedAt, updatedBy: saved.updatedBy } })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
+// 生成一个自定义入口模块（前端点「新增」时调用，不落库）
+app.post('/api/admin/layout/link', requireAdmin, (req, res) => {
+  try {
+    const block = layout.makeLink(req.body || {})
+    res.json({ code: 0, data: block })
   } catch (e) {
     res.json({ code: 400, msg: e.message })
   }

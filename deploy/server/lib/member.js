@@ -7,6 +7,7 @@ const {
 } = require('./common')
 const { isInitialized } = require('./system')
 const features = require('./features')
+const layout = require('./layout')
 const { accessToken } = require('./notify')
 
 function publicMe(me) {
@@ -63,9 +64,20 @@ function publicMe(me) {
 }
 
 async function home({ openid, me }) {
-  const [initialized, featureState] = await Promise.all([isInitialized(), features.get()])
+  const [initialized, featureState, blocks] = await Promise.all([
+    isInitialized(),
+    features.get(),
+    layout.forRole(me && me.role)
+  ])
   if (!initialized || !me) {
-    return { initialized: false, me: publicMe(me), cards: [], todayBookings: [], features: featureState }
+    return {
+      initialized: false,
+      me: publicMe(me),
+      cards: [],
+      todayBookings: [],
+      features: featureState,
+      layout: blocks
+    }
   }
   const now = Date.now()
   const cards = (await query(
@@ -82,6 +94,8 @@ async function home({ openid, me }) {
     initialized,
     me: publicMe(me),
     features: featureState,
+    // 首页布局：管理员按角色配好的模块顺序
+    layout: blocks,
     cards: cards.map(c => Object.assign(c, { usable: cardUsable(c, now) })),
     todayBookings: todayBookings.map(bookingRow)
   }

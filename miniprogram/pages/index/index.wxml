@@ -18,67 +18,145 @@
       </view>
     </view>
 
-    <view class="hero">
-      <view class="hello">你好，{{me && me.nickName ? me.nickName : '欢迎光临'}}</view>
-      <view class="sub">今天也要动起来 · 积分 {{me ? me.points : 0}}</view>
-      <view wx:if="{{features.cards !== false}}" class="entry-btn" bindtap="openEntry">
-        <view class="entry-text">出示入场码</view>
-        <view class="entry-sub">前台扫码入场</view>
-      </view>
-    </view>
+    <!-- 按管理员配置的布局顺序渲染 -->
+    <block wx:for="{{layout}}" wx:key="id">
 
-    <view class="quick" wx:if="{{features.classes !== false || features.venues !== false}}">
-      <view wx:if="{{features.classes !== false}}" class="q" bindtap="goSchedule"><view class="q-t">约团课</view><view class="muted">瑜伽 单车 搏击</view></view>
-      <view wx:if="{{features.venues !== false}}" class="q" bindtap="goVenues"><view class="q-t">娱乐预约</view><view class="muted">攀岩 蹦床 台球</view></view>
-    </view>
-
-    <block wx:if="{{features.rank !== false}}">
-      <view class="between section-title">
-        <text>{{rankName}}排行榜</text>
-        <text class="muted" bindtap="goRank">查看全部 ›</text>
+      <!-- 欢迎与积分 -->
+      <view wx:if="{{item.type === 'hero'}}" class="hero">
+        <view class="hello">你好，{{me && me.nickName ? me.nickName : '欢迎光临'}}</view>
+        <view class="sub">今天也要动起来 · 积分 {{me ? me.points : 0}}</view>
       </view>
-      <view class="card" bindtap="goRank">
-        <view wx:if="{{!rankTop.length}}" class="muted">还没有人上榜，教练录入成绩后这里就会出现</view>
-        <view wx:for="{{rankTop}}" wx:key="openid" class="list-item">
-          <text class="muted" style="width: 64rpx">{{item.rank}}</text>
-          <view class="grow">
-            <view>{{item.name}} <text wx:if="{{item.isMe}}" class="tag orange">我</text></view>
-            <view wx:if="{{item.weight}}" class="muted">{{item.weight}} kg · 评分 {{item.bodyScore}}</view>
+
+      <!-- 入场码 -->
+      <view wx:elif="{{item.type === 'entry'}}" class="entry-card" bindtap="openEntry">
+        <view class="entry-btn">
+          <view class="entry-text">出示入场码</view>
+          <view class="entry-sub">前台扫码入场</view>
+        </view>
+      </view>
+
+      <!-- 今日概况（员工） -->
+      <view wx:elif="{{item.type === 'stats' && stat}}" class="card">
+        <view class="between">
+          <text class="title">今日概况</text>
+          <text class="muted">{{me && me.role !== 'member' ? '员工视角' : ''}}</text>
+        </view>
+        <view class="stats">
+          <view class="s"><view class="n">{{stat.entries}}</view><view class="muted">入场人次</view></view>
+          <view class="s"><view class="n">{{stat.classBookings}}</view><view class="muted">课程预约</view></view>
+          <view class="s"><view class="n">{{stat.venueBookings}}</view><view class="muted">娱乐预约</view></view>
+          <view class="s"><view class="n">{{stat.members}}</view><view class="muted">会员总数</view></view>
+        </view>
+      </view>
+
+      <!-- 快捷入口 -->
+      <view wx:elif="{{item.type === 'quick'}}" class="quick">
+        <view wx:if="{{features.classes !== false}}" class="q" bindtap="goSchedule"><view class="q-t">约团课</view><view class="muted">瑜伽 单车 搏击</view></view>
+        <view wx:if="{{features.venues !== false}}" class="q" bindtap="goVenues"><view class="q-t">娱乐预约</view><view class="muted">攀岩 蹦床 台球</view></view>
+        <view wx:if="{{features.rank !== false}}" class="q" bindtap="goRank"><view class="q-t">排行榜</view><view class="muted">看看谁最强</view></view>
+        <view wx:if="{{features.moments !== false}}" class="q" bindtap="goMoments"><view class="q-t">健身友圈</view><view class="muted">晒训练日常</view></view>
+      </view>
+
+      <!-- 排行榜预览 -->
+      <block wx:elif="{{item.type === 'rank' && features.rank !== false}}">
+        <view class="between section-title">
+          <text>{{rankName}}排行榜</text>
+          <text class="muted" bindtap="goRank">查看全部 ›</text>
+        </view>
+        <view class="card" bindtap="goRank">
+          <view wx:if="{{!rankTop.length}}" class="muted">还没有人上榜，教练录入成绩后这里就会出现</view>
+          <view wx:for="{{rankTop}}" wx:key="openid" class="list-item">
+            <text class="muted" style="width: 64rpx">{{item.rank}}</text>
+            <view class="grow">
+              <view>{{item.name}} <text wx:if="{{item.isMe}}" class="tag orange">我</text></view>
+              <view wx:if="{{item.weight}}" class="muted">{{item.weight}} kg · 评分 {{item.bodyScore}}</view>
+            </view>
+            <text class="price">{{item.value}} {{item.unit || 'kg'}}</text>
           </view>
-          <text class="price">{{item.oneRM}} kg</text>
-        </view>
-        <view wx:if="{{rankTop.length}}" class="muted mt">
-          {{rankMe ? '我的排名第 ' + rankMe.rank + ' 名' : '我还未上榜'}} · 共 {{rankTotal}} 人
-        </view>
-      </view>
-    </block>
-
-    <block wx:if="{{features.cards !== false}}">
-      <view class="section-title">我的会员卡</view>
-      <view class="card" bindtap="goCards">
-        <view wx:if="{{!cards.length}}" class="muted">还没有会员卡，请到前台办理</view>
-        <view wx:for="{{cards}}" wx:key="_id" class="list-item">
-          <view class="grow">
-            <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
-            <view class="muted">{{item.summary}}</view>
+          <view wx:if="{{rankTop.length}}" class="muted mt">
+            {{rankMe ? '我的排名第 ' + rankMe.rank + ' 名' : '我还未上榜'}} · 共 {{rankTotal}} 人
           </view>
-          <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
         </view>
-      </view>
-    </block>
+      </block>
 
-    <block wx:if="{{features.classes !== false || features.venues !== false}}">
-      <view class="section-title">今日预约</view>
-      <view class="card">
-        <view wx:if="{{!bookings.length}}" class="muted">今天没有预约</view>
-        <view wx:for="{{bookings}}" wx:key="_id" class="list-item">
-          <view class="grow">
-            <view class="title">{{item.title}}</view>
-            <view class="muted">{{item.timeText}}{{item.room ? ' · ' + item.room : ''}}</view>
-          </view>
-          <text class="tag orange">{{item.typeName}}</text>
+      <!-- 竞赛预览 -->
+      <block wx:elif="{{item.type === 'competitions' && features.rank !== false}}">
+        <view class="between section-title">
+          <text>竞赛</text>
+          <text class="muted" bindtap="goCompetitions">全部 ›</text>
         </view>
+        <view wx:if="{{!competitions.length}}" class="card muted">暂时没有进行中的竞赛</view>
+        <view wx:for="{{competitions}}" wx:key="_id" class="card" data-id="{{item._id}}" bindtap="goCompetition">
+          <view class="between">
+            <view class="grow">
+              <view>
+                <text class="title">{{item.title}}</text>
+                <text class="tag {{item.status === 'active' ? 'green' : 'orange'}}">{{item.statusName}}</text>
+              </view>
+              <view class="muted">{{item.liftName}} · {{item.playerCount}} 人参赛{{item.myRank ? ' · 我第 ' + item.myRank + ' 名' : ''}}</view>
+            </view>
+            <text class="muted">›</text>
+          </view>
+          <view wx:if="{{item.prize}}" class="muted mt">奖品：{{item.prize}}</view>
+        </view>
+      </block>
+
+      <!-- 我的会员卡 -->
+      <block wx:elif="{{item.type === 'cards' && features.cards !== false}}">
+        <view class="section-title">我的会员卡</view>
+        <view class="card" bindtap="goCards">
+          <view wx:if="{{!cards.length}}" class="muted">还没有会员卡，请到前台办理</view>
+          <view wx:for="{{cards}}" wx:key="_id" class="list-item">
+            <view class="grow">
+              <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
+              <view class="muted">{{item.summary}}</view>
+            </view>
+            <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 今日预约 -->
+      <block wx:elif="{{item.type === 'bookings' && (features.classes !== false || features.venues !== false)}}">
+        <view class="section-title">今日预约</view>
+        <view class="card">
+          <view wx:if="{{!bookings.length}}" class="muted">今天没有预约</view>
+          <view wx:for="{{bookings}}" wx:key="_id" class="list-item">
+            <view class="grow">
+              <view class="title">{{item.title}}</view>
+              <view class="muted">{{item.timeText}}{{item.room ? ' · ' + item.room : ''}}</view>
+            </view>
+            <text class="tag orange">{{item.typeName}}</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 友圈预览 -->
+      <block wx:elif="{{item.type === 'moments' && features.moments !== false}}">
+        <view class="between section-title">
+          <text>健身友圈</text>
+          <text class="muted" bindtap="goMoments">全部 ›</text>
+        </view>
+        <view wx:if="{{!moments.length}}" class="card muted">还没有动态</view>
+        <view wx:for="{{moments}}" wx:key="_id" class="card moment-row" bindtap="goMoments">
+          <view class="grow">
+            <view>{{item.nickName || '会员'}} <text class="muted">{{item.timeText}}</text></view>
+            <view wx:if="{{item.content}}">{{item.content}}</view>
+          </view>
+          <image wx:if="{{item.image}}" class="moment-thumb" src="{{item.image}}" mode="aspectFill" />
+        </view>
+      </block>
+
+      <!-- 自定义快捷入口 -->
+      <view wx:elif="{{item.type === 'link'}}" class="card link-card" data-page="{{item.page}}" bindtap="goLink">
+        <view class="link-icon">{{item.icon || '🔗'}}</view>
+        <view class="grow">
+          <view class="title">{{item.title}}</view>
+          <view wx:if="{{item.desc}}" class="muted">{{item.desc}}</view>
+        </view>
+        <text class="muted">›</text>
       </view>
+
     </block>
   </block>
 </view>

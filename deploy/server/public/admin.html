@@ -98,6 +98,30 @@
     .row { grid-template-columns: 1fr; }
     body { padding: 14px 12px 40px; }
   }
+
+  /* ===== 首页布局编辑器 ===== */
+  .roleTabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .roleTab {
+    padding: 6px 14px; border: 1px solid var(--line); border-radius: 20px;
+    background: var(--panel-2); color: var(--muted); cursor: pointer; font-size: 13px;
+  }
+  .roleTab.on { border-color: var(--accent); color: #7ee787; background: rgba(63,185,80,.1); }
+  .blk { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+  .blk:last-child { border-bottom: 0; }
+  .blk .grow { flex: 1; min-width: 0; }
+  .blk .name { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .blk .d { font-size: 12px; color: var(--muted); }
+  .blk.is-off .grow { opacity: .45; }
+  .blk-btns { display: flex; gap: 6px; flex: none; }
+  .mini {
+    padding: 4px 10px; font-size: 12px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    font-family: inherit; line-height: 1.5;
+  }
+  .mini:hover { border-color: var(--accent); }
+  .mini:disabled { opacity: .3; cursor: not-allowed; }
+  .mini.danger:hover { border-color: var(--danger); color: #ff9b95; }
+  .layout-empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
 </style>
 </head>
 <body>
@@ -254,7 +278,46 @@
       <div class="hint" style="margin-top:12px" id="featUpdated"></div>
     </div>
 
-    <div class="card">
+        <div class="card">
+      <h2>首页布局 <span class="tag">按角色编排首页模块</span></h2>
+      <div class="hint" style="margin-bottom:12px">
+        每个角色一套布局：上下移动调整顺序，开关决定显示与否。
+        还能把任意页面做成「快捷入口卡片」放到首页更靠前的位置。
+        保存后会员下次进首页就生效，不用重新发布小程序。
+      </div>
+      <div class="roleTabs" id="roleTabs"></div>
+      <div id="layoutList"></div>
+
+      <div class="row" style="margin-top:16px">
+        <div class="field">
+          <label>快捷入口标题</label>
+          <input id="linkTitle" placeholder="例如：查看竞赛" maxlength="20">
+        </div>
+        <div class="field">
+          <label>指向页面</label>
+          <select id="linkPage"></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>说明（可选）</label>
+          <input id="linkDesc" placeholder="例如：看实时排名" maxlength="30">
+        </div>
+        <div class="field">
+          <label>图标（emoji）</label>
+          <input id="linkIcon" placeholder="🏆" maxlength="4">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="linkAddBtn">新增快捷入口</button>
+        <button class="primary" id="layoutSaveBtn">保存布局</button>
+        <button id="layoutReloadBtn">重新加载</button>
+        <button id="layoutResetBtn">恢复默认</button>
+      </div>
+      <div class="msg" id="layoutMsg"></div>
+    </div>
+
+<div class="card">
       <h2>排行榜项目 <span class="tag">比什么、怎么比</span></h2>
       <div class="hint" style="margin-bottom:10px">
         排行榜按这里的项目排名。可以新增项目（如「农夫行走」），也可以把用不上的隐藏——
@@ -526,6 +589,157 @@
     return api('/api/admin/features').then(renderFeatures)
   }
 
+  // ---------- 首页布局 ----------
+  var layoutData = { roles: {}, meta: null }
+  var currentRole = 'member'
+
+  function needMeta() {
+    return layoutData.meta || { blocks: [], pages: [], roles: [], defaults: {}, maxLinks: 8, maxBlocks: 20 }
+  }
+
+  function renderRoles() {
+    var meta = needMeta()
+    $('roleTabs').innerHTML = (meta.roles || []).map(function (r) {
+      return '<div class="roleTab ' + (r.key === currentRole ? 'on' : '') + '" data-role="' + esc(r.key) + '">' +
+        esc(r.name) + '</div>'
+    }).join('')
+    Array.prototype.forEach.call($('roleTabs').querySelectorAll('[data-role]'), function (el) {
+      el.addEventListener('click', function () {
+        currentRole = this.getAttribute('data-role')
+        renderRoles()
+        renderLayoutList()
+      })
+    })
+  }
+
+  function blocksOf(role) {
+    if (!layoutData.roles[role]) layoutData.roles[role] = []
+    return layoutData.roles[role]
+  }
+
+  function typeMeta(type) {
+    var meta = needMeta()
+    return (meta.blocks || []).find(function (b) { return b.type === type }) || { name: type, desc: '' }
+  }
+
+  function renderLayoutList() {
+    var list = blocksOf(currentRole)
+    var meta = needMeta()
+    if (!list.length) {
+      $('layoutList').innerHTML = '<div class="layout-empty">这个角色还没有模块，点「恢复默认」恢复一套。</div>'
+    } else {
+      $('layoutList').innerHTML = list.map(function (b, i) {
+        var tm = typeMeta(b.type)
+        var title = b.type === 'link' ? (b.icon || '🔗') + ' ' + b.title : b.title
+        var desc = b.type === 'link' ? (b.page || '') : (b.desc || tm.desc)
+        return '<div class="blk ' + (b.enabled ? '' : 'is-off') + '">' +
+          '<div class="grow">' +
+          '<div class="name">' + esc(title) +
+          '<span class="badge ' + (b.enabled ? 'on' : 'off') + '">' + (b.enabled ? '显示' : '已隐藏') + '</span>' +
+          (b.type === 'link' ? '<span class="badge">自定义</span>' : '') +
+          '</div>' +
+          '<div class="d">' + esc(desc) + '</div>' +
+          '</div>' +
+          '<div class="blk-btns">' +
+          '<button class="mini" data-act="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+          '<button class="mini" data-act="down" data-i="' + i + '"' + (i === list.length - 1 ? ' disabled' : '') + '>↓</button>' +
+          '<button class="mini" data-act="toggle" data-i="' + i + '">' + (b.enabled ? '隐藏' : '显示') + '</button>' +
+          '<button class="mini danger" data-act="del" data-i="' + i + '">删除</button>' +
+          '</div>' +
+          '</div>'
+      }).join('')
+    }
+
+    $('linkPage').innerHTML = (meta.pages || []).map(function (p) {
+      return '<option value="' + esc(p.path) + '">' + esc(p.name) + (p.tab ? '（tab页）' : '') + '</option>'
+    }).join('')
+
+    Array.prototype.forEach.call($('layoutList').querySelectorAll('[data-act]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var act = this.getAttribute('data-act')
+        var i = Number(this.getAttribute('data-i'))
+        var arr = blocksOf(currentRole)
+        if (act === 'up' && i > 0) {
+          var t1 = arr[i - 1]; arr[i - 1] = arr[i]; arr[i] = t1
+        } else if (act === 'down' && i < arr.length - 1) {
+          var t2 = arr[i + 1]; arr[i + 1] = arr[i]; arr[i] = t2
+        } else if (act === 'toggle') {
+          arr[i].enabled = !arr[i].enabled
+        } else if (act === 'del') {
+          if (arr.length <= 1) return showMsg($('layoutMsg'), '每个角色至少保留一个模块', 'err')
+          arr.splice(i, 1)
+        }
+        renderLayoutList()
+      })
+    })
+  }
+
+  function renderLayout(data) {
+    layoutData = { roles: data.roles || {}, meta: data.meta || null }
+    renderRoles()
+    renderLayoutList()
+    var when = data.updatedAt ? new Date(data.updatedAt).toLocaleString('zh-CN') : ''
+    if (when) showMsg($('layoutMsg'), '当前布局最后由 ' + (data.updatedBy || '管理员') + ' 于 ' + when + ' 保存', 'info')
+  }
+
+  function loadLayout() {
+    return api('/api/admin/layout').then(renderLayout)
+  }
+
+  $('layoutSaveBtn').addEventListener('click', function () {
+    var btn = this
+    btn.disabled = true
+    hideMsg($('layoutMsg'))
+    api('/api/admin/layout', { method: 'POST', body: { roles: layoutData.roles } })
+      .then(function (data) {
+        layoutData.roles = data.roles
+        renderLayoutList()
+        showMsg($('layoutMsg'), '已保存，会员下次进首页就会生效', 'ok')
+      })
+      .catch(function (e) { showMsg($('layoutMsg'), e.message, 'err') })
+      .finally(function () { btn.disabled = false })
+  })
+
+  $('layoutReloadBtn').addEventListener('click', function () {
+    hideMsg($('layoutMsg'))
+    loadLayout().catch(function (e) { showMsg($('layoutMsg'), e.message, 'err') })
+  })
+
+  $('layoutResetBtn').addEventListener('click', function () {
+    var meta = needMeta()
+    var def = (meta.defaults || {})[currentRole]
+    if (!def) return showMsg($('layoutMsg'), '没有可用的默认布局', 'err')
+    if (!confirm('把这个角色的布局恢复成默认？（还没保存，点「保存布局」才生效）')) return
+    layoutData.roles[currentRole] = JSON.parse(JSON.stringify(def))
+    renderLayoutList()
+    showMsg($('layoutMsg'), '已恢复默认，记得点「保存布局」', 'info')
+  })
+
+  $('linkAddBtn').addEventListener('click', function () {
+    var btn = this
+    var page = $('linkPage').value
+    if (!page) return showMsg($('layoutMsg'), '请选择页面', 'err')
+    btn.disabled = true
+    hideMsg($('layoutMsg'))
+    api('/api/admin/layout/link', {
+      method: 'POST',
+      body: {
+        page: page,
+        title: $('linkTitle').value.trim(),
+        desc: $('linkDesc').value.trim(),
+        icon: $('linkIcon').value.trim()
+      }
+    }).then(function (block) {
+      blocksOf(currentRole).push(block)
+      $('linkTitle').value = ''
+      $('linkDesc').value = ''
+      renderLayoutList()
+      showMsg($('layoutMsg'), '已添加到首页，记得点「保存布局」', 'ok')
+    }).catch(function (e) {
+      showMsg($('layoutMsg'), e.message, 'err')
+    }).finally(function () { btn.disabled = false })
+  })
+
   // ---------- 排行榜项目 ----------
   var liftData = { items: [], metrics: [] }
 
@@ -597,7 +811,7 @@
         setToken(data.data.token)
         $('password').value = ''
         showMain()
-        return Promise.all([loadStatus(), loadStorage(), loadFeatures(), loadLifts()])
+        return Promise.all([loadStatus(), loadStorage(), loadFeatures(), loadLifts(), loadLayout()])
       })
       .catch(function (e) { showMsg($('loginMsg'), e.message, 'err') })
       .finally(function () { btn.disabled = false })
@@ -680,7 +894,7 @@
   // ---------- 启动 ----------
   if (token()) {
     showMain()
-    Promise.all([loadStatus(), loadStorage(), loadFeatures(), loadLifts()]).catch(function (e) {
+    Promise.all([loadStatus(), loadStorage(), loadFeatures(), loadLifts(), loadLayout()]).catch(function (e) {
       if (e.message !== '未登录') showMsg($('storageMsg'), e.message, 'err')
     })
   } else {

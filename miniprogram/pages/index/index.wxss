@@ -7,19 +7,55 @@
 }
 .hello { font-size: 40rpx; font-weight: 600; }
 .sub { font-size: 24rpx; opacity: 0.9; margin-top: 8rpx; }
+
+/* 入场码单独成块，管理员可以拖到任意位置 */
+.entry-card { margin-bottom: 24rpx; }
 .entry-btn {
-  margin-top: 32rpx;
   background: #fff;
   color: #ff6a3d;
   border-radius: 20rpx;
-  padding: 24rpx;
+  padding: 28rpx 24rpx;
   text-align: center;
+  border: 1px solid #ffe0d3;
 }
 .entry-text { font-size: 34rpx; font-weight: 600; }
-.entry-sub { font-size: 22rpx; color: #8a8f99; }
-.quick { display: flex; margin-bottom: 24rpx; }
-.q { flex: 1; background: #fff; border-radius: 20rpx; padding: 24rpx; }
+.entry-sub { font-size: 22rpx; color: #8a8f99; margin-top: 6rpx; }
+
+.quick { display: flex; flex-wrap: wrap; margin-bottom: 24rpx; }
+.q { flex: 1; min-width: 40%; background: #fff; border-radius: 20rpx; padding: 24rpx; margin-bottom: 16rpx; }
 .q + .q { margin-left: 24rpx; }
+.q:nth-child(2n+1) { margin-left: 0; }
 .q-t { font-size: 30rpx; font-weight: 600; }
 
 .profile-tip { border: 1px solid #ffe0d3; background: #fff8f5; }
+
+/* 自定义快捷入口卡片 */
+.link-card {
+  display: flex;
+  align-items: center;
+}
+.link-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 18rpx;
+  background: #fff3ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  margin-right: 20rpx;
+}
+
+/* 友圈预览 */
+.moment-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+.moment-thumb {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 14rpx;
+  margin-left: 20rpx;
+  background: #f2f3f5;
+}
