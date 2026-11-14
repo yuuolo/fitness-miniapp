@@ -6,12 +6,12 @@ const {
   configGet, configSet, ROLE_LEVEL
 } = require('./common')
 const { accessToken } = require('./notify')
+const storage = require('./storage')
 
 const MAX_CONTENT = 500
 const MAX_MEDIA = 9
 const PAGE_SIZE = 20
 const DETAIL_PAGE = 'pages/moments/detail/detail'
-const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://gym.novrein.com'
 
 // 小程序码 scene 最多 32 字符，用 10 位短码指回动态
 function makeShort() {
@@ -221,12 +221,9 @@ async function momentPoster({ me, data }) {
       'https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=' + encodeURIComponent(at),
       { scene: 's=' + short, page: DETAIL_PAGE, width: 280, checkPath: false }
     )
-    const mediaId = newId()
-    await query(
-      'insert into media (id, mime, bytes, created_at) values ($1, $2, $3, $4)',
-      [mediaId, 'image/jpeg', buf, Date.now()]
-    )
-    const fileID = PUBLIC_BASE_URL + '/api/media/' + mediaId
+    // 海报图片也走存储抽象层（数据库 / COS / OSS）
+    const saved = await storage.put(buf, { ext: 'jpg', mime: 'image/jpeg' })
+    const fileID = saved.url
     await query('update moments set poster_qr = $2 where id = $1', [m._id, fileID])
     return { fileID, cached: false }
   } catch (e) {

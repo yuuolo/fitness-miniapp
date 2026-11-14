@@ -6,6 +6,8 @@ const express = require('express')
 
 const { query, one, pool, ensureSchema } = require('./lib/db')
 const { BizError, getMember } = require('./lib/common')
+const storage = require('./lib/storage')
+const manage = require('./lib/manage')
 
 const PORT = Number(process.env.PORT || 3000)
 const APPID = process.env.WX_APPID
@@ -127,12 +129,13 @@ app.post('/api/upload', express.raw({ type: () => true, limit: UPLOAD_LIMIT }), 
     if (!bytes || !bytes.length) return res.json({ code: 400, msg: '没有收到文件内容' })
     if (bytes.length > UPLOAD_LIMIT) return res.json({ code: 400, msg: '文件超过 12MB' })
 
-    const id = require('crypto').randomBytes(16).toString('hex')
-    await query('insert into media (id, mime, bytes, created_at) values ($1, $2, $3, $4)',
-      [id, mime, bytes, Date.now()])
+    // 存储位置由管理页配置：数据库 / 腾讯云 COS / 阿里云 OSS
+    const saved = await storage.put(bytes, { ext, mime })
     await ensureMember(openid)
-    const base = process.env.PUBLIC_BASE_URL || 'https://gym.novrein.com'
-    res.json({ code: 0, data: { fileID: base + '/api/media/' + id, bytes: bytes.length, mime } })
+    res.json({
+      code: 0,
+      data: { fileID: saved.url, bytes: bytes.length, mime, storage: saved.driver }
+    })
   } catch (e) {
     if (e instanceof BizError) return res.json({ code: 400, msg: e.message })
     console.error('upload failed', e)
@@ -151,6 +154,71 @@ app.get('/api/media/:id', async (req, res) => {
   } catch (e) {
     console.error('media read failed', e)
     res.status(500).end()
+  }
+})
+
+// ---------- 服务器管理页 ----------
+app.get('/favicon.ico', (req, res) => res.status(204).end())
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'))
+})
+
+function requireAdmin(req, res, next) {
+  if (!manage.enabled()) {
+    return res.status(503).json({ code: 503, msg: '未配置 ADMIN_PASSWORD，管理入口已关闭' })
+  }
+  if (!manage.verify(req.get('x-admin-token'))) {
+    return res.status(401).json({ code: 401, msg: '请先登录' })
+  }
+  next()
+}
+
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const ip = req.socket.remoteAddress || 'unknown'
+    const result = manage.login((req.body || {}).password, ip)
+    res.json({ code: 0, data: result })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
+app.get('/api/admin/status', requireAdmin, async (req, res) => {
+  try {
+    const [status, storageStats] = await Promise.all([manage.status(), storage.stats()])
+    res.json({ code: 0, data: Object.assign({}, status, { storage: storageStats }) })
+  } catch (e) {
+    console.error('admin status failed', e)
+    res.json({ code: 500, msg: '读取状态失败' })
+  }
+})
+
+app.get('/api/admin/storage', requireAdmin, async (req, res) => {
+  try {
+    res.json({ code: 0, data: await storage.getPublicConfig() })
+  } catch (e) {
+    console.error('admin storage read failed', e)
+    res.json({ code: 500, msg: '读取存储配置失败' })
+  }
+})
+
+app.put('/api/admin/storage', requireAdmin, async (req, res) => {
+  try {
+    const cfg = await storage.saveConfig(req.body || {}, 'admin')
+    console.log('storage config changed ->', cfg.driver)
+    res.json({ code: 0, data: cfg })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
+app.post('/api/admin/storage/test', requireAdmin, async (req, res) => {
+  try {
+    const result = await storage.testConfig(req.body || {})
+    res.json({ code: 0, data: result })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
   }
 })
 
@@ -183,6 +251,7 @@ function startCron() {
     running = true
     try {
       const result = await runCron(Date.now())
+      manage.recordCron(result)
       console.log('cron', new Date().toISOString(), JSON.stringify(result))
     } catch (e) {
       console.error('cron failed', e)

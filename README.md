@@ -171,6 +171,19 @@ DATABASE_URL=postgres://postgres:pw@127.0.0.1:5432/gym_test node deploy/server/t
 node test/run.js
 ```
 
+## 服务器管理页
+
+浏览器打开 **https://gym.novrein.com/admin**，用服务器 `.env` 里的 `ADMIN_PASSWORD` 登录。
+
+能看到运行状态与业务数据，并且**切换上传文件的存储位置**：服务器数据库（默认）/
+腾讯云 COS / 阿里云 OSS。点「测试连接」会真传一个探针文件再删掉，通过才算配好。
+
+- 切换只影响新上传的文件，已存在的文件仍可通过原地址访问
+- 云存储密钥加密后存库，页面不回显明文
+- 没配 `ADMIN_PASSWORD` 时管理入口整体关闭
+
+详见 [deploy/README.md](deploy/README.md#服务器管理页-admin)。
+
 ## 关键运维命令
 
 ```bash

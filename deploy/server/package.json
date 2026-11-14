@@ -1,9 +1,11 @@
 {
   "name": "gym-api",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "main": "index.js",
   "dependencies": {
+    "ali-oss": "^6.21.0",
+    "cos-nodejs-sdk-v5": "^2.14.6",
     "express": "^4.19.2",
     "pg": "^8.12.0",
     "qrcode": "^1.5.4"

@@ -31,6 +31,10 @@ services:
       SHOP_ADDRESS: ${SHOP_ADDRESS:-前台签到}
       # 上传文件对外地址前缀（小程序要能直接访问）
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://gym.novrein.com}
+      # 服务器管理页 /admin 的密码；留空则管理入口关闭
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      # 云存储 AccessKey 等敏感配置的加密密钥（换掉会导致已保存的密钥失效）
+      CONFIG_SECRET: ${CONFIG_SECRET:-}
     depends_on:
       db:
         condition: service_healthy

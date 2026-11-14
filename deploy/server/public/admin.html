@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>服务器管理 · 健身娱乐系统</title>
+<style>
+  :root {
+    --bg: #0f1216;
+    --panel: #171c23;
+    --panel-2: #1e252e;
+    --line: #2a333e;
+    --text: #e6edf3;
+    --muted: #8b98a5;
+    --accent: #3fb950;
+    --accent-dim: #1f6f33;
+    --warn: #d29922;
+    --danger: #f85149;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card h2 .tag { font-size: 11px; font-weight: 400; color: var(--muted); border: 1px solid var(--line); border-radius: 20px; padding: 1px 8px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
+  input, select {
+    width: 100%; padding: 9px 11px; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent-dim); }
+  input::placeholder { color: #5b6672; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { margin-bottom: 14px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+  button {
+    padding: 9px 18px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--text); font-size: 14px; font-family: inherit;
+    cursor: pointer; transition: all .15s;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent-dim); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.primary { background: var(--accent-dim); border-color: var(--accent-dim); }
+  button.primary:hover:not(:disabled) { background: #2a8a45; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .stat .k { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .stat .v { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat .v small { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .kv { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+  .kv:last-child { border-bottom: 0; }
+  .kv .k { color: var(--muted); }
+  .kv .v { text-align: right; word-break: break-all; }
+  .msg { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
+  .msg.ok { display: block; background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.35); color: #7ee787; }
+  .msg.err { display: block; background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.35); color: #ff9b95; }
+  .msg.info { display: block; background: rgba(210,153,34,.1); border: 1px solid rgba(210,153,34,.35); color: #e3b341; }
+  .hidden { display: none !important; }
+  .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); }
+  .badge.on { color: #7ee787; border-color: rgba(63,185,80,.4); background: rgba(63,185,80,.1); }
+  .badge.off { color: var(--muted); }
+  .foot { color: var(--muted); font-size: 12px; text-align: center; margin-top: 26px; }
+  .foot a { color: var(--muted); }
+  @media (max-width: 620px) {
+    .row { grid-template-columns: 1fr; }
+    body { padding: 14px 12px 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>服务器管理</h1>
+  <div class="sub">健身娱乐系统 · 自建后端 <span id="hostName"></span></div>
+
+  <!-- 登录 -->
+  <div class="card" id="loginCard">
+    <h2>登录</h2>
+    <div class="field">
+      <label>管理密码</label>
+      <input type="password" id="password" placeholder="在服务器 .env 的 ADMIN_PASSWORD 里设置" autocomplete="current-password">
+    </div>
+    <div class="actions">
+      <button class="primary" id="loginBtn">登录</button>
+    </div>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- 主体 -->
+  <div id="main" class="hidden">
+
+    <div class="card">
+      <h2>系统状态 <span class="tag" id="uptimeTag"></span></h2>
+      <div class="grid" id="stats"></div>
+    </div>
+
+    <div class="card">
+      <h2>业务数据</h2>
+      <div id="bizData"></div>
+    </div>
+
+    <div class="card">
+      <h2>运行配置</h2>
+      <div id="runtimeConfig"></div>
+    </div>
+
+    <div class="card">
+      <h2>上传文件存储位置 <span class="tag">当前：<span id="curDriver">—</span></span></h2>
+      <div class="hint" style="margin-bottom:14px">
+        切换后只影响**新上传**的文件。已经存进服务器数据库的文件仍然可以通过原来的地址访问，
+        不会因为切换而失效；需要搬家的话另行处理。
+      </div>
+
+      <div class="field">
+        <label>存储方式</label>
+        <select id="driver">
+          <option value="postgres">服务器数据库（默认，无需额外配置）</option>
+          <option value="cos">腾讯云 COS</option>
+          <option value="oss">阿里云 OSS</option>
+        </select>
+      </div>
+
+      <!-- 数据库 -->
+      <div id="sec-postgres">
+        <div class="field">
+          <label>对外访问地址</label>
+          <input id="pg-baseUrl" placeholder="https://gym.novrein.com">
+          <div class="hint">文件会通过「地址 + /api/media/文件ID」访问，填小程序能访问到的域名。</div>
+        </div>
+      </div>
+
+      <!-- COS -->
+      <div id="sec-cos" class="hidden">
+        <div class="row">
+          <div class="field">
+            <label>SecretId</label>
+            <input id="cos-secretId" placeholder="AKID...">
+          </div>
+          <div class="field">
+            <label>SecretKey</label>
+            <input id="cos-secretKey" type="password" placeholder="留空表示不修改">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>存储桶 Bucket</label>
+            <input id="cos-bucket" placeholder="gym-1250000000">
+          </div>
+          <div class="field">
+            <label>地域 Region</label>
+            <input id="cos-region" placeholder="ap-guangzhou">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>访问域名（可选）</label>
+            <input id="cos-publicBaseUrl" placeholder="https://cdn.example.com">
+            <div class="hint">留空则用 https://桶名.cos.地域.myqcloud.com。绑定 CDN 后填 CDN 域名。</div>
+          </div>
+          <div class="field">
+            <label>路径前缀</label>
+            <input id="cos-prefix" placeholder="uploads/">
+          </div>
+        </div>
+      </div>
+
+      <!-- OSS -->
+      <div id="sec-oss" class="hidden">
+        <div class="row">
+          <div class="field">
+            <label>AccessKey ID</label>
+            <input id="oss-accessKeyId" placeholder="LTAI...">
+          </div>
+          <div class="field">
+            <label>AccessKey Secret</label>
+            <input id="oss-accessKeySecret" type="password" placeholder="留空表示不修改">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Bucket 名称</label>
+            <input id="oss-bucket" placeholder="gym-files">
+          </div>
+          <div class="field">
+            <label>地域 Region</label>
+            <input id="oss-region" placeholder="oss-cn-shenzhen">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>访问域名（可选）</label>
+            <input id="oss-publicBaseUrl" placeholder="https://cdn.example.com">
+            <div class="hint">留空则用 https://桶名.地域.aliyuncs.com。</div>
+          </div>
+          <div class="field">
+            <label>路径前缀</label>
+            <input id="oss-prefix" placeholder="uploads/">
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="saveBtn">保存配置</button>
+        <button id="testBtn">测试连接</button>
+      </div>
+      <div class="msg" id="storageMsg"></div>
+      <div class="hint" style="margin-top:12px" id="storageUpdated"></div>
+    </div>
+
+    <div class="card">
+      <h2>说明</h2>
+      <div class="kv"><span class="k">管理密码</span><span class="v">服务器 /opt/gym/.env 的 ADMIN_PASSWORD</span></div>
+      <div class="kv"><span class="k">配置加密</span><span class="v">云存储密钥用 AES-256-GCM 加密后存库（密钥来自 CONFIG_SECRET）</span></div>
+      <div class="kv"><span class="k">备份</span><span class="v">每天北京时间 04:17 自动备份到 /opt/gym/backups</span></div>
+      <div class="kv"><span class="k">日志</span><span class="v">ssh gym 'cd /opt/gym &amp;&amp; docker compose logs -f server'</span></div>
+    </div>
+
+    <div class="actions" style="justify-content:flex-end">
+      <button id="logoutBtn">退出登录</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    接口：<a href="/health" target="_blank">/health</a> ·
+    <span id="versionFoot"></span>
+  </div>
+</div>
+
+<script>
+(function () {
+  var TOKEN_KEY = 'gym-admin-token'
+  var $ = function (id) { return document.getElementById(id) }
+  var driverNames = { postgres: '服务器数据库', cos: '腾讯云 COS', oss: '阿里云 OSS' }
+
+  $('hostName').textContent = '· ' + location.host
+
+  function token() { return localStorage.getItem(TOKEN_KEY) || '' }
+  function setToken(t) { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY) }
+
+  function api(path, options) {
+    options = options || {}
+    var headers = Object.assign({ 'content-type': 'application/json' }, options.headers || {})
+    if (token()) headers['x-admin-token'] = token()
+    return fetch(path, {
+      method: options.method || 'GET',
+      headers: headers,
+      body: options.body ? JSON.stringify(options.body) : undefined
+    }).then(function (res) {
+      return res.json().catch(function () { return { code: res.status, msg: '响应不是 JSON' } })
+        .then(function (data) {
+          if (res.status === 401) {
+            setToken('')
+            showLogin('登录已过期，请重新登录')
+            throw new Error('未登录')
+          }
+          if (data.code && data.code !== 0) throw new Error(data.msg || '请求失败')
+          return data.data === undefined ? data : data.data
+        })
+    })
+  }
+
+  function showMsg(el, text, kind) {
+    el.className = 'msg ' + (kind || 'info')
+    el.textContent = text
+  }
+  function hideMsg(el) { el.className = 'msg'; el.textContent = '' }
+
+  function showLogin(text) {
+    $('loginCard').classList.remove('hidden')
+    $('main').classList.add('hidden')
+    if (text) showMsg($('loginMsg'), text, 'err')
+  }
+  function showMain() {
+    $('loginCard').classList.add('hidden')
+    $('main').classList.remove('hidden')
+  }
+
+  function fmtBytes(n) {
+    n = Number(n) || 0
+    if (n < 1024) return n + ' B'
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'
+    if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB'
+    return (n / 1073741824).toFixed(2) + ' GB'
+  }
+  function fmtDuration(sec) {
+    sec = Number(sec) || 0
+    var d = Math.floor(sec / 86400)
+    var h = Math.floor(sec % 86400 / 3600)
+    var m = Math.floor(sec % 3600 / 60)
+    if (d) return d + ' 天 ' + h + ' 小时'
+    if (h) return h + ' 小时 ' + m + ' 分'
+    return m + ' 分钟'
+  }
+  function fmtTime(ms) {
+    if (!ms) return '—'
+    var d = new Date(ms)
+    var p = function (n) { return String(n).padStart(2, '0') }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes())
+  }
+  function esc(s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  }
+
+  // ---------- 状态 ----------
+  function renderStatus(s) {
+    $('uptimeTag').textContent = '已运行 ' + fmtDuration(s.server.uptimeSec)
+    var stats = [
+      ['运行时长', fmtDuration(s.server.uptimeSec)],
+      ['内存占用', s.server.rssMb + ' MB'],
+      ['Node', s.server.node],
+      ['进程 PID', s.server.pid]
+    ]
+    $('stats').innerHTML = stats.map(function (x) {
+      return '<div class="stat"><div class="k">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div></div>'
+    }).join('')
+
+    var d = s.data
+    $('bizData').innerHTML = [
+      ['会员总数', d.members],
+      ['有效会员卡', d.activeCards],
+      ['待上课预约', d.pendingBookings],
+      ['未开始课程', d.upcomingSchedules],
+      ['友圈动态', d.moments],
+      ['今日入场', d.todayEntries]
+    ].map(function (x) {
+      return '<div class="kv"><span class="k">' + esc(x[0]) + '</span><span class="v">' + esc(x[1]) + '</span></div>'
+    }).join('')
+
+    var c = s.config
+    var cronText = s.cron
+      ? fmtTime(s.cron.at) + ' ' + JSON.stringify(s.cron.result)
+      : '还没跑过（启动 30 秒后第一次执行）'
+    var rows = [
+      ['小程序 AppID', c.appid || '未配置'],
+      ['AppSecret', c.hasSecret ? '已配置' : '未配置'],
+      ['跳转版本', c.miniprogramState],
+      ['订阅消息模板', [c.templates.bookingSuccess && '预约成功', c.templates.classReminder && '课前提醒', c.templates.cardExpire && '到期提醒'].filter(Boolean).join('、') || '未配置'],
+      ['场地地址', c.shopAddress || '—'],
+      ['上传地址前缀', c.publicBaseUrl || '—'],
+      ['最近定时任务', cronText]
+    ]
+    $('runtimeConfig').innerHTML = rows.map(function (x) {
+      return '<div class="kv"><span class="k">' + esc(x[0]) + '</span><span class="v">' + esc(x[1]) + '</span></div>'
+    }).join('')
+  }
+
+  // ---------- 存储配置 ----------
+  function applyDriverSections(driver) {
+    $('sec-postgres').classList.toggle('hidden', driver !== 'postgres')
+    $('sec-cos').classList.toggle('hidden', driver !== 'cos')
+    $('sec-oss').classList.toggle('hidden', driver !== 'oss')
+  }
+
+  function fillStorage(cfg) {
+    $('driver').value = cfg.driver
+    $('curDriver').textContent = cfg.driverName
+    $('pg-baseUrl').value = (cfg.postgres && cfg.postgres.baseUrl) || ''
+
+    $('cos-secretId').value = cfg.cos.secretId || ''
+    $('cos-secretKey').value = ''
+    $('cos-secretKey').placeholder = cfg.cos.hasSecretKey ? '已配置，留空表示不修改' : 'SecretKey'
+    $('cos-bucket').value = cfg.cos.bucket || ''
+    $('cos-region').value = cfg.cos.region || ''
+    $('cos-publicBaseUrl').value = cfg.cos.publicBaseUrl || ''
+    $('cos-prefix').value = cfg.cos.prefix || ''
+
+    $('oss-accessKeyId').value = cfg.oss.accessKeyId || ''
+    $('oss-accessKeySecret').value = ''
+    $('oss-accessKeySecret').placeholder = cfg.oss.hasAccessKeySecret ? '已配置，留空表示不修改' : 'AccessKey Secret'
+    $('oss-bucket').value = cfg.oss.bucket || ''
+    $('oss-region').value = cfg.oss.region || ''
+    $('oss-publicBaseUrl').value = cfg.oss.publicBaseUrl || ''
+    $('oss-prefix').value = cfg.oss.prefix || ''
+
+    $('storageUpdated').textContent = cfg.updatedAt
+      ? '上次修改：' + fmtTime(cfg.updatedAt) + '（' + (cfg.updatedBy || '—') + '）'
+      : '还没修改过，当前用默认配置'
+
+    applyDriverSections(cfg.driver)
+  }
+
+  function readForm() {
+    var driver = $('driver').value
+    var body = {
+      driver: driver,
+      postgres: { baseUrl: $('pg-baseUrl').value.trim() },
+      cos: {
+        secretId: $('cos-secretId').value.trim(),
+        bucket: $('cos-bucket').value.trim(),
+        region: $('cos-region').value.trim(),
+        publicBaseUrl: $('cos-publicBaseUrl').value.trim(),
+        prefix: $('cos-prefix').value.trim()
+      },
+      oss: {
+        accessKeyId: $('oss-accessKeyId').value.trim(),
+        bucket: $('oss-bucket').value.trim(),
+        region: $('oss-region').value.trim(),
+        publicBaseUrl: $('oss-publicBaseUrl').value.trim(),
+        prefix: $('oss-prefix').value.trim()
+      }
+    }
+    var cosSecret = $('cos-secretKey').value
+    if (cosSecret) body.cos.secretKey = cosSecret
+    var ossSecret = $('oss-accessKeySecret').value
+    if (ossSecret) body.oss.accessKeySecret = ossSecret
+    return body
+  }
+
+  function loadStorage() {
+    return api('/api/admin/storage').then(fillStorage)
+  }
+
+  function loadStatus() {
+    return api('/api/admin/status').then(renderStatus)
+  }
+
+  // ---------- 事件 ----------
+  $('driver').addEventListener('change', function () {
+    applyDriverSections(this.value)
+  })
+
+  $('loginBtn').addEventListener('click', function () {
+    var btn = this
+    var pw = $('password').value
+    if (!pw) return showMsg($('loginMsg'), '请输入密码', 'err')
+    btn.disabled = true
+    hideMsg($('loginMsg'))
+    fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    }).then(function (r) { return r.json() })
+      .then(function (data) {
+        if (data.code !== 0) throw new Error(data.msg || '登录失败')
+        setToken(data.data.token)
+        $('password').value = ''
+        showMain()
+        return Promise.all([loadStatus(), loadStorage()])
+      })
+      .catch(function (e) { showMsg($('loginMsg'), e.message, 'err') })
+      .finally(function () { btn.disabled = false })
+  })
+
+  $('password').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') $('loginBtn').click()
+  })
+
+  $('saveBtn').addEventListener('click', function () {
+    var btn = this
+    btn.disabled = true
+    hideMsg($('storageMsg'))
+    api('/api/admin/storage', { method: 'PUT', body: readForm() })
+      .then(function (cfg) {
+        fillStorage(cfg)
+        showMsg($('storageMsg'), '已保存，新上传的文件会写入：' + cfg.driverName, 'ok')
+        return loadStatus()
+      })
+      .catch(function (e) { showMsg($('storageMsg'), e.message, 'err') })
+      .finally(function () { btn.disabled = false })
+  })
+
+  $('testBtn').addEventListener('click', function () {
+    var btn = this
+    btn.disabled = true
+    showMsg($('storageMsg'), '正在测试…', 'info')
+    api('/api/admin/storage/test', { method: 'POST', body: readForm() })
+      .then(function (r) { showMsg($('storageMsg'), r.message, 'ok') })
+      .catch(function (e) { showMsg($('storageMsg'), e.message, 'err') })
+      .finally(function () { btn.disabled = false })
+  })
+
+  $('logoutBtn').addEventListener('click', function () {
+    setToken('')
+    showLogin()
+    $('password').value = ''
+  })
+
+  // ---------- 启动 ----------
+  if (token()) {
+    showMain()
+    Promise.all([loadStatus(), loadStorage()]).catch(function (e) {
+      if (e.message !== '未登录') showMsg($('storageMsg'), e.message, 'err')
+    })
+  } else {
+    showLogin()
+  }
+
+  fetch('/health').then(function (r) { return r.json() }).then(function () {
+    $('versionFoot').textContent = '服务正常'
+  }).catch(function () {
+    $('versionFoot').textContent = '服务异常'
+  })
+})()
+</script>
+</body>
+</html>
