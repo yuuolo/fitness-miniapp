@@ -28,29 +28,86 @@ function prompt(title, placeholder) {
 
 Page({
   data: {
-    isAdmin: false, member: null, cards: [], bookings: [], entries: [],
-    types: [], payMethods: PAY_METHODS, roles: ROLES, roleIndex: 0,
-    opening: false, form: { typeIndex: -1, amount: '', payIndex: 0, remark: '' }
+    isAdmin: false,
+    manage: false,
+    member: null,
+    cards: [],
+    bookings: [],
+    entries: [],
+    types: [],
+    payMethods: PAY_METHODS,
+    roles: ROLES,
+    roleIndex: 0,
+    opening: false,
+    editingProfile: false,
+    profileForm: { nickName: '', phone: '', gender: '', height: '' },
+    genderOptions: [{ value: '', label: '不填' }, { value: 'male', label: '男' }, { value: 'female', label: '女' }],
+    genderIndex: 0,
+    form: { typeIndex: -1, amount: '', payIndex: 0, remark: '' }
   },
 
   onLoad(query) {
-    this.id = query.id
-    this.setData({ isAdmin: query.admin === '1' })
+    const q = query || {}
+    this.id = q.id
+    this.setData({ isAdmin: q.admin === '1', manage: q.manage === '1' })
     this.load()
-    api.call('listCardTypes').then(types => {
-      this.setData({ types: types.filter(t => t.onSale).map(t => Object.assign(t, { label: t.name + '  ¥' + fmt.yuan(t.price) })) })
-    })
+    if (this.data.manage) {
+      api.call('listCardTypes').then(types => {
+        this.setData({ types: types.filter(t => t.onSale).map(t => Object.assign(t, { label: t.name + '  ¥' + fmt.yuan(t.price) })) })
+      })
+    }
   },
 
   load() {
     return api.call('memberDetail', { openid: this.id }).then(res => {
+      const genderIndex = Math.max(
+        this.data.genderOptions.findIndex(g => g.value === (res.member.gender || '')),
+        0
+      )
       this.setData({
         member: Object.assign(res.member, { since: fmt.fullDate(res.member.createdAt) }),
         roleIndex: Math.max(ROLES.findIndex(r => r.value === res.member.role), 0),
+        genderIndex,
+        profileForm: {
+          nickName: res.member.nickName || '',
+          phone: res.member.phone || '',
+          gender: res.member.gender || '',
+          height: res.member.height || ''
+        },
         cards: res.cards.map(fmt.decorateCard),
         bookings: res.bookings.map(fmt.decorateBooking),
         entries: res.entries.map(e => Object.assign(e, { time: fmt.dateTime(e.createdAt) }))
       })
+    }, err => wx.showToast({ title: err.message || '加载失败', icon: 'none' }))
+  },
+
+  // ---------- 代填资料（教练/前台） ----------
+
+  toggleProfile() {
+    this.setData({ editingProfile: !this.data.editingProfile })
+  },
+
+  onProfileInput(e) {
+    const key = e.currentTarget.dataset.key
+    this.setData({ ['profileForm.' + key]: e.detail.value })
+  },
+
+  onGender(e) {
+    const idx = Number(e.detail.value)
+    this.setData({
+      genderIndex: idx,
+      'profileForm.gender': this.data.genderOptions[idx].value
+    })
+  },
+
+  saveProfile() {
+    const f = this.data.profileForm
+    const payload = { openid: this.id, nickName: f.nickName, phone: f.phone, gender: f.gender }
+    if (f.height !== '' && f.height !== null) payload.height = Number(f.height)
+    api.call('staffUpdateProfile', payload, { loading: '保存中' }).then(() => {
+      wx.showToast({ title: '已保存' })
+      this.setData({ editingProfile: false })
+      this.load()
     })
   },
 

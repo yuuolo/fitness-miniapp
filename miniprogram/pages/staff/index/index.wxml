@@ -22,7 +22,9 @@
     <view class="list-item" data-url="/pages/staff/schedule/schedule?staff={{isStaff ? 1 : 0}}" bindtap="go"><text class="grow">{{isStaff ? '排课与签到' : '我的课程与签到'}}</text><text class="muted">›</text></view>
     <view class="list-item" data-url="/pages/staff/competitions/competitions" bindtap="go"><text class="grow">竞赛管理</text><text class="muted">›</text></view>
     <view wx:if="{{isStaff}}" class="list-item" data-url="/pages/staff/venue-bookings/venue-bookings" bindtap="go"><text class="grow">娱乐预约核销</text><text class="muted">›</text></view>
-    <view wx:if="{{isStaff}}" class="list-item" data-url="/pages/staff/members/members?admin={{isAdmin ? 1 : 0}}" bindtap="go"><text class="grow">会员与办卡</text><text class="muted">›</text></view>
+    <view wx:if="{{isCoach}}" class="list-item" data-url="/pages/staff/members/members?manage={{isStaff ? 1 : 0}}&admin={{isAdmin ? 1 : 0}}" bindtap="go">
+      <text class="grow">{{isStaff ? '会员与办卡' : '会员资料与体测'}}</text><text class="muted">›</text>
+    </view>
     <view wx:if="{{isStaff}}" class="list-item" data-url="/pages/staff/card-types/card-types?admin={{isAdmin ? 1 : 0}}" bindtap="go"><text class="grow">卡种管理</text><text class="muted">›</text></view>
     <view wx:if="{{isStaff}}" class="list-item" data-url="/pages/staff/venues/venues?admin={{isAdmin ? 1 : 0}}" bindtap="go"><text class="grow">娱乐项目管理</text><text class="muted">›</text></view>
   </view>

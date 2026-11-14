@@ -177,7 +177,7 @@ function isImageRef(s) {
 }
 
 async function saveBodyRecord({ me, data }) {
-  need(me, 'staff')
+  need(me, 'coach')
   const target = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
   if (!target) fail('会员不存在')
   const now = Date.now()
@@ -297,7 +297,7 @@ async function bodyTrend({ me, data }) {
 // ---------- 力量成绩 ----------
 
 async function saveStrength({ me, data }) {
-  need(me, 'staff')
+  need(me, 'coach')
   const items = await liftItems.enabledMap()
   const item = items[data.lift] || (data.lift ? null : items.bench) || Object.values(items)[0]
   if (!item) fail('未知动作')
@@ -357,7 +357,7 @@ async function saveStrength({ me, data }) {
 // ---------- 运动数据 ----------
 
 async function saveActivity({ me, data }) {
-  need(me, 'staff')
+  need(me, 'coach')
   const target = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
   if (!target) fail('会员不存在')
   const now = Date.now()
@@ -432,7 +432,7 @@ async function myFitness({ me }) {
 }
 
 async function memberFitness({ me, data }) {
-  need(me, 'staff')
+  need(me, 'coach')
   const target = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
   if (!target) fail('会员不存在')
   return fitnessOf(target, false)

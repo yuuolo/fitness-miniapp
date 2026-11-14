@@ -3,7 +3,7 @@
     <input class="grow" value="{{keyword}}" bindinput="onInput" bindconfirm="search" confirm-type="search" placeholder="输入手机号或昵称搜索" />
     <button class="btn" bindtap="search">搜索</button>
   </view>
-  <view class="muted" style="margin: 0 8rpx 16rpx">会员需先打开一次小程序才会出现在这里；请让会员在「我的」填写手机号。</view>
+  <view class="muted" style="margin: 0 8rpx 16rpx">会员需先打开一次小程序才会出现在这里；没填手机号的可以让教练代填。</view>
 
   <view wx:if="{{loaded && !list.length}}" class="empty">没有找到会员</view>
   <view class="card" wx:if="{{list.length}}">

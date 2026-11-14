@@ -2,15 +2,18 @@ const api = require('../../../utils/api')
 const fmt = require('../../../utils/format')
 
 Page({
-  data: { stat: null, role: '', isStaff: false, isAdmin: false, last: null },
+  data: { stat: null, role: '', isStaff: false, isAdmin: false, isCoach: false, last: null },
 
   onShow() {
     api.call('dashboard').then(stat => {
+      const isStaff = stat.role === 'staff' || stat.role === 'admin'
       this.setData({
         stat,
         role: fmt.ROLE_NAMES[stat.role],
-        isStaff: stat.role === 'staff' || stat.role === 'admin',
-        isAdmin: stat.role === 'admin'
+        isStaff,
+        isAdmin: stat.role === 'admin',
+        // 教练也能查会员、录体测数据
+        isCoach: isStaff || stat.role === 'coach'
       })
     })
   },

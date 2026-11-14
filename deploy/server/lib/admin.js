@@ -74,7 +74,7 @@ async function dashboard({ me }) {
 // ---------- 会员 ----------
 
 async function searchMembers({ me, data }) {
-  need(me, 'staff')
+  need(me, 'coach')
   const kw = String(data.keyword || '').trim()
   if (!kw) {
     return (await query('select * from members order by created_at desc limit 50')).rows.map(memberRow)
@@ -87,7 +87,7 @@ async function searchMembers({ me, data }) {
 }
 
 async function memberDetail({ me, data }) {
-  need(me, 'staff')
+  need(me, 'coach')
   const member = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
   if (!member) fail('会员不存在')
   const now = Date.now()
@@ -212,6 +212,42 @@ async function setRole({ me, data }) {
   if (!member) fail('会员不存在')
   await query('update members set role = $2 where openid = $1', [member.openid, data.role])
   return { role: data.role }
+}
+
+// 教练/前台代会员补充基本资料（会员自己不会填手机号时常用）
+async function staffUpdateProfile({ me, data }) {
+  need(me, 'coach')
+  const target = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
+  if (!target) fail('会员不存在')
+
+  const sets = []
+  const values = [target._id]
+  const push = (column, value) => { values.push(value); sets.push(column + ' = $' + values.length) }
+
+  if (data.nickName !== undefined) {
+    const n = String(data.nickName).trim()
+    if (!n || n.length > 20) fail('昵称需为 1–20 个字')
+    push('nick_name', n)
+  }
+  if (data.phone !== undefined) {
+    const p = String(data.phone).trim()
+    if (p && !/^1\d{10}$/.test(p)) fail('手机号需为 11 位')
+    push('phone', p)
+  }
+  if (data.gender !== undefined) {
+    const g = String(data.gender)
+    if (!['male', 'female', ''].includes(g)) fail('性别取值不正确')
+    push('gender', g)
+  }
+  if (data.height !== undefined) {
+    const h = Number(data.height) || 0
+    if (h && (h < 80 || h > 250)) fail('身高需在 80–250 之间')
+    push('height', h)
+  }
+  if (!sets.length) fail('没有要修改的内容')
+
+  await query(`update members set ${sets.join(', ')} where openid = $1`, values)
+  return memberRow((await query('select * from members where openid = $1', [target._id])).rows[0])
 }
 
 // ---------- 卡种 ----------
@@ -476,7 +512,8 @@ async function saveVenue({ me, data }) {
 }
 
 module.exports = {
-  dashboard, searchMembers, memberDetail, openCard, adjustCard, setCardStatus, setRole,
+  dashboard, searchMembers, memberDetail, staffUpdateProfile,
+  openCard, adjustCard, setCardStatus, setRole,
   listCardTypes, saveCardType, listCoaches, staffSchedules, saveSchedule, cancelSchedule,
   roster, markAttendance, venueBookings, useVenueBooking, listAllVenues, saveVenue
 }

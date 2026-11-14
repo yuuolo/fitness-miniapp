@@ -321,8 +321,40 @@ async function main() {
   // ---------- 健身数据 ----------
   await expectFail(
     () => act('saveBodyRecord', MEMBER, { openid: MEMBER, weight: 70 }),
-    '没有权限', '员工才能录入身体数据'
+    '没有权限', '普通会员不能录身体数据'
   )
+
+  // 教练也能查会员、录数据（前台以上不再是唯一入口）
+  const coachSearch = await act('searchMembers', COACH, { keyword: '小明' })
+  assert.ok(coachSearch.some(m => m._id === MEMBER), '教练应能搜索会员')
+  const coachDetail = await act('memberDetail', COACH, { openid: MEMBER })
+  assert.ok(coachDetail.member, '教练应能看会员详情')
+  ok('教练可以搜索会员、查看会员详情')
+
+  const coachBody = await act('saveBodyRecord', COACH, {
+    openid: MEMBER, weight: 73, height: 175, bodyFat: 17, deviceName: '教练录入'
+  })
+  assert.ok(coachBody.score > 0, '教练录入的身体数据应算出评分')
+  // 用引体向上（比次数）验证力量录入，避免动到 SBD 合计影响后面的断言
+  const coachStrength = await act('saveStrength', COACH, { openid: MEMBER, lift: 'pullup', weight: 0, reps: 12 })
+  assert.strictEqual(coachStrength.oneRM, 12, '教练应能录力量成绩（引体按次数）')
+  ok('教练可以给会员录身体数据与力量成绩')
+
+  await expectFail(
+    () => act('openCard', COACH, { openid: MEMBER, typeId: timesType.id, amount: 100, payMethod: 'cash' }),
+    '没有权限', '教练不能办卡（这是前台的事）'
+  )
+  await expectFail(
+    () => act('setRole', COACH, { openid: MEMBER, role: 'staff' }),
+    '没有权限', '教练不能改角色'
+  )
+
+  // 教练/前台可以代会员补资料
+  const updated = await act('staffUpdateProfile', COACH, { openid: MEMBER, phone: '13800001112', height: 176 })
+  assert.strictEqual(updated.phone, '13800001112')
+  assert.strictEqual(Number(updated.height), 176)
+  ok('教练可以代会员修改手机号与身高')
+
   const body = await act('saveBodyRecord', STAFF, {
     openid: MEMBER, weight: 72.5, height: 175, bodyFat: 18, muscle: 55, visceral: 8, deviceName: 'S800'
   })
@@ -348,7 +380,9 @@ async function main() {
   ok('运动数据同一天同来源幂等覆盖')
 
   const trend = await act('bodyTrend', MEMBER, { days: 30 })
-  assert.strictEqual(trend.count, 1)
+  // 教练录了一次、前台又录了一次，所以至少有 2 个点
+  assert.ok(trend.count >= 2, '趋势应包含多次体测记录，实际 ' + trend.count)
+  assert.ok(trend.points.every(p => p.date), '每个点都应带日期')
   ok('身体数据趋势返回一段时间的点')
 
   const boardBefore = await act('leaderboard', MEMBER, { lift: 'bench', metric: 'relative' })
