@@ -81,9 +81,10 @@ Page({
     }, err => wx.showToast({ title: err.message || '加载失败', icon: 'none' }))
   },
 
-  // ---------- 代填资料（教练/前台） ----------
+  // ---------- 代填资料（仅前台及以上；教练没有这个权限） ----------
 
   toggleProfile() {
+    if (!this.data.manage) return
     this.setData({ editingProfile: !this.data.editingProfile })
   },
 
@@ -101,6 +102,9 @@ Page({
   },
 
   saveProfile() {
+    if (!this.data.manage) {
+      return wx.showToast({ title: '没有修改资料的权限', icon: 'none' })
+    }
     const f = this.data.profileForm
     const payload = { openid: this.id, nickName: f.nickName, phone: f.phone, gender: f.gender }
     if (f.height !== '' && f.height !== null) payload.height = Number(f.height)

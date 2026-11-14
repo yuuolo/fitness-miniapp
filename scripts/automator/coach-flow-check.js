@@ -78,17 +78,15 @@ async function main() {
     let texts = []
     for (const b of buttons) { try { texts.push(String(await b.text()).trim()) } catch (e) {} }
     log('  按钮: ' + JSON.stringify(texts))
-    if (texts.some(t => t.indexOf('代填') >= 0)) ok('教练能打开「代填/修改资料」')
-    else bad('没有代填资料入口')
 
-    // 展开代填表单
-    for (const b of buttons) {
-      if (String(await b.text()).indexOf('代填') >= 0) { await b.tap(); break }
+    const ddAll = await detail.data()
+    const canEditProfile = texts.some(t => t.indexOf('代填') >= 0) || ddAll.editingProfile === true
+    if (ddAll.manage === false) {
+      if (!canEditProfile) ok('教练没有「代填/修改资料」入口（不能改别人昵称/手机号/头像）')
+      else bad('教练不该有修改资料的入口')
+    } else {
+      log('  当前是前台/管理员视角（manage=true），跳过教练专属断言')
     }
-    await sleep(1500)
-    const dd2 = await detail.data()
-    if (dd2.editingProfile === true) ok('代填资料表单已展开')
-    else bad('代填表单没有展开')
 
     // 录入数据入口
     if (texts.length) {

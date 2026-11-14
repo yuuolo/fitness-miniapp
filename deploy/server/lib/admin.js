@@ -214,11 +214,25 @@ async function setRole({ me, data }) {
   return { role: data.role }
 }
 
-// 教练/前台代会员补充基本资料（会员自己不会填手机号时常用）
+// 前台/管理员代会员补充基本资料（会员自己不会填手机号时常用）
+//
+// 权限刻意收紧：
+//   1. 只有前台（staff）及以上能改，**教练不行**——昵称/手机号/头像是身份标识，
+//      教练能改就等于能冒充别人，也会让员工工作台里的记录对不上人。
+//   2. 只能改「比自己级别低」的账号：前台能改会员和教练，不能改别的前台和管理员；
+//      管理员可以改所有人。避免互相改资料造成权限混乱。
+//   3. 头像不走这里，只能本人在「我的」里换，杜绝代换头像。
 async function staffUpdateProfile({ me, data }) {
-  need(me, 'coach')
+  need(me, 'staff')
   const target = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
   if (!target) fail('会员不存在')
+
+  if (target._id === me._id) fail('请在「我的」里修改自己的资料')
+  const myLevel = ROLE_LEVEL[me.role] || 0
+  const targetLevel = ROLE_LEVEL[target.role] || 0
+  if (myLevel < ROLE_LEVEL.admin && targetLevel >= myLevel) {
+    fail('只能修改级别比自己低的账号资料')
+  }
 
   const sets = []
   const values = [target._id]

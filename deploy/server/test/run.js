@@ -349,11 +349,33 @@ async function main() {
     '没有权限', '教练不能改角色'
   )
 
-  // 教练/前台可以代会员补资料
-  const updated = await act('staffUpdateProfile', COACH, { openid: MEMBER, phone: '13800001112', height: 176 })
+  // 教练不能改别人的昵称/手机号/头像（身份标识只能本人或前台改）
+  await expectFail(
+    () => act('staffUpdateProfile', COACH, { openid: MEMBER, phone: '13800001112' }),
+    '没有权限', '教练不能修改别人资料（昵称/手机号/头像）'
+  )
+  await expectFail(
+    () => act('staffUpdateProfile', COACH, { openid: ADMIN, nickName: '被改的管理员' }),
+    '没有权限', '教练连管理员的资料也改不了'
+  )
+
+  // 前台可以代会员补资料，但只能改级别比自己低的账号
+  const updated = await act('staffUpdateProfile', STAFF, { openid: MEMBER, phone: '13800001112', height: 176 })
   assert.strictEqual(updated.phone, '13800001112')
   assert.strictEqual(Number(updated.height), 176)
-  ok('教练可以代会员修改手机号与身高')
+  ok('前台可以代会员修改手机号与身高')
+
+  await expectFail(
+    () => act('staffUpdateProfile', STAFF, { openid: ADMIN, phone: '13800009999' }),
+    '级别比自己低', '前台不能改管理员资料'
+  )
+  await expectFail(
+    () => act('staffUpdateProfile', ADMIN, { openid: ADMIN, nickName: '自己' }),
+    '请在「我的」里修改自己的资料', '不能通过这个接口改自己（要走个人资料页）'
+  )
+  const adminEdit = await act('staffUpdateProfile', ADMIN, { openid: STAFF, gender: 'male' })
+  assert.strictEqual(adminEdit.gender, 'male')
+  ok('管理员可以改前台资料')
 
   const body = await act('saveBodyRecord', STAFF, {
     openid: MEMBER, weight: 72.5, height: 175, bodyFat: 18, muscle: 55, visceral: 8, deviceName: 'S800'

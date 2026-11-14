@@ -9,10 +9,11 @@
         <view class="picker-text">{{roles[roleIndex].label}} ›</view>
       </picker>
     </view>
-    <button class="btn ghost mt" bindtap="toggleProfile">{{editingProfile ? '收起' : '代填/修改资料'}}</button>
+    <button wx:if="{{manage}}" class="btn ghost mt" bindtap="toggleProfile">{{editingProfile ? '收起' : '代填/修改资料'}}</button>
+    <view wx:else class="muted mt">修改会员资料请找前台</view>
   </view>
 
-  <view wx:if="{{editingProfile}}" class="card">
+  <view wx:if="{{manage && editingProfile}}" class="card">
     <view class="form-row">
       <text class="label">昵称</text>
       <input value="{{profileForm.nickName}}" data-key="nickName" bindinput="onProfileInput" maxlength="20" placeholder="会员昵称" />
