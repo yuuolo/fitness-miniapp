@@ -1,115 +1,206 @@
+/* ============================================================
+   设计变量（暖色系）
+   原来界面里 32 种颜色全是硬编码，冷灰底（#f5f6f8）配暖橙主色（#ff6a3d），
+   冷暖混搭是「看着不和谐」的根因。这里统一成一套暖色体系：
+   底色偏暖、文字用暖黑、主色压暗一点去掉荧光感，
+   所有语义色（成功/警告/危险）也统一降饱和，跟主色同一个温度。
+   ============================================================ */
 page {
-  background: #f5f6f8;
-  color: #1f2329;
+  /* 品牌色 */
+  --brand: #e9603a;
+  --brand-strong: #cf4f2b;
+  --brand-soft: #fdf0ea;
+  --brand-line: #f7d5c6;
+  --brand-grad-a: #e9603a;
+  --brand-grad-b: #f18a5f;
+
+  /* 文字 */
+  --ink: #23201d;
+  --sub: #6b645c;
+  --muted: #9c948c;
+  --ph: #c3bab1;
+
+  /* 背景与线条 */
+  --bg: #f7f4f1;
+  --surface: #ffffff;
+  --line: #efe8e1;
+  --line-soft: #f5f0ea;
+  --fill: #f4efea;
+
+  /* 语义色 */
+  --ok: #2e9668;
+  --ok-soft: #e9f6ef;
+  --warn: #b9821c;
+  --warn-soft: #fbf2e1;
+  --danger: #c9433d;
+  --danger-soft: #fceceb;
+
+  /* 圆角与阴影 */
+  --r-sm: 12rpx;
+  --r-md: 18rpx;
+  --r-lg: 24rpx;
+  --r-pill: 999rpx;
+  --shadow: 0 4rpx 20rpx rgba(35, 32, 29, 0.05);
+  --shadow-up: 0 -2rpx 12rpx rgba(35, 32, 29, 0.04);
+
+  background: var(--bg);
+  color: var(--ink);
   font-size: 28rpx;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* 底部留出自定义 tabBar 的高度，避免内容被遮住 */
-.page { padding: 24rpx 24rpx calc(140rpx + env(safe-area-inset-bottom)); }
+.page {
+  padding: 24rpx 24rpx calc(140rpx + env(safe-area-inset-bottom));
+}
 
 /* 功能未开启时的占位 */
 .feature-off {
   text-align: center;
   padding: 120rpx 40rpx;
-  color: #8a8f99;
+  color: var(--muted);
 }
-.feature-off .t { font-size: 32rpx; font-weight: 600; color: #1f2329; margin-bottom: 12rpx; }
-.feature-off .d { font-size: 26rpx; line-height: 1.7; }
+.feature-off .t {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 12rpx;
+}
+.feature-off .d { font-size: 26rpx; line-height: 1.7; color: var(--muted); }
 
+/* ---------- 容器 ---------- */
 .card {
-  background: #fff;
-  border-radius: 20rpx;
+  background: var(--surface);
+  border-radius: var(--r-lg);
   padding: 28rpx;
   margin-bottom: 24rpx;
+  box-shadow: var(--shadow);
 }
 
 .section-title {
   font-size: 30rpx;
   font-weight: 600;
+  color: var(--ink);
   margin: 8rpx 4rpx 20rpx;
 }
 
+/* ---------- 布局工具 ---------- */
 .row { display: flex; align-items: center; }
 .between { display: flex; align-items: center; justify-content: space-between; }
 .grow { flex: 1; min-width: 0; }
-.muted { color: #8a8f99; font-size: 24rpx; }
-.title { font-size: 32rpx; font-weight: 600; }
-.price { color: #ff6a3d; font-weight: 600; }
-.empty { text-align: center; color: #8a8f99; padding: 48rpx 0; }
 .mt { margin-top: 16rpx; }
 
+/* ---------- 文字 ---------- */
+.title { font-size: 32rpx; font-weight: 600; color: var(--ink); }
+.muted { color: var(--muted); font-size: 24rpx; }
+.price { color: var(--brand); font-weight: 600; }
+.empty { text-align: center; color: var(--muted); padding: 48rpx 0; }
+
+/* ---------- 标签 ---------- */
 .tag {
   display: inline-block;
   font-size: 22rpx;
   padding: 2rpx 12rpx;
-  border-radius: 8rpx;
-  background: #f0f1f4;
-  color: #5c6370;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+  color: var(--sub);
   margin-right: 8rpx;
+  line-height: 1.6;
 }
-.tag.orange { background: #fff1eb; color: #ff6a3d; }
-.tag.green { background: #e8f7ee; color: #1a9a4b; }
-.tag.red { background: #fdecec; color: #d93a3a; }
+.tag.orange { background: var(--brand-soft); color: var(--brand-strong); }
+.tag.green { background: var(--ok-soft); color: var(--ok); }
+.tag.red { background: var(--danger-soft); color: var(--danger); }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
 
+/* ---------- 按钮 ---------- */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 60rpx;
   padding: 0 28rpx;
-  border-radius: 30rpx;
+  border-radius: var(--r-pill);
   font-size: 26rpx;
-  background: #ff6a3d;
+  background: var(--brand);
   color: #fff;
   border: none;
   line-height: 60rpx;
   margin: 0;
+  font-weight: 500;
 }
 .btn::after { border: none; }
-.btn.ghost { background: #fff; color: #ff6a3d; border: 1px solid #ff6a3d; }
-.btn.gray { background: #f0f1f4; color: #8a8f99; }
-.btn.block { display: flex; width: 100%; height: 88rpx; border-radius: 44rpx; font-size: 30rpx; }
-.btn[disabled] { opacity: 0.5; }
+.btn:active { background: var(--brand-strong); }
+.btn.ghost {
+  background: var(--surface);
+  color: var(--brand);
+  border: 1rpx solid var(--brand-line);
+}
+.btn.ghost:active { background: var(--brand-soft); }
+.btn.gray { background: var(--fill); color: var(--sub); }
+.btn.gray:active { background: var(--line); }
+.btn.block {
+  display: flex;
+  width: 100%;
+  height: 88rpx;
+  border-radius: var(--r-pill);
+  font-size: 30rpx;
+}
+.btn[disabled] { opacity: 0.45; }
 
+/* ---------- 列表 ---------- */
 .list-item {
   display: flex;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1px solid #f0f1f4;
+  border-bottom: 1rpx solid var(--line-soft);
 }
 .list-item:last-child { border-bottom: none; }
 
+/* ---------- 日期/分段选择 ---------- */
 .date-bar {
   display: flex;
-  background: #fff;
-  border-radius: 20rpx;
+  background: var(--surface);
+  border-radius: var(--r-md);
   padding: 12rpx;
   margin-bottom: 24rpx;
+  box-shadow: var(--shadow);
 }
 .date-bar .d {
   flex: 1;
   text-align: center;
   padding: 10rpx 0;
-  border-radius: 14rpx;
+  border-radius: var(--r-sm);
 }
-.date-bar .d .w { font-size: 22rpx; color: #8a8f99; }
-.date-bar .d .n { font-size: 32rpx; font-weight: 600; }
-.date-bar .d.on { background: #ff6a3d; }
-.date-bar .d.on .w, .date-bar .d.on .n { color: #fff; }
+.date-bar .d .w { font-size: 22rpx; color: var(--muted); }
+.date-bar .d .n { font-size: 32rpx; font-weight: 600; color: var(--ink); }
+.date-bar .d.on { background: var(--brand); }
+.date-bar .d.on .w,
+.date-bar .d.on .n { color: #fff; }
 
+/* ---------- 表单 ---------- */
 .form-row {
   display: flex;
   align-items: center;
   padding: 20rpx 0;
-  border-bottom: 1px solid #f0f1f4;
+  border-bottom: 1rpx solid var(--line-soft);
 }
-.form-row .label { width: 180rpx; color: #5c6370; }
-.form-row input, .form-row picker { flex: 1; }
-.form-row .picker-text { color: #1f2329; }
-.form-row .placeholder { color: #b8bcc4; }
+.form-row .label { width: 180rpx; color: var(--sub); }
+.form-row input,
+.form-row picker { flex: 1; }
+.form-row .picker-text { color: var(--ink); }
+.form-row .placeholder { color: var(--ph); }
 
 /* 全局兜底：picker 选中/未选中的文字颜色
    原来只写了 .form-row .picker-text，元素不在 .form-row 里时不会变色 */
-.picker-text { color: #1f2329; }
-.placeholder { color: #b8bcc4; }
+.picker-text { color: var(--ink); }
+.placeholder { color: var(--ph); }
+
+/* ---------- 统计数字 ---------- */
+.stats { display: flex; margin-top: 16rpx; }
+.stats .s { flex: 1; text-align: center; }
+.stats .s .n {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+}

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f7f4f1; color: #23201d;
+    font: 14px/1.6 -apple-system, "Microsoft YaHei", sans-serif;
+    padding: 28px 26px; width: 900px;
+  }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .lead { color: #9c948c; font-size: 13px; margin-bottom: 22px; }
+  h2 { font-size: 14px; margin: 22px 0 10px; color: #6b645c; font-weight: 600; }
+  .sws { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sw { display: flex; align-items: center; gap: 9px; width: 205px; }
+  .chip { width: 34px; height: 34px; border-radius: 9px; border: 1px solid rgba(0,0,0,.06); flex: none; }
+  .nm { font-size: 13px; font-weight: 500; }
+  .cd { font-size: 11px; color: #9c948c; font-family: ui-monospace, Consolas, monospace; }
+
+  .phone { display: flex; gap: 22px; margin-top: 6px; }
+  .screen {
+    width: 320px; background: #f7f4f1; border-radius: 22px; padding: 12px;
+    border: 1px solid #efe8e1;
+  }
+  .hero {
+    background: linear-gradient(135deg, #e9603a, #f18a5f);
+    border-radius: 12px; padding: 20px 16px; color: #fff;
+    box-shadow: 0 4px 14px rgba(233,96,58,.22); margin-bottom: 12px;
+  }
+  .hello { font-size: 20px; font-weight: 600; }
+  .sub { font-size: 12px; opacity: .92; margin-top: 5px; }
+  .card {
+    background: #ffffff; border-radius: 12px;
+    padding: 14px; margin-bottom: 12px; box-shadow: 0 4rpx 20rpx rgba(35, 32, 29, 0.05);
+  }
+  .title { font-size: 16px; font-weight: 600; }
+  .muted { color: #9c948c; font-size: 12px; }
+  .li { display: flex; align-items: center; padding: 11px 0; border-bottom: 1px solid #f5f0ea; }
+  .li:last-child { border-bottom: 0; }
+  .grow { flex: 1; }
+  .price { color: #e9603a; font-weight: 600; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: #f4efea; color: #6b645c; }
+  .tag.orange { background: #fdf0ea; color: #cf4f2b; }
+  .tag.green { background: #e9f6ef; color: #2e9668; }
+  .tag.red { background: #fceceb; color: #c9433d; }
+  .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; height: 30px;
+    padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 500;
+    background: #e9603a; color: #fff;
+  }
+  .btn.ghost { background: #ffffff; color: #e9603a; border: 1px solid #f7d5c6; }
+  .btn.gray { background: #f4efea; color: #6b645c; }
+  .q { display: flex; gap: 10px; }
+  .qi { flex: 1; background: #ffffff; border-radius: 9px; padding: 12px; box-shadow: 0 4rpx 20rpx rgba(35, 32, 29, 0.05); }
+  .tabbar {
+    display: flex; background: #ffffff; border-radius: 0 0 14px 14px;
+    border-top: 1px solid #efe8e1; box-shadow: 0 -2rpx 12rpx rgba(35, 32, 29, 0.04);
+    margin: 0 -12px -12px; padding: 0 0 4px;
+  }
+  .tb { flex: 1; text-align: center; padding: 9px 0; position: relative; font-size: 13px; color: #9c948c; }
+  .tb.on { color: #e9603a; font-weight: 600; }
+  .tb.on::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 2px; border-radius: 0 0 2px 2px; background: #e9603a;
+  }
+  .datebar { display: flex; background: #ffffff; border-radius: 9px; padding: 6px; box-shadow: 0 4rpx 20rpx rgba(35, 32, 29, 0.05); margin-bottom: 12px; }
+  .db { flex: 1; text-align: center; padding: 5px 0; border-radius: 6px; font-size: 12px; color: #9c948c; }
+  .db.on { background: #e9603a; color: #fff; font-weight: 600; }
+  .note { font-size: 12px; color: #9c948c; margin-top: 16px; line-height: 1.8; }
+</style></head>
+<body>
+  <h1>健身娱乐 · 新配色体系</h1>
+  <div class="lead">从 32 种硬编码颜色 / 0 个变量，收敛成 27 个设计变量；冷灰底改为暖米底，主色去掉荧光感。</div>
+
+  <h2>品牌色</h2>
+  <div class="sws">
+    
+  <div class="sw">
+    <div class="chip" style="background:#e9603a"></div>
+    <div class="meta">
+      <div class="nm">品牌主色</div>
+      <div class="cd">--brand · #e9603a</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#cf4f2b"></div>
+    <div class="meta">
+      <div class="nm">按下/深色</div>
+      <div class="cd">--brand-strong · #cf4f2b</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#fdf0ea"></div>
+    <div class="meta">
+      <div class="nm">浅底</div>
+      <div class="cd">--brand-soft · #fdf0ea</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#f7d5c6"></div>
+    <div class="meta">
+      <div class="nm">描边</div>
+      <div class="cd">--brand-line · #f7d5c6</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#e9603a"></div>
+    <div class="meta">
+      <div class="nm">渐变起</div>
+      <div class="cd">--brand-grad-a · #e9603a</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#f18a5f"></div>
+    <div class="meta">
+      <div class="nm">渐变止</div>
+      <div class="cd">--brand-grad-b · #f18a5f</div>
+    </div>
+  </div>
+  </div>
+
+  <h2>文字</h2>
+  <div class="sws">
+    
+  <div class="sw">
+    <div class="chip" style="background:#23201d"></div>
+    <div class="meta">
+      <div class="nm">正文</div>
+      <div class="cd">--ink · #23201d</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#6b645c"></div>
+    <div class="meta">
+      <div class="nm">次要</div>
+      <div class="cd">--sub · #6b645c</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#9c948c"></div>
+    <div class="meta">
+      <div class="nm">弱化</div>
+      <div class="cd">--muted · #9c948c</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#c3bab1"></div>
+    <div class="meta">
+      <div class="nm">占位</div>
+      <div class="cd">--ph · #c3bab1</div>
+    </div>
+  </div>
+  </div>
+
+  <h2>背景与线条</h2>
+  <div class="sws">
+    
+  <div class="sw">
+    <div class="chip" style="background:#f7f4f1"></div>
+    <div class="meta">
+      <div class="nm">页面底色</div>
+      <div class="cd">--bg · #f7f4f1</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#ffffff"></div>
+    <div class="meta">
+      <div class="nm">卡片</div>
+      <div class="cd">--surface · #ffffff</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#efe8e1"></div>
+    <div class="meta">
+      <div class="nm">线条</div>
+      <div class="cd">--line · #efe8e1</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#f5f0ea"></div>
+    <div class="meta">
+      <div class="nm">浅线条</div>
+      <div class="cd">--line-soft · #f5f0ea</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#f4efea"></div>
+    <div class="meta">
+      <div class="nm">填充</div>
+      <div class="cd">--fill · #f4efea</div>
+    </div>
+  </div>
+  </div>
+
+  <h2>语义色</h2>
+  <div class="sws">
+    
+  <div class="sw">
+    <div class="chip" style="background:#2e9668"></div>
+    <div class="meta">
+      <div class="nm">成功</div>
+      <div class="cd">--ok · #2e9668</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#e9f6ef"></div>
+    <div class="meta">
+      <div class="nm">成功底</div>
+      <div class="cd">--ok-soft · #e9f6ef</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#b9821c"></div>
+    <div class="meta">
+      <div class="nm">警告</div>
+      <div class="cd">--warn · #b9821c</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#c9433d"></div>
+    <div class="meta">
+      <div class="nm">危险</div>
+      <div class="cd">--danger · #c9433d</div>
+    </div>
+  </div>
+    
+  <div class="sw">
+    <div class="chip" style="background:#fceceb"></div>
+    <div class="meta">
+      <div class="nm">危险底</div>
+      <div class="cd">--danger-soft · #fceceb</div>
+    </div>
+  </div>
+  </div>
+
+  <h2>组件样张</h2>
+  <div class="phone">
+    <div class="screen">
+      <div class="hero">
+        <div class="hello">你好，店长</div>
+        <div class="sub">今天也要动起来 · 积分 0</div>
+      </div>
+      <div class="datebar">
+        <div class="db on">本周</div><div class="db">本月</div><div class="db">总榜</div>
+      </div>
+      <div class="card">
+        <div class="title">卧推排行榜</div>
+        <div class="li"><span class="muted" style="width:16px">1</span><span class="grow">参赛会员 <span class="tag orange">我</span></span><span class="price">143 kg</span></div>
+        <div class="li"><span class="muted" style="width:16px">2</span><span class="grow">会员小明</span><span class="price">121 kg</span></div>
+      </div>
+      <div class="q">
+        <div class="qi"><div style="font-size:14px;font-weight:600">约团课</div><div class="muted">瑜伽 单车</div></div>
+        <div class="qi"><div style="font-size:14px;font-weight:600">健身友圈</div><div class="muted">晒训练</div></div>
+      </div>
+      <div class="row">
+        <span class="tag green">可用</span><span class="tag red">已过期</span><span class="tag">普通</span>
+      </div>
+      <div class="row">
+        <span class="btn">主要按钮</span><span class="btn ghost">次要</span><span class="btn gray">灰色</span>
+      </div>
+      <div class="tabbar">
+        <div class="tb on">首页</div><div class="tb">友圈</div><div class="tb">我的</div>
+      </div>
+    </div>
+
+    <div style="flex:1">
+      <div class="card">
+        <div class="title">竞赛</div>
+        <div class="muted" style="margin-top:4px">卧推挑战赛 · 进行中 · 2 人参赛</div>
+        <div class="li"><span class="grow">冠军 蛋白粉一桶</span><span class="tag orange">奖品</span></div>
+        <div class="row"><span class="btn">录入成绩</span><span class="btn ghost">修改</span></div>
+      </div>
+      <div class="card">
+        <div class="title">今日概况</div>
+        <div style="display:flex;margin-top:10px;text-align:center">
+          <div style="flex:1"><div style="font-size:20px;font-weight:600">12</div><div class="muted">入场人次</div></div>
+          <div style="flex:1"><div style="font-size:20px;font-weight:600">3</div><div class="muted">课程预约</div></div>
+          <div style="flex:1"><div style="font-size:20px;font-weight:600">2</div><div class="muted">会员总数</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="muted">空状态</div>
+        <div style="text-align:center;color:#9c948c;padding:16px 0">还没有人上榜</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    圆角统一为 12 / 18 / 24rpx 三档与胶囊形；字号收敛为 18–40rpx；按下态统一变深而不是变透明。<br>
+    冷灰底（#f5f6f8）换成暖米底（#f7f4f1），和橙色主色同一色温——这是「和谐感」的主要来源。
+  </div>
+</body></html>

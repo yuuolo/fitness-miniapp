@@ -6,17 +6,17 @@
 .media-item {
   width: 218rpx;
   height: 218rpx;
-  border-radius: 12rpx;
-  background: #f0f1f4;
+  border-radius: var(--r-sm);
+  background: var(--fill);
 }
 .like {
   font-size: 26rpx;
-  color: #8a8f99;
+  color: var(--muted);
   padding: 4rpx 20rpx;
-  border-radius: 24rpx;
-  background: #f0f1f4;
+  border-radius: var(--r-lg);
+  background: var(--fill);
 }
 .like.on {
-  color: #ff6a3d;
-  background: #fff1eb;
+  color: var(--brand);
+  background: var(--brand-soft);
 }

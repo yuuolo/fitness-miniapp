@@ -1,3 +1,2 @@
-.stats { display: flex; margin-top: 24rpx; }
-.stats .s { flex: 1; text-align: center; }
-.stats .n { font-size: 40rpx; font-weight: 600; }
+/* 今日概况的样式已经在 app.wxss 里统一定义（.stats / .s / .n），
+   这里不再重复，避免两处规则互相覆盖。 */

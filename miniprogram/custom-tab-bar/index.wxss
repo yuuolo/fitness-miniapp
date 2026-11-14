@@ -6,10 +6,10 @@
   z-index: 1000;
   display: flex;
   align-items: center;
-  background: #ffffff;
-  border-top: 1rpx solid #e6e8eb;
+  background: var(--surface);
+  border-top: 1rpx solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
-  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-up);
 }
 
 .tab {
@@ -18,14 +18,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .tab-text {
   font-size: 26rpx;
-  color: #8a8f99;
+  color: var(--muted);
+  transition: color 0.15s;
 }
 
+/* 选中态：文字变品牌色，并在上方加一小段指示条 */
 .tab.on .tab-text {
-  color: #ff6a3d;
+  color: var(--brand);
   font-weight: 600;
+}
+.tab.on::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40rpx;
+  height: 4rpx;
+  border-radius: 0 0 4rpx 4rpx;
+  background: var(--brand);
 }

@@ -2,11 +2,11 @@
   display: flex;
   align-items: center;
   gap: 12rpx;
-  background: #fff8f4;
-  border-radius: 14rpx;
+  background: var(--brand-soft);
+  border-radius: var(--r-sm);
   padding: 16rpx 20rpx;
   font-size: 26rpx;
-  color: #c2501f;
+  color: var(--brand-strong);
 }
 
 .actions {
@@ -24,8 +24,8 @@
 
 .video-link {
   font-size: 22rpx;
-  color: #ff6a3d;
-  border: 1px solid #ff6a3d;
-  border-radius: 20rpx;
+  color: var(--brand);
+  border: 1px solid var(--brand);
+  border-radius: var(--r-md);
   padding: 2rpx 14rpx;
 }

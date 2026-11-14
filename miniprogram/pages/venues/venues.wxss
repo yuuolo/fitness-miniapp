@@ -5,9 +5,9 @@
   margin-right: 16rpx;
   border-radius: 32rpx;
   background: #fff;
-  color: #5c6370;
+  color: var(--sub);
 }
-.tab.on { background: #ff6a3d; color: #fff; }
+.tab.on { background: var(--brand); color: #fff; }
 .grid { display: flex; flex-wrap: wrap; margin: 0 -8rpx; }
 .slot {
   width: calc(25% - 16rpx);
@@ -20,8 +20,8 @@
   border: 1px solid #fff;
 }
 .slot .s-t { font-size: 30rpx; font-weight: 600; }
-.slot .s-r { font-size: 22rpx; color: #1a9a4b; }
-.slot.off { background: #f0f1f4; }
-.slot.off .s-t, .slot.off .s-r { color: #b8bcc4; }
-.slot.mine { border-color: #ff6a3d; background: #fff1eb; }
-.slot.mine .s-r { color: #ff6a3d; }
+.slot .s-r { font-size: 22rpx; color: var(--ok); }
+.slot.off { background: var(--fill); }
+.slot.off .s-t, .slot.off .s-r { color: var(--ph); }
+.slot.mine { border-color: var(--brand); background: var(--brand-soft); }
+.slot.mine .s-r { color: var(--brand); }

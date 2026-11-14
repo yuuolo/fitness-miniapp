@@ -27,7 +27,7 @@
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "健身娱乐",
-    "backgroundColor": "#f5f6f8"
+    "backgroundColor": "#f7f4f1"
   },
   "tabBar": {
     "custom": true,

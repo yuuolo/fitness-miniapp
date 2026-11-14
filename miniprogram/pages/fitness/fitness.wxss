@@ -12,7 +12,7 @@
 }
 .grid-u {
   font-size: 22rpx;
-  color: #8a8f99;
+  color: var(--muted);
   margin-left: 4rpx;
   font-weight: 400;
 }
@@ -22,14 +22,14 @@
   text-align: center;
   padding: 12rpx 0;
   margin-right: 10rpx;
-  border-radius: 12rpx;
-  background: #f0f1f4;
-  color: #5c6370;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+  color: var(--sub);
   font-size: 26rpx;
 }
 .period:last-child { margin-right: 0; }
 .period.on {
-  background: #ff6a3d;
+  background: var(--brand);
   color: #fff;
 }
 
@@ -37,15 +37,15 @@
   font-weight: 600;
   margin-left: 8rpx;
 }
-.delta.up { color: #d93a3a; }
-.delta.down { color: #1a9a4b; }
+.delta.up { color: var(--danger); }
+.delta.down { color: var(--ok); }
 
 .report {
   width: 100%;
   height: 420rpx;
-  border-radius: 12rpx;
+  border-radius: var(--r-sm);
   margin-top: 16rpx;
-  background: #f0f1f4;
+  background: var(--fill);
 }
 
 /* ---------- 节段人体图 ---------- */
@@ -57,12 +57,12 @@
   padding: 10rpx 36rpx;
   margin-right: 12rpx;
   border-radius: 26rpx;
-  background: #f0f1f4;
-  color: #5c6370;
+  background: var(--fill);
+  color: var(--sub);
   font-size: 26rpx;
 }
 .seg-tab.on {
-  background: #ff6a3d;
+  background: var(--brand);
   color: #fff;
 }
 
@@ -80,13 +80,13 @@
   height: 88rpx;
   margin-left: -44rpx;
   border-radius: 50%;
-  background: #e6e9ee;
+  background: var(--line);
 }
 .seg {
   position: absolute;
-  border-radius: 14rpx;
-  background: #eef3f7;
-  border: 2rpx solid #dbe4ec;
+  border-radius: var(--r-sm);
+  background: var(--line);
+  border: 2rpx solid var(--line);
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -96,16 +96,16 @@
 .seg-v {
   font-size: 26rpx;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--ink);
 }
 .seg-u {
   font-size: 18rpx;
-  color: #8a8f99;
+  color: var(--muted);
   margin-left: 2rpx;
 }
 .seg-n {
   font-size: 20rpx;
-  color: #8a8f99;
+  color: var(--muted);
 }
 .seg-la, .seg-ra {
   top: 120rpx;
@@ -140,7 +140,7 @@
 }
 .seg-line text:first-child {
   width: 100rpx;
-  color: #5c6370;
+  color: var(--sub);
 }
 .seg-badge {
   padding: 2rpx 16rpx;
@@ -148,5 +148,5 @@
   margin-right: 12rpx;
   font-size: 22rpx;
 }
-.seg-badge.ok { background: #e8f7ee; color: #1a9a4b; }
-.seg-badge.warn { background: #fff1eb; color: #ff6a3d; }
+.seg-badge.ok { background: var(--ok-soft); color: var(--ok); }
+.seg-badge.warn { background: var(--brand-soft); color: var(--brand); }

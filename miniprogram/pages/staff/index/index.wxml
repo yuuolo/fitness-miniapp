@@ -12,7 +12,10 @@
     </view>
   </view>
 
-  <button wx:if="{{isStaff}}" class="btn block" bindtap="scanEntry">扫码核验入场</button>
+  <button wx:if="{{isStaff && cardsOn}}" class="btn block" bindtap="scanEntry">扫码核验入场</button>
+  <view wx:if="{{isStaff && !cardsOn}}" class="card mt">
+    <view class="muted">会员卡功能未开启，暂无需核验入场。需要时可到管理页打开「会员卡」开关。</view>
+  </view>
   <view wx:if="{{last}}" class="card mt">
     <view wx:if="{{last.denied}}"><text class="tag red">拒绝</text> {{last.message}} <text class="muted">{{last.time}}</text></view>
     <view wx:else><text class="tag green">已入场</text> {{last.name}} · {{last.cardName}} · {{last.info}} <text class="muted">{{last.time}}</text></view>
