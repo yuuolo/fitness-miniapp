@@ -205,6 +205,12 @@ function cosUrl(cfg, key) {
   return `https://${cfg.cos.bucket}.cos.${cfg.cos.region}.myqcloud.com/${key}`
 }
 
+// 上传对象一律设为「公有读」。
+// 原因：小程序用 <image>/<video> 直接加载 https 地址，没有签名 URL 机制；
+// 友圈的照片和视频需要「所有人都能看到」（会员彼此可见），
+// 头像与入场海报同理。文件名是 20 字节随机串，不可枚举。
+const OBJECT_ACL = 'public-read'
+
 async function putCos(buffer, mime, cfg, ext) {
   const key = buildKey(cfg.cos.prefix, ext)
   const cos = cosClient(cfg)
@@ -214,7 +220,8 @@ async function putCos(buffer, mime, cfg, ext) {
       Region: cfg.cos.region,
       Key: key,
       Body: buffer,
-      ContentType: mime
+      ContentType: mime,
+      ACL: OBJECT_ACL
     }, (err, data) => (err ? reject(normalizeError('腾讯云 COS', err)) : resolve(data)))
   })
   return { url: cosUrl(cfg, key), key }
@@ -244,7 +251,10 @@ async function putOss(buffer, mime, cfg, ext) {
   const key = buildKey(cfg.oss.prefix, ext)
   const client = ossClient(cfg)
   try {
-    await client.put(key, buffer, { mime })
+    await client.put(key, buffer, {
+      mime,
+      headers: { 'x-oss-object-acl': OBJECT_ACL }
+    })
   } catch (e) {
     throw normalizeError('阿里云 OSS', e)
   }
@@ -318,7 +328,7 @@ async function testConfig(override) {
     await new Promise((resolve, reject) => {
       cos.putObject({
         Bucket: cfg.cos.bucket, Region: cfg.cos.region, Key: key,
-        Body: probe, ContentType: 'text/plain'
+        Body: probe, ContentType: 'text/plain', ACL: OBJECT_ACL
       }, (err, data) => (err ? reject(normalizeError('腾讯云 COS', err)) : resolve(data)))
     })
     await new Promise(resolve => {
@@ -330,7 +340,7 @@ async function testConfig(override) {
   const key = buildKey(cfg.oss.prefix, 'txt')
   const client = ossClient(cfg)
   try {
-    await client.put(key, probe, { mime: 'text/plain' })
+    await client.put(key, probe, { mime: 'text/plain', headers: { 'x-oss-object-acl': OBJECT_ACL } })
   } catch (e) {
     throw normalizeError('阿里云 OSS', e)
   }

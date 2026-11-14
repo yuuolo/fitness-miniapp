@@ -171,6 +171,55 @@ async function main() {
   assert.ok(notFound.msg.indexOf('会员不存在') >= 0)
   ok('不存在的会员返回业务错误')
 
+  // ---------- 功能开关：关闭后台接口必须被拦 ----------
+  const { query } = require('../lib/db')
+  const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+  // 正常情况下排行榜可用
+  const before = await call('leaderboard', MEMBER, { lift: 'bench', metric: 'absolute' })
+  assert.strictEqual(before.code, 0, '开关打开时排行榜应可用')
+  ok('开关开启时排行榜接口可用')
+
+  // 直接改 config 关掉排行榜（服务端有 5 秒缓存，等它过期）
+  await query(
+    `insert into config (key, value) values ('features', $1)
+     on conflict (key) do update set value = excluded.value`,
+    [JSON.stringify({ cards: true, classes: true, venues: true, moments: true, fitness: true, rank: false })]
+  )
+  await sleep(5600)
+
+  const blocked = await call('leaderboard', MEMBER, { lift: 'bench', metric: 'absolute' })
+  assert.strictEqual(blocked.code, 400, '关闭后应返回业务错误')
+  assert.ok(blocked.msg.indexOf('功能暂未开放') >= 0, '提示应说明功能未开放：' + blocked.msg)
+  ok('关闭「力量排行榜」后接口返回「功能暂未开放」')
+
+  const stillOk = await call('myCards', MEMBER)
+  assert.strictEqual(stillOk.code, 0, '只关排行榜不应影响其他功能')
+  ok('只关闭一个模块时其他模块不受影响')
+
+  // 关掉会员卡后入场码也应被拦
+  await query(
+    `insert into config (key, value) values ('features', $1)
+     on conflict (key) do update set value = excluded.value`,
+    [JSON.stringify({ cards: false, classes: true, venues: true, moments: true, fitness: true, rank: true })]
+  )
+  await sleep(5600)
+  const codeBlocked = await call('entryCode', MEMBER)
+  assert.strictEqual(codeBlocked.code, 400)
+  assert.ok(codeBlocked.msg.indexOf('会员卡') >= 0, '提示应点名模块：' + codeBlocked.msg)
+  ok('关闭「会员卡」后入场码接口同样被拦')
+
+  // 恢复全部开启
+  await query(
+    `insert into config (key, value) values ('features', $1)
+     on conflict (key) do update set value = excluded.value`,
+    [JSON.stringify({ cards: true, classes: true, venues: true, moments: true, fitness: true, rank: true })]
+  )
+  await sleep(5600)
+  const restored = await call('leaderboard', MEMBER, { lift: 'bench', metric: 'absolute' })
+  assert.strictEqual(restored.code, 0)
+  ok('重新打开后接口恢复可用')
+
   console.log('\n全部 ' + passed + ' 项 HTTP 断言通过')
 }
 

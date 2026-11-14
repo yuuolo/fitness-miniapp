@@ -5,6 +5,7 @@ const {
   cardRow, cardTypeRow, bookingRow, pointsLogRow
 } = require('./common')
 const { isInitialized } = require('./system')
+const features = require('./features')
 
 function publicMe(me) {
   if (!me) return null
@@ -21,8 +22,10 @@ function publicMe(me) {
 }
 
 async function home({ openid, me }) {
-  const initialized = await isInitialized()
-  if (!initialized || !me) return { initialized: false, me: publicMe(me), cards: [], todayBookings: [] }
+  const [initialized, featureState] = await Promise.all([isInitialized(), features.get()])
+  if (!initialized || !me) {
+    return { initialized: false, me: publicMe(me), cards: [], todayBookings: [], features: featureState }
+  }
   const now = Date.now()
   const cards = (await query(
     `select * from member_cards where openid = $1 and status in ('active', 'paused')
@@ -37,6 +40,7 @@ async function home({ openid, me }) {
   return {
     initialized,
     me: publicMe(me),
+    features: featureState,
     cards: cards.map(c => Object.assign(c, { usable: cardUsable(c, now) })),
     todayBookings: todayBookings.map(bookingRow)
   }

@@ -1,9 +1,10 @@
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
+const features = require('../../utils/features')
 const { subscribe } = require('../../utils/subscribe')
 
 Page({
-  data: { venues: [], venueIndex: 0, days: [], date: '', venue: null, slots: [], busy: false },
+  data: { venues: [], venueIndex: 0, days: [], date: '', venue: null, slots: [], busy: false, disabled: false },
 
   onLoad() {
     const days = fmt.nextDays(7)
@@ -11,13 +12,21 @@ Page({
   },
 
   onShow() {
-    api.call('listVenues').then(venues => {
-      const index = Math.min(this.data.venueIndex, Math.max(venues.length - 1, 0))
-      this.setData({
-        venues: venues.map(v => Object.assign(v, { priceText: fmt.yuan(v.price) })),
-        venueIndex: index
+    // 功能关闭时直接显示占位
+    features.ensure().then(f => {
+      if (f.venues === false) {
+        this.setData({ disabled: true })
+        return
+      }
+      this.setData({ disabled: false })
+      api.call('listVenues').then(venues => {
+        const index = Math.min(this.data.venueIndex, Math.max(venues.length - 1, 0))
+        this.setData({
+          venues: venues.map(v => Object.assign(v, { priceText: fmt.yuan(v.price) })),
+          venueIndex: index
+        })
+        if (venues.length) this.loadSlots()
       })
-      if (venues.length) this.loadSlots()
     })
   },
 

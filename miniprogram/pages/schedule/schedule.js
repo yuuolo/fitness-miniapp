@@ -1,9 +1,10 @@
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
+const features = require('../../utils/features')
 const { subscribe } = require('../../utils/subscribe')
 
 Page({
-  data: { days: [], date: '', list: [], loading: false, busyId: '' },
+  data: { days: [], date: '', list: [], loading: false, busyId: '', disabled: false },
 
   onLoad() {
     const days = fmt.nextDays(7)
@@ -11,7 +12,12 @@ Page({
   },
 
   onShow() {
-    this.load()
+    // 功能关闭时直接显示占位，不发请求
+    features.ensure().then(f => {
+      const off = f.classes === false
+      this.setData({ disabled: off })
+      if (!off) this.load()
+    })
   },
 
   onPullDownRefresh() {

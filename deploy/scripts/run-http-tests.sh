@@ -41,6 +41,7 @@ echo "=== 运行 HTTP 测试 ==="
 docker run --rm --network gym_default \
   -e BASE=http://gym-http-test:3000 \
   -e DEV_LOGIN_TOKEN=http-test-token \
+  -e DATABASE_URL="postgres://postgres:${PW}@db:5432/${DB}" \
   gym-server node test/http.js
 RC=$?
 echo "=== HTTP 测试退出码: $RC ==="

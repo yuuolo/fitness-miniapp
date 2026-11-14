@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const features = require('../../utils/features')
 
 // 自建后端存的是 https 地址，video 组件可以直接播；不再需要临时链接
 function resolveVideoUrls(list) {
@@ -10,10 +11,17 @@ function resolveVideoUrls(list) {
 }
 
 Page({
-  data: { list: [], loaded: false, hasMore: true, loading: false },
+  data: { list: [], loaded: false, hasMore: true, loading: false, disabled: false },
 
   onShow() {
-    this.reload()
+    features.ensure().then(f => {
+      if (f.moments === false) {
+        this.setData({ disabled: true, loaded: true })
+        return
+      }
+      this.setData({ disabled: false })
+      this.reload()
+    })
   },
 
   onPullDownRefresh() {

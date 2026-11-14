@@ -2,6 +2,7 @@
 const crypto = require('crypto')
 const { tx, query } = require('./db')
 const { DAY, HOUR, cnDate, dayStart, fail, newId, configGet } = require('./common')
+const features = require('./features')
 
 async function isInitialized() {
   return !!(await configGet('system'))
@@ -9,6 +10,11 @@ async function isInitialized() {
 
 async function systemStatus() {
   return { initialized: await isInitialized() }
+}
+
+/** 小程序启动时拉一次功能开关，决定隐藏哪些入口与 tab（不需要登录态） */
+async function featureFlags() {
+  return features.flags()
 }
 
 const CARD_TYPES = [
@@ -102,4 +108,4 @@ async function bootstrap({ openid, me }) {
   return { initialized: true }
 }
 
-module.exports = { systemStatus, bootstrap, isInitialized }
+module.exports = { systemStatus, bootstrap, isInitialized, featureFlags }

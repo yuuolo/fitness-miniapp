@@ -8,6 +8,7 @@ const { query, one, pool, ensureSchema } = require('./lib/db')
 const { BizError, getMember } = require('./lib/common')
 const storage = require('./lib/storage')
 const manage = require('./lib/manage')
+const features = require('./lib/features')
 
 const PORT = Number(process.env.PORT || 3000)
 const APPID = process.env.WX_APPID
@@ -106,6 +107,54 @@ for (const name of MODULES) {
   }
 }
 console.log('actions (' + Object.keys(handlers).length + '):', Object.keys(handlers).sort().join(', '))
+
+// ---------- 功能开关：action → 所属模块 ----------
+// 关闭模块后，这些 action 统一返回「功能暂未开放」，防止旧链接/缓存页面绕过界面隐藏。
+const ACTION_FEATURE = {
+  // 会员卡
+  myCards: 'cards',
+  openCard: 'cards',
+  adjustCard: 'cards',
+  setCardStatus: 'cards',
+  listCardTypes: 'cards',
+  saveCardType: 'cards',
+  entryCode: 'cards',
+  verifyEntry: 'cards',
+  // 团课与私教
+  listSchedules: 'classes',
+  bookSchedule: 'classes',
+  cancelSchedule: 'classes',
+  staffSchedules: 'classes',
+  saveSchedule: 'classes',
+  roster: 'classes',
+  markAttendance: 'classes',
+  // 娱乐项目
+  listVenues: 'venues',
+  venueSlots: 'venues',
+  bookVenue: 'venues',
+  listAllVenues: 'venues',
+  saveVenue: 'venues',
+  venueBookings: 'venues',
+  useVenueBooking: 'venues',
+  // 健身友圈
+  momentList: 'moments',
+  postMoment: 'moments',
+  momentDetail: 'moments',
+  deleteMoment: 'moments',
+  likeMoment: 'moments',
+  momentPoster: 'moments',
+  momentByShort: 'moments',
+  setPosterQr: 'moments',
+  // 健身数据
+  saveBodyRecord: 'fitness',
+  saveStrength: 'fitness',
+  saveActivity: 'fitness',
+  myFitness: 'fitness',
+  memberFitness: 'fitness',
+  bodyTrend: 'fitness',
+  // 排行榜
+  leaderboard: 'rank'
+}
 
 const app = express()
 app.use(express.json({ limit: '2mb' }))
@@ -222,6 +271,28 @@ app.post('/api/admin/storage/test', requireAdmin, async (req, res) => {
   }
 })
 
+app.get('/api/admin/features', requireAdmin, async (req, res) => {
+  try {
+    res.json({ code: 0, data: await features.describe() })
+  } catch (e) {
+    console.error('admin features read failed', e)
+    res.json({ code: 500, msg: '读取功能开关失败' })
+  }
+})
+
+app.put('/api/admin/features', requireAdmin, async (req, res) => {
+  try {
+    const patch = (req.body && req.body.state) || {}
+    await features.set(patch, 'admin')
+    const data = await features.describe()
+    const off = data.features.filter(f => !f.enabled).map(f => f.name)
+    console.log('features changed ->', JSON.stringify(data.state))
+    res.json({ code: 0, data: Object.assign({}, data, { summary: off.length ? '已关闭：' + off.join('、') : '全部功能已开启' }) })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
 app.post('/api', async (req, res) => {
   const { action, data, code } = req.body || {}
   try {
@@ -229,6 +300,8 @@ app.post('/api', async (req, res) => {
       ? handlers[action]
       : null
     if (!fn) return res.json({ code: 404, msg: '未知操作' })
+    const featureKey = ACTION_FEATURE[action]
+    if (featureKey) await features.assertEnabled(featureKey)
     const openid = await resolveOpenid(req, code)
     const me = await ensureMember(openid)
     const result = await fn({ openid, me, data: data || {} })

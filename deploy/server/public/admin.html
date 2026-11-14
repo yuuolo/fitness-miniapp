@@ -67,6 +67,27 @@
   .msg.ok { display: block; background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.35); color: #7ee787; }
   .msg.err { display: block; background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.35); color: #ff9b95; }
   .msg.info { display: block; background: rgba(210,153,34,.1); border: 1px solid rgba(210,153,34,.35); color: #e3b341; }
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute; inset: 0; cursor: pointer; background: #3a4450;
+    border-radius: 24px; transition: background .18s;
+  }
+  .switch .slider:before {
+    content: ""; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: transform .18s;
+  }
+  .switch input:checked + .slider { background: var(--accent-dim); }
+  .switch input:checked + .slider:before { transform: translateX(20px); }
+  .switch input:disabled + .slider { opacity: .45; cursor: not-allowed; }
+  .feat { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-bottom: 1px dashed var(--line); }
+  .feat:last-child { border-bottom: 0; }
+  .feat .grow { flex: 1; min-width: 0; }
+  .feat .name { font-weight: 600; margin-bottom: 2px; }
+  .feat .name .badge { margin-left: 8px; }
+  .feat .d { font-size: 12px; color: var(--muted); }
+  .feat .c { font-size: 11px; color: #5b6672; margin-top: 3px; font-family: ui-monospace, Consolas, monospace; }
+
   .hidden { display: none !important; }
   .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); }
   .badge.on { color: #7ee787; border-color: rgba(63,185,80,.4); background: rgba(63,185,80,.1); }
@@ -216,6 +237,21 @@
       </div>
       <div class="msg" id="storageMsg"></div>
       <div class="hint" style="margin-top:12px" id="storageUpdated"></div>
+    </div>
+
+    <div class="card">
+      <h2>功能开关 <span class="tag">早期用不上的可以先关掉</span></h2>
+      <div class="hint" style="margin-bottom:6px">
+        关闭后，小程序里对应的入口和 tab 会隐藏，服务端也不会再响应这些接口。
+        改完几秒内生效，不需要重新发布小程序。
+      </div>
+      <div id="featureList"></div>
+      <div class="actions" style="margin-top:14px">
+        <button class="primary" id="featSaveBtn">保存开关</button>
+        <button id="featReloadBtn">刷新</button>
+      </div>
+      <div class="msg" id="featMsg"></div>
+      <div class="hint" style="margin-top:12px" id="featUpdated"></div>
     </div>
 
     <div class="card">
@@ -426,6 +462,45 @@
     return api('/api/admin/status').then(renderStatus)
   }
 
+  // ---------- 功能开关 ----------
+  var featureState = {}
+
+  function renderFeatures(data) {
+    featureState = Object.assign({}, data.state || {})
+    $('featureList').innerHTML = (data.features || []).map(function (f) {
+      var on = f.enabled !== false
+      return '<div class="feat">' +
+        '<div class="grow">' +
+        '<div class="name">' + esc(f.name) +
+        '<span class="badge ' + (on ? 'on' : 'off') + '">' + (on ? '已开启' : '已隐藏') + '</span></div>' +
+        '<div class="d">' + esc(f.desc) + '</div>' +
+        '<div class="c">' + esc(f.covers) + '</div>' +
+        '</div>' +
+        '<label class="switch"><input type="checkbox" data-key="' + esc(f.key) + '"' + (on ? ' checked' : '') +
+        '><span class="slider"></span></label>' +
+        '</div>'
+    }).join('')
+
+    Array.prototype.forEach.call($('featureList').querySelectorAll('input[type=checkbox]'), function (input) {
+      input.addEventListener('change', function () {
+        var key = this.getAttribute('data-key')
+        featureState[key] = this.checked
+        var badge = this.closest('.feat').querySelector('.badge')
+        badge.className = 'badge ' + (this.checked ? 'on' : 'off')
+        badge.textContent = this.checked ? '已开启' : '已隐藏'
+        hideMsg($('featMsg'))
+      })
+    })
+
+    $('featUpdated').textContent = data.updatedAt
+      ? '上次修改：' + fmtTime(data.updatedAt) + '（' + (data.updatedBy || '—') + '）'
+      : '还没修改过，默认全部开启'
+  }
+
+  function loadFeatures() {
+    return api('/api/admin/features').then(renderFeatures)
+  }
+
   // ---------- 事件 ----------
   $('driver').addEventListener('change', function () {
     applyDriverSections(this.value)
@@ -447,7 +522,7 @@
         setToken(data.data.token)
         $('password').value = ''
         showMain()
-        return Promise.all([loadStatus(), loadStorage()])
+        return Promise.all([loadStatus(), loadStorage(), loadFeatures()])
       })
       .catch(function (e) { showMsg($('loginMsg'), e.message, 'err') })
       .finally(function () { btn.disabled = false })
@@ -481,6 +556,25 @@
       .finally(function () { btn.disabled = false })
   })
 
+  $('featSaveBtn').addEventListener('click', function () {
+    var btn = this
+    btn.disabled = true
+    hideMsg($('featMsg'))
+    api('/api/admin/features', { method: 'PUT', body: { state: featureState } })
+      .then(function (data) {
+        renderFeatures(data)
+        showMsg($('featMsg'), '已保存。' + (data.summary || ''), 'ok')
+        return loadStatus()
+      })
+      .catch(function (e) { showMsg($('featMsg'), e.message, 'err') })
+      .finally(function () { btn.disabled = false })
+  })
+
+  $('featReloadBtn').addEventListener('click', function () {
+    hideMsg($('featMsg'))
+    loadFeatures().catch(function (e) { showMsg($('featMsg'), e.message, 'err') })
+  })
+
   $('logoutBtn').addEventListener('click', function () {
     setToken('')
     showLogin()
@@ -490,7 +584,7 @@
   // ---------- 启动 ----------
   if (token()) {
     showMain()
-    Promise.all([loadStatus(), loadStorage()]).catch(function (e) {
+    Promise.all([loadStatus(), loadStorage(), loadFeatures()]).catch(function (e) {
       if (e.message !== '未登录') showMsg($('storageMsg'), e.message, 'err')
     })
   } else {

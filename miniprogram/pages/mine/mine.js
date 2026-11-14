@@ -1,20 +1,24 @@
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
+const features = require('../../utils/features')
 
 Page({
-  data: { loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', logs: [] },
+  data: { loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', logs: [], features: {} },
 
   onShow() {
     this.load()
   },
 
   load() {
+    features.ensure().then(f => this.setData({ features: f || {} }))
     return api.call('home', {}, { silent: true }).then(res => {
+      if (res.features) features.set(res.features)
       const me = res.me || {}
       this.setData({
         loaded: true,
         initialized: res.initialized,
         me,
+        features: res.features || {},
         roleName: fmt.ROLE_NAMES[me.role] || '会员',
         isStaff: !!me.role && me.role !== 'member',
         blockedText: me.blockUntil > Date.now() ? '因缺席次数过多，' + fmt.fullDate(me.blockUntil) + ' 前暂停预约' : ''

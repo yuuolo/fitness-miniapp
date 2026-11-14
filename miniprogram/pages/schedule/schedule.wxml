@@ -1,32 +1,39 @@
 <view class="page">
-  <view class="date-bar">
-    <view wx:for="{{days}}" wx:key="date" class="d {{item.date === date ? 'on' : ''}}" data-date="{{item.date}}" bindtap="pickDate">
-      <view class="w">{{item.week}}</view>
-      <view class="n">{{item.day}}</view>
-    </view>
+  <view wx:if="{{disabled}}" class="feature-off">
+    <view class="t">团课暂未开放</view>
+    <view class="d">门店还没开放约课。想了解课程安排，可以到前台咨询。</view>
   </view>
 
-  <view wx:if="{{!loading && !list.length}}" class="empty">这一天没有排课</view>
-
-  <view wx:for="{{list}}" wx:key="_id" class="card row">
-    <view class="time">
-      <view class="t">{{item.time}}</view>
-      <view class="muted">{{item.endTime}}</view>
-    </view>
-    <view class="grow">
-      <view>
-        <text class="title">{{item.courseName}}</text>
-        <text wx:if="{{item.kind === 'private'}}" class="tag orange">私教</text>
+  <block wx:else>
+    <view class="date-bar">
+      <view wx:for="{{days}}" wx:key="date" class="d {{item.date === date ? 'on' : ''}}" data-date="{{item.date}}" bindtap="pickDate">
+        <view class="w">{{item.week}}</view>
+        <view class="n">{{item.day}}</view>
       </view>
-      <view class="muted">{{item.coachName}}{{item.room ? ' · ' + item.room : ''}}</view>
-      <view class="muted">已约 {{item.booked}}/{{item.capacity}}</view>
     </view>
-    <view>
-      <button wx:if="{{item.myStatus === 'booked'}}" class="btn ghost" data-index="{{index}}" bindtap="cancel" disabled="{{item.started}}">取消</button>
-      <text wx:elif="{{item.myStatus}}" class="tag green">{{item.myStatus === 'attended' ? '已签到' : '缺席'}}</text>
-      <button wx:elif="{{item.started}}" class="btn gray" disabled>已开始</button>
-      <button wx:elif="{{item.full}}" class="btn gray" disabled>已满</button>
-      <button wx:else class="btn" data-index="{{index}}" bindtap="book" disabled="{{busyId === item._id}}">预约</button>
+
+    <view wx:if="{{!loading && !list.length}}" class="empty">这一天没有排课</view>
+
+    <view wx:for="{{list}}" wx:key="_id" class="card row">
+      <view class="time">
+        <view class="t">{{item.time}}</view>
+        <view class="muted">{{item.endTime}}</view>
+      </view>
+      <view class="grow">
+        <view>
+          <text class="title">{{item.courseName}}</text>
+          <text wx:if="{{item.kind === 'private'}}" class="tag orange">私教</text>
+        </view>
+        <view class="muted">{{item.coachName}}{{item.room ? ' · ' + item.room : ''}}</view>
+        <view class="muted">已约 {{item.booked}}/{{item.capacity}}</view>
+      </view>
+      <view>
+        <button wx:if="{{item.myStatus === 'booked'}}" class="btn ghost" data-index="{{index}}" bindtap="cancel" disabled="{{item.started}}">取消</button>
+        <text wx:elif="{{item.myStatus}}" class="tag green">{{item.myStatus === 'attended' ? '已签到' : '缺席'}}</text>
+        <button wx:elif="{{item.started}}" class="btn gray" disabled>已开始</button>
+        <button wx:elif="{{item.full}}" class="btn gray" disabled>已满</button>
+        <button wx:else class="btn" data-index="{{index}}" bindtap="book" disabled="{{busyId === item._id}}">预约</button>
+      </view>
     </view>
-  </view>
+  </block>
 </view>

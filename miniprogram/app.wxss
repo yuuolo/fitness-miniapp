@@ -5,7 +5,17 @@ page {
   line-height: 1.5;
 }
 
-.page { padding: 24rpx 24rpx 48rpx; }
+/* 底部留出自定义 tabBar 的高度，避免内容被遮住 */
+.page { padding: 24rpx 24rpx calc(140rpx + env(safe-area-inset-bottom)); }
+
+/* 功能未开启时的占位 */
+.feature-off {
+  text-align: center;
+  padding: 120rpx 40rpx;
+  color: #8a8f99;
+}
+.feature-off .t { font-size: 32rpx; font-weight: 600; color: #1f2329; margin-bottom: 12rpx; }
+.feature-off .d { font-size: 26rpx; line-height: 1.7; }
 
 .card {
   background: #fff;
