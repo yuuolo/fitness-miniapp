@@ -108,3 +108,8 @@ page {
 .form-row input, .form-row picker { flex: 1; }
 .form-row .picker-text { color: #1f2329; }
 .form-row .placeholder { color: #b8bcc4; }
+
+/* 全局兜底：picker 选中/未选中的文字颜色
+   原来只写了 .form-row .picker-text，元素不在 .form-row 里时不会变色 */
+.picker-text { color: #1f2329; }
+.placeholder { color: #b8bcc4; }

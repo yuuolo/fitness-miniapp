@@ -32,7 +32,15 @@ Page({
   },
 
   onShow() {
+    this.syncTabBar()
     this.load()
+  },
+
+  // 自定义 tabBar 的高亮：真机上组件的 pageLifetimes.show 不一定触发，
+  // 这里在每个 tab 页 onShow 主动同步一次，保证底部文字颜色跟得上
+  syncTabBar() {
+    const bar = typeof this.getTabBar === 'function' ? this.getTabBar() : null
+    if (bar && typeof bar.refresh === 'function') bar.refresh()
   },
 
   onPullDownRefresh() {

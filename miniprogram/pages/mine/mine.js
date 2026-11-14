@@ -5,7 +5,15 @@ const features = require('../../utils/features')
 Page({
   data: { loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', logs: [], features: {} },
 
+  // 自定义 tabBar 的高亮：真机上组件的 pageLifetimes.show 不一定触发，
+  // 这里在每个 tab 页 onShow 主动同步一次，保证底部文字颜色跟得上
+  syncTabBar() {
+    const bar = typeof this.getTabBar === 'function' ? this.getTabBar() : null
+    if (bar && typeof bar.refresh === 'function') bar.refresh()
+  },
+
   onShow() {
+    this.syncTabBar()
     this.load()
   },
 

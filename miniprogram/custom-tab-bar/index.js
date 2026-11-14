@@ -44,6 +44,8 @@ Component({
     onTap(e) {
       const path = e.currentTarget.dataset.path
       if (!path || path === this.data.current) return
+      // 先本地高亮再切页：真机上切页有延迟，否则点了之后文字颜色要等一下才变
+      this.setData({ current: path })
       wx.switchTab({ url: path })
     }
   }
