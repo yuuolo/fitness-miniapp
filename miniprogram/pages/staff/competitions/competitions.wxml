@@ -1,0 +1,29 @@
+<view class="page">
+  <view class="between section-title">
+    <text>竞赛管理</text>
+    <button class="btn" bindtap="goCreate">发起竞赛</button>
+  </view>
+
+  <view wx:if="{{loaded && !list.length}}" class="card muted">还没有竞赛，点右上角发起一场。</view>
+
+  <view wx:for="{{list}}" wx:key="_id" class="card">
+    <view class="between" data-id="{{item._id}}" bindtap="goDetail">
+      <view class="grow">
+        <view>
+          <text class="title">{{item.title}}</text>
+          <text class="tag {{item.status === 'active' ? 'green' : (item.status === 'upcoming' ? 'orange' : '')}}">{{item.statusName}}</text>
+        </view>
+        <view class="muted mt">{{item.liftName}} · {{item.startText}} 至 {{item.endText}}</view>
+        <view class="muted">{{item.playerCount}} 人参赛{{item.prize ? ' · 奖品：' + item.prize : ''}}</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+
+    <view class="actions mt">
+      <button wx:if="{{item.status !== 'ended' && item.status !== 'cancelled'}}" class="btn" data-id="{{item._id}}" catchtap="goEntry">录入成绩</button>
+      <button wx:if="{{item.status !== 'ended' && item.status !== 'cancelled'}}" class="btn ghost" data-id="{{item._id}}" catchtap="goEdit">修改</button>
+      <button wx:if="{{item.status === 'active'}}" class="btn gray" data-id="{{item._id}}" catchtap="endIt">结束</button>
+      <button wx:if="{{item.status !== 'cancelled' && item.status !== 'ended'}}" class="btn gray" data-id="{{item._id}}" catchtap="cancelIt">取消</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,36 @@
+<view class="page">
+  <view wx:if="{{disabled}}" class="feature-off">
+    <view class="t">排行榜暂未开放</view>
+    <view class="d">门店还没开启排行榜功能。</view>
+  </view>
+
+  <block wx:else>
+    <view wx:if="{{loaded && !list.length}}" class="card">
+      <view class="muted">还没有竞赛。等教练发起挑战赛，这里就会出现。</view>
+    </view>
+
+    <view wx:for="{{list}}" wx:key="_id" class="card" data-id="{{item._id}}" bindtap="goDetail">
+      <view class="between">
+        <view class="grow">
+          <view>
+            <text class="title">{{item.title}}</text>
+            <text class="tag {{item.status === 'active' ? 'green' : (item.status === 'upcoming' ? 'orange' : '')}}">{{item.statusName}}</text>
+          </view>
+          <view class="muted mt">{{item.liftName}} · {{item.rangeText}}</view>
+        </view>
+        <text class="muted">›</text>
+      </view>
+
+      <view wx:if="{{item.prize}}" class="prize-box mt">
+        <text class="tag orange">奖品</text>
+        <text>{{item.prize}}</text>
+      </view>
+
+      <view class="between mt">
+        <text class="muted">{{item.playerCount}} 人参赛</text>
+        <text wx:if="{{item.myRank}}" class="price">我的最好名次 第 {{item.myRank}} 名</text>
+        <text wx:else class="muted">还没参加</text>
+      </view>
+    </view>
+  </block>
+</view>

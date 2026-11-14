@@ -15,7 +15,8 @@ const { runCron } = require('../lib/cron')
 const TABLES = [
   'config', 'members', 'card_types', 'member_cards', 'card_logs', 'offline_payments',
   'schedules', 'bookings', 'venues', 'venue_slots', 'entry_logs', 'points_logs',
-  'body_records', 'strength_records', 'activity_records', 'moments', 'media'
+  'body_records', 'strength_records', 'activity_records', 'moments', 'media',
+  'competitions', 'competition_entries'
 ]
 
 let passed = 0

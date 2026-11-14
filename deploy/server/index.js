@@ -9,6 +9,10 @@ const { BizError, getMember } = require('./lib/common')
 const storage = require('./lib/storage')
 const manage = require('./lib/manage')
 const features = require('./lib/features')
+const liftItems = require('./lib/lift-items')
+
+// 管理页没有微信登录态，用一个虚拟管理员身份调用需要权限的模块函数
+const ADMIN_ME = { _id: 'admin-page', openid: 'admin-page', role: 'admin', nickName: '管理页', phone: '' }
 
 const PORT = Number(process.env.PORT || 3000)
 const APPID = process.env.WX_APPID
@@ -89,9 +93,9 @@ async function ensureMember(openid) {
 // 这些导出是内部工具/纯函数，不是可调用 action
 const INTERNAL_EXPORTS = new Set([
   'LIFTS', 'bmiOf', 'oneRM', 'scoreBody', 'publicMe', 'isInitialized',
-  'markNoShows', 'remindClasses', 'remindExpiringCards'
+  'markNoShows', 'remindClasses', 'remindExpiringCards', 'statusOf'
 ])
-const MODULES = ['system', 'member', 'booking', 'entry', 'admin', 'fitness', 'moment']
+const MODULES = ['system', 'member', 'booking', 'entry', 'admin', 'fitness', 'moment', 'competition']
 const handlers = {}
 for (const name of MODULES) {
   const file = path.join(__dirname, 'lib', name + '.js')
@@ -152,8 +156,20 @@ const ACTION_FEATURE = {
   myFitness: 'fitness',
   memberFitness: 'fitness',
   bodyTrend: 'fitness',
-  // 排行榜
-  leaderboard: 'rank'
+  // 排行榜与竞赛
+  leaderboard: 'rank',
+  listLiftItems: 'rank',
+  saveLiftItem: 'rank',
+  setLiftItemEnabled: 'rank',
+  deleteLiftItem: 'rank',
+  competitionList: 'rank',
+  competitionDetail: 'rank',
+  saveCompetition: 'rank',
+  setCompetitionStatus: 'rank',
+  recordCompetitionEntry: 'rank',
+  competitionEntries: 'rank',
+  deleteCompetitionEntry: 'rank',
+  myCompetitions: 'rank'
 }
 
 const app = express()
@@ -293,6 +309,50 @@ app.put('/api/admin/features', requireAdmin, async (req, res) => {
   }
 })
 
+// ---------- 排行榜项目（管理页） ----------
+app.get('/api/admin/lifts', requireAdmin, async (req, res) => {
+  try {
+    const items = await liftItems.list({ includeDisabled: true })
+    res.json({
+      code: 0,
+      data: {
+        items,
+        metrics: Object.entries(liftItems.METRICS).map(([key, v]) => ({ key, name: v.name, unit: v.unit }))
+      }
+    })
+  } catch (e) {
+    console.error('admin lifts read failed', e)
+    res.json({ code: 500, msg: '读取排行榜项目失败' })
+  }
+})
+
+app.post('/api/admin/lifts', requireAdmin, async (req, res) => {
+  try {
+    const item = await liftItems.save({ me: ADMIN_ME, data: req.body || {} })
+    res.json({ code: 0, data: item })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
+app.post('/api/admin/lifts/toggle', requireAdmin, async (req, res) => {
+  try {
+    const item = await liftItems.setEnabled({ me: ADMIN_ME, data: req.body || {} })
+    res.json({ code: 0, data: item })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
+app.post('/api/admin/lifts/delete', requireAdmin, async (req, res) => {
+  try {
+    const result = await liftItems.remove({ me: ADMIN_ME, data: req.body || {} })
+    res.json({ code: 0, data: result })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
 app.post('/api', async (req, res) => {
   const { action, data, code } = req.body || {}
   try {
@@ -349,7 +409,13 @@ app.use((err, req, res, next) => {
 })
 
 ensureSchema()
-  .then(() => {
+  .then(async () => {
+    // 排行榜默认项目：表为空时写入五项（幂等，老库不动）
+    try {
+      await require('./lib/lift-items').ensureSeed()
+    } catch (e) {
+      console.error('lift items seed failed', e)
+    }
     app.listen(PORT, () => console.log('listening on ' + PORT))
     startCron()
   })

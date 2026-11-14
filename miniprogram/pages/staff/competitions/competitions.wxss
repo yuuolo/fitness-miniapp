@@ -1,0 +1,5 @@
+﻿.actions {
+  display: flex;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}

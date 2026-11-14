@@ -10,6 +10,8 @@
     "pages/bookings/bookings",
     "pages/fitness/fitness",
     "pages/rank/rank",
+    "pages/competitions/competitions",
+    "pages/competitions/detail/detail",
     "pages/moments/moments",
     "pages/moments/post/post",
     "pages/moments/detail/detail",
@@ -21,7 +23,10 @@
     "pages/staff/member/member",
     "pages/staff/card-types/card-types",
     "pages/staff/venues/venues",
-    "pages/staff/fitness/fitness"
+    "pages/staff/fitness/fitness",
+    "pages/staff/competitions/competitions",
+    "pages/staff/competition-edit/competition-edit",
+    "pages/staff/competition-entry/competition-entry"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",

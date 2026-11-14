@@ -276,6 +276,65 @@ create table if not exists media (
   created_at bigint not null default 0
 );
 
+-- ---------- 排行榜项目（可增删） ----------
+create table if not exists lift_items (
+  key        text primary key,
+  name       text not null,
+  metric     text not null default 'oneRM',   -- oneRM 估算1RM / maxWeight 最大重量 / reps 次数 / volume 单组容量
+  unit       text not null default 'kg',
+  enabled    boolean not null default true,
+  sort       int  not null default 0,
+  created_at bigint not null default 0
+);
+
+-- 默认五项；已有同名 key 时不动，方便老库升级
+insert into lift_items (key, name, metric, unit, enabled, sort, created_at) values
+  ('bench',    '卧推',   'oneRM', 'kg', true, 10, 0),
+  ('squat',    '深蹲',   'oneRM', 'kg', true, 20, 0),
+  ('deadlift', '硬拉',   'oneRM', 'kg', true, 30, 0),
+  ('ohp',      '站姿肩推', 'oneRM', 'kg', true, 40, 0),
+  ('pullup',   '引体向上', 'reps',  '次', true, 50, 0)
+on conflict (key) do nothing;
+
+-- ---------- 竞赛（教练/店员发起，有起止时间和奖品） ----------
+create table if not exists competitions (
+  id              text primary key,
+  title           text not null,
+  descr           text not null default '',
+  lift_key        text not null default '',
+  lift_name       text not null default '',
+  metric          text not null default 'oneRM',
+  unit            text not null default 'kg',
+  start_at        bigint not null default 0,
+  end_at          bigint not null default 0,
+  prize           text not null default '',
+  rules           text not null default '',
+  status          text not null default 'active',  -- active / ended / cancelled
+  created_by      text not null default '',
+  created_by_name text not null default '',
+  created_at      bigint not null default 0
+);
+create index if not exists idx_competitions_status on competitions (status, end_at desc);
+
+-- ---------- 竞赛成绩（每个参赛者可以有多条，取最好的一条参与排名） ----------
+create table if not exists competition_entries (
+  id             text primary key,
+  competition_id text not null references competitions(id) on delete cascade,
+  openid         text not null,
+  member_name    text not null default '',
+  value          numeric(8,2) not null default 0,
+  weight         numeric(6,2) not null default 0,
+  reps           int  not null default 0,
+  note           text not null default '',
+  video_url      text not null default '',
+  video_thumb    text not null default '',
+  operator       text not null default '',
+  recorded_at    bigint not null default 0,
+  created_at     bigint not null default 0
+);
+create index if not exists idx_entries_comp on competition_entries (competition_id, value desc);
+create index if not exists idx_entries_member on competition_entries (competition_id, openid);
+
 -- 早期骨架版本建的 members 表缺这些列：补列保证旧库可以平滑升级
 alter table members add column if not exists no_show        int  not null default 0;
 alter table members add column if not exists block_until    bigint not null default 0;

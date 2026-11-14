@@ -1,10 +1,26 @@
 const api = require('../../utils/api')
+const features = require('../../utils/features')
 
 Page({
-  data: { loaded: false, lifts: [], lift: 'bench', metric: 'absolute', board: null },
+  data: {
+    loaded: false,
+    disabled: false,
+    lifts: [],
+    lift: '',
+    period: 'week',
+    metric: 'absolute',
+    board: null
+  },
 
-  onLoad() {
-    this.load()
+  onShow() {
+    features.ensure().then(f => {
+      if (f.rank === false) {
+        this.setData({ disabled: true, loaded: true })
+        return
+      }
+      this.setData({ disabled: false })
+      if (!this.data.loaded) this.load()
+    })
   },
 
   onPullDownRefresh() {
@@ -12,12 +28,18 @@ Page({
   },
 
   load() {
-    const lift = this.data.lift
-    const metric = this.data.metric
-    return api.call('leaderboard', { lift, metric }).then(r => {
+    const { lift, period, metric } = this.data
+    return api.call('leaderboard', { lift, period, metric }).then(r => {
       // 连点切换时丢掉过期的返回
-      if (lift !== this.data.lift || metric !== this.data.metric) return
-      this.setData({ loaded: true, lifts: r.lifts, board: r })
+      if (lift !== this.data.lift || period !== this.data.period || metric !== this.data.metric) return
+      this.setData({
+        loaded: true,
+        lifts: r.lifts,
+        lift: r.lift,
+        period: r.period,
+        metric: r.metric,
+        board: r
+      })
     }, () => this.setData({ loaded: true }))
   },
 
@@ -27,9 +49,19 @@ Page({
     this.load()
   },
 
+  pickPeriod(e) {
+    if (this.data.period === e.currentTarget.dataset.period) return
+    this.setData({ period: e.currentTarget.dataset.period })
+    this.load()
+  },
+
   pickMetric(e) {
     if (this.data.metric === e.currentTarget.dataset.metric) return
     this.setData({ metric: e.currentTarget.dataset.metric })
     this.load()
+  },
+
+  goCompetitions() {
+    wx.navigateTo({ url: '/pages/competitions/competitions' })
   }
 })

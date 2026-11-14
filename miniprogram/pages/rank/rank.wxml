@@ -1,42 +1,65 @@
 <view class="page">
-  <view class="date-bar">
-    <view wx:for="{{lifts}}" wx:key="key" class="d {{lift === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="pickLift">
-      <view class="w">{{item.name}}</view>
-    </view>
+  <view wx:if="{{disabled}}" class="feature-off">
+    <view class="t">排行榜暂未开放</view>
+    <view class="d">门店还没开启排行榜功能。</view>
   </view>
 
-  <view class="card">
-    <view class="between">
-      <text>排序方式</text>
-      <view class="row">
-        <text class="tag {{metric === 'absolute' ? 'orange' : ''}}" data-metric="absolute" bindtap="pickMetric">绝对重量</text>
-        <text class="tag {{metric === 'relative' ? 'orange' : ''}}" data-metric="relative" bindtap="pickMetric">相对体重</text>
+  <block wx:else>
+    <!-- 项目切换 -->
+    <scroll-view scroll-x class="tabs">
+      <view wx:for="{{lifts}}" wx:key="key" class="tab {{lift === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="pickLift">{{item.name}}</view>
+    </scroll-view>
+
+    <!-- 周期切换 -->
+    <view class="date-bar">
+      <view wx:for="{{board.periods}}" wx:key="key" class="d {{period === item.key ? 'on' : ''}}" data-period="{{item.key}}" bindtap="pickPeriod">
+        <view class="w">{{item.name}}</view>
       </view>
     </view>
-    <view wx:if="{{metric === 'relative'}}" class="muted mt">按「1RM ÷ 体重」排名。只有公开身体数据的会员才会出现在这个榜。</view>
-    <view wx:else class="muted mt">按单次最大重量（1RM）排名。</view>
-  </view>
 
-  <view class="card">
-    <view wx:if="{{loaded && board && !board.top.length}}" class="empty">还没有人上榜</view>
-    <view wx:for="{{board.top}}" wx:key="openid" class="list-item">
-      <text class="muted" style="width: 70rpx">{{item.rank}}</text>
-      <view class="grow">
-        <view>{{item.name}} <text wx:if="{{item.isMe}}" class="tag orange">我</text></view>
-        <view wx:if="{{item.weight}}" class="muted">{{item.weight}} kg · 身体评分 {{item.bodyScore}}</view>
-      </view>
-      <text class="price">{{metric === 'relative' ? item.relative : item.oneRM}}{{metric === 'relative' ? ' 倍' : ' kg'}}</text>
-    </view>
-  </view>
-
-  <view wx:if="{{board}}" class="card">
-    <block wx:if="{{board.me}}">
+    <view class="card">
       <view class="between">
-        <text class="title">我的排名 第 {{board.me.rank}} 名</text>
-        <text class="tag green">{{board.liftName}}</text>
+        <text>排序方式</text>
+        <view class="row">
+          <text class="tag {{metric === 'absolute' ? 'orange' : ''}}" data-metric="absolute" bindtap="pickMetric">绝对成绩</text>
+          <text class="tag {{metric === 'relative' ? 'orange' : ''}}" data-metric="relative" bindtap="pickMetric">相对体重</text>
+        </view>
       </view>
-      <view class="muted mt">{{board.total}} 人上榜 · {{metric === 'relative' ? board.me.relative + ' 倍' : board.me.oneRM + ' kg'}}</view>
-    </block>
-    <view wx:else class="muted">你还没有{{board.liftName}}成绩；相对体重榜还需要先公开身体数据。</view>
-  </view>
+      <view wx:if="{{metric === 'relative'}}" class="muted mt">按「成绩 ÷ 体重」排名。只有公开身体数据的会员才会出现在这个榜。</view>
+      <view wx:else class="muted mt">{{board.periodName}} · {{board.liftName}}（{{board.unit}}）</view>
+    </view>
+
+    <view class="card">
+      <view wx:if="{{loaded && board && !board.top.length}}" class="empty">{{board.periodName}}还没有人上榜</view>
+      <view wx:for="{{board.top}}" wx:key="openid" class="list-item">
+        <text class="muted" style="width: 70rpx">{{item.rank}}</text>
+        <view class="grow">
+          <view>{{item.name}} <text wx:if="{{item.isMe}}" class="tag orange">我</text></view>
+          <view wx:if="{{item.weight}}" class="muted">体重 {{item.weight}} kg · 身体评分 {{item.bodyScore}}</view>
+        </view>
+        <text class="price">{{metric === 'relative' ? item.relative + ' 倍' : item.value + ' ' + board.unit}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{board}}" class="card">
+      <block wx:if="{{board.me}}">
+        <view class="between">
+          <text class="title">我的排名 第 {{board.me.rank}} 名</text>
+          <text class="tag green">{{board.periodName}}</text>
+        </view>
+        <view class="muted mt">{{board.total}} 人上榜 · {{metric === 'relative' ? board.me.relative + ' 倍' : board.me.value + ' ' + board.unit}}</view>
+      </block>
+      <view wx:else class="muted">你还没有{{board.liftName}}成绩；相对体重榜还需要先公开身体数据。</view>
+    </view>
+
+    <view class="card" bindtap="goCompetitions">
+      <view class="between">
+        <view>
+          <view class="title">正在进行的竞赛</view>
+          <view class="muted">门店发起的挑战赛，有奖品和实时排名</view>
+        </view>
+        <text class="muted">去看看 ›</text>
+      </view>
+    </view>
+  </block>
 </view>

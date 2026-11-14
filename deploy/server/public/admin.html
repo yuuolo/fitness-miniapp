@@ -255,6 +255,31 @@
     </div>
 
     <div class="card">
+      <h2>排行榜项目 <span class="tag">比什么、怎么比</span></h2>
+      <div class="hint" style="margin-bottom:10px">
+        排行榜按这里的项目排名。可以新增项目（如「农夫行走」），也可以把用不上的隐藏——
+        隐藏后排行榜不再显示，历史成绩仍保留；只有从未产生成绩的项目才能彻底删除。
+      </div>
+      <div id="liftList"></div>
+
+      <div class="row" style="margin-top:14px">
+        <div class="field">
+          <label>新项目名称</label>
+          <input id="liftName" placeholder="例如：农夫行走" maxlength="12">
+        </div>
+        <div class="field">
+          <label>怎么比</label>
+          <select id="liftMetric"></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="liftAddBtn">新增项目</button>
+        <button id="liftReloadBtn">刷新</button>
+      </div>
+      <div class="msg" id="liftMsg"></div>
+    </div>
+
+    <div class="card">
       <h2>说明</h2>
       <div class="kv"><span class="k">管理密码</span><span class="v">服务器 /opt/gym/.env 的 ADMIN_PASSWORD</span></div>
       <div class="kv"><span class="k">配置加密</span><span class="v">云存储密钥用 AES-256-GCM 加密后存库（密钥来自 CONFIG_SECRET）</span></div>
@@ -501,6 +526,56 @@
     return api('/api/admin/features').then(renderFeatures)
   }
 
+  // ---------- 排行榜项目 ----------
+  var liftData = { items: [], metrics: [] }
+
+  function renderLifts(data) {
+    liftData = data
+    $('liftMetric').innerHTML = (data.metrics || []).map(function (m) {
+      return '<option value="' + esc(m.key) + '">' + esc(m.name) + '（' + esc(m.unit) + '）</option>'
+    }).join('')
+
+    $('liftList').innerHTML = (data.items || []).map(function (it) {
+      return '<div class="feat">' +
+        '<div class="grow">' +
+        '<div class="name">' + esc(it.name) +
+        '<span class="badge ' + (it.enabled ? 'on' : 'off') + '">' + (it.enabled ? '启用' : '已隐藏') + '</span></div>' +
+        '<div class="d">' + esc(it.metricName) + ' · 单位 ' + esc(it.unit) + ' · 排序 ' + esc(it.sort) + '</div>' +
+        '</div>' +
+        '<div class="row" style="gap:8px">' +
+        '<button data-toggle="' + esc(it.key) + '">' + (it.enabled ? '隐藏' : '启用') + '</button>' +
+        '<button data-del="' + esc(it.key) + '">删除</button>' +
+        '</div>' +
+        '</div>'
+    }).join('')
+
+    Array.prototype.forEach.call($('liftList').querySelectorAll('[data-toggle]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var key = this.getAttribute('data-toggle')
+        var item = liftData.items.find(function (x) { return x.key === key })
+        api('/api/admin/lifts/toggle', { method: 'POST', body: { key: key, enabled: !item.enabled } })
+          .then(function () { return loadLifts() })
+          .then(function () { showMsg($('liftMsg'), '已更新', 'ok') })
+          .catch(function (e) { showMsg($('liftMsg'), e.message, 'err') })
+      })
+    })
+
+    Array.prototype.forEach.call($('liftList').querySelectorAll('[data-del]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var key = this.getAttribute('data-del')
+        if (!confirm('确定删除这个项目？只有从未产生成绩的项目才能删。')) return
+        api('/api/admin/lifts/delete', { method: 'POST', body: { key: key } })
+          .then(function () { return loadLifts() })
+          .then(function () { showMsg($('liftMsg'), '已删除', 'ok') })
+          .catch(function (e) { showMsg($('liftMsg'), e.message, 'err') })
+      })
+    })
+  }
+
+  function loadLifts() {
+    return api('/api/admin/lifts').then(renderLifts)
+  }
+
   // ---------- 事件 ----------
   $('driver').addEventListener('change', function () {
     applyDriverSections(this.value)
@@ -522,7 +597,7 @@
         setToken(data.data.token)
         $('password').value = ''
         showMain()
-        return Promise.all([loadStatus(), loadStorage(), loadFeatures()])
+        return Promise.all([loadStatus(), loadStorage(), loadFeatures(), loadLifts()])
       })
       .catch(function (e) { showMsg($('loginMsg'), e.message, 'err') })
       .finally(function () { btn.disabled = false })
@@ -575,6 +650,27 @@
     loadFeatures().catch(function (e) { showMsg($('featMsg'), e.message, 'err') })
   })
 
+  $('liftAddBtn').addEventListener('click', function () {
+    var btn = this
+    var name = $('liftName').value.trim()
+    if (!name) return showMsg($('liftMsg'), '请填写项目名称', 'err')
+    btn.disabled = true
+    hideMsg($('liftMsg'))
+    api('/api/admin/lifts', { method: 'POST', body: { name: name, metric: $('liftMetric').value } })
+      .then(function () {
+        $('liftName').value = ''
+        return loadLifts()
+      })
+      .then(function () { showMsg($('liftMsg'), '已新增', 'ok') })
+      .catch(function (e) { showMsg($('liftMsg'), e.message, 'err') })
+      .finally(function () { btn.disabled = false })
+  })
+
+  $('liftReloadBtn').addEventListener('click', function () {
+    hideMsg($('liftMsg'))
+    loadLifts().catch(function (e) { showMsg($('liftMsg'), e.message, 'err') })
+  })
+
   $('logoutBtn').addEventListener('click', function () {
     setToken('')
     showLogin()
@@ -584,7 +680,7 @@
   // ---------- 启动 ----------
   if (token()) {
     showMain()
-    Promise.all([loadStatus(), loadStorage(), loadFeatures()]).catch(function (e) {
+    Promise.all([loadStatus(), loadStorage(), loadFeatures(), loadLifts()]).catch(function (e) {
       if (e.message !== '未登录') showMsg($('storageMsg'), e.message, 'err')
     })
   } else {

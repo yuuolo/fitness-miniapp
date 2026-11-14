@@ -1,0 +1,57 @@
+<view class="page">
+  <view wx:if="{{competition}}" class="card">
+    <view class="title">{{competition.title}}</view>
+    <view class="muted mt">{{competition.liftName}} · {{competition.statusName}} · 单位 {{unit}}</view>
+  </view>
+
+  <view class="card">
+    <view class="muted">选择会员</view>
+    <view class="row mt">
+      <input class="grow" value="{{keyword}}" bindinput="onKeyword" placeholder="手机号后 4 位或昵称" />
+      <button class="btn" bindtap="search">搜索</button>
+    </view>
+
+    <view wx:if="{{picked}}" class="picked mt">
+      已选择：<text class="title">{{picked.nickName || picked.phone}}</text>
+      <text wx:if="{{picked.phone}}" class="muted">（{{picked.phone}}）</text>
+    </view>
+
+    <view wx:if="{{members.length && !picked}}" class="mt">
+      <view wx:for="{{members}}" wx:key="_id" class="list-item" data-openid="{{item._id}}" bindtap="pick">
+        <view class="grow">
+          <view>{{item.nickName || '未命名会员'}}</view>
+          <view class="muted">{{item.phone || '未填手机号'}} · {{item.role}}</view>
+        </view>
+        <text class="muted">选择</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="form-row">
+      <view class="label">重量(kg)</view>
+      <input type="digit" value="{{weight}}" data-key="weight" bindinput="onInput" placeholder="例如 100" />
+    </view>
+    <view class="form-row">
+      <view class="label">次数</view>
+      <input type="number" value="{{reps}}" data-key="reps" bindinput="onInput" placeholder="例如 5" />
+    </view>
+    <view class="form-row">
+      <view class="label">备注</view>
+      <input value="{{note}}" data-key="note" bindinput="onInput" maxlength="100" placeholder="选填" />
+    </view>
+    <view wx:if="{{previewValue}}" class="muted mt">按当前项目算法，本次成绩约 {{previewValue}} {{unit}}（以后端计算为准）</view>
+  </view>
+
+  <view class="card">
+    <view class="muted">视频凭证（可选）</view>
+    <view wx:if="{{videoUrl}}" class="mt">
+      <button class="btn ghost" bindtap="playVideo">▶ 预览</button>
+      <button class="btn gray" style="margin-left: 12rpx" bindtap="clearVideo">删除</button>
+    </view>
+    <button wx:else class="btn mt" bindtap="chooseVideo" disabled="{{uploading}}">{{uploading ? '上传中…' : '拍摄或选择视频'}}</button>
+    <view class="muted mt">单个视频不超过 12MB；会员在竞赛详情里可以点开看。</view>
+  </view>
+
+  <button class="btn block" bindtap="save" disabled="{{saving || uploading}}">保存成绩</button>
+</view>

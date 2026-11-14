@@ -1,0 +1,6 @@
+﻿.picked {
+  background: #f7f8fa;
+  border-radius: 14rpx;
+  padding: 16rpx 20rpx;
+  font-size: 28rpx;
+}

@@ -1,0 +1,79 @@
+<view class="page">
+  <view wx:if="{{disabled}}" class="feature-off">
+    <view class="t">排行榜暂未开放</view>
+  </view>
+
+  <block wx:else>
+    <view wx:if="{{error}}" class="card muted">{{error}}</view>
+
+    <block wx:if="{{competition}}">
+      <view class="card">
+        <view class="between">
+          <text class="title">{{competition.title}}</text>
+          <text class="tag {{competition.status === 'active' ? 'green' : (competition.status === 'upcoming' ? 'orange' : '')}}">{{competition.statusName}}</text>
+        </view>
+        <view class="muted mt">{{competition.liftName}} · {{competition.startText}} 至 {{competition.endText}}</view>
+        <view wx:if="{{competition.desc}}" class="mt">{{competition.desc}}</view>
+
+        <view wx:if="{{competition.prize}}" class="prize-box mt">
+          <text class="tag orange">奖品</text>
+          <text>{{competition.prize}}</text>
+        </view>
+
+        <view wx:if="{{competition.rules}}" class="mt">
+          <view class="muted">规则</view>
+          <view>{{competition.rules}}</view>
+        </view>
+
+        <view class="muted mt">发起人：{{competition.createdByName}} · {{competition.playerCount}} 人参赛</view>
+
+        <view wx:if="{{competition.canManage}}" class="actions mt">
+          <button class="btn" bindtap="goEntry">录入成绩</button>
+          <button class="btn ghost" bindtap="goManage">修改竞赛</button>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="between section-title">
+          <text>实时排名</text>
+          <text class="muted">取每人最好成绩</text>
+        </view>
+        <view wx:if="{{!ranking.length}}" class="empty">还没有人参赛</view>
+        <view wx:for="{{ranking}}" wx:key="openid" class="list-item">
+          <text class="muted" style="width: 70rpx">{{item.rank}}</text>
+          <view class="grow">
+            <view>
+              <text>{{item.memberName}}</text>
+              <text wx:if="{{item.openid === myRank.openid}}" class="tag orange">我</text>
+            </view>
+            <view class="muted">{{item.recordedText}}{{item.note ? ' · ' + item.note : ''}}</view>
+          </view>
+          <view class="value-col">
+            <text class="price">{{item.valueText}}</text>
+            <text wx:if="{{item.hasVideo}}" class="video-link" data-url="{{item.videoUrl}}" catchtap="playVideo">▶ 看视频</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="section-title">我的成绩</view>
+        <view wx:if="{{myRank}}" class="between">
+          <text>最好名次 第 {{myRank.rank}} 名</text>
+          <text class="price">{{myRank.valueText}}</text>
+        </view>
+        <view wx:else class="muted">你还没有成绩，可以找教练帮你录一次。</view>
+
+        <block wx:if="{{myEntries.length}}">
+          <view class="muted mt">全部记录</view>
+          <view wx:for="{{myEntries}}" wx:key="_id" class="list-item">
+            <view class="grow">
+              <view>{{item.valueText}}</view>
+              <view class="muted">{{item.recordedText}}{{item.note ? ' · ' + item.note : ''}}</view>
+            </view>
+            <text wx:if="{{item.hasVideo}}" class="video-link" data-url="{{item.videoUrl}}" catchtap="playVideo">▶ 看视频</text>
+          </view>
+        </block>
+      </view>
+    </block>
+  </block>
+</view>

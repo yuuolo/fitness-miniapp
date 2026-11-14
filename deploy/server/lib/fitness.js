@@ -4,8 +4,10 @@ const {
   DAY, cnDate, dayStart, fail, need, newId, memberLabel, memberRow,
   bodyRow, strengthRow, activityRow, ROLE_LEVEL
 } = require('./common')
+const liftItems = require('./lift-items')
 
-// 可排行的力量动作
+// 可排行的力量动作改为从 lift_items 表读取（管理员可以增删），
+// 这里保留一份默认值仅供内部/测试引用。
 const LIFTS = {
   bench: '卧推',
   squat: '深蹲',
@@ -296,13 +298,18 @@ async function bodyTrend({ me, data }) {
 
 async function saveStrength({ me, data }) {
   need(me, 'staff')
-  if (!LIFTS[data.lift]) fail('未知动作')
-  const lift = data.lift
-  const weight = num(data.weight, 1, 500, '重量(kg)')
-  const reps = int(data.reps, 1, 100, '次数')
+  const items = await liftItems.enabledMap()
+  const item = items[data.lift] || (data.lift ? null : items.bench) || Object.values(items)[0]
+  if (!item) fail('未知动作')
+  if (data.lift && !items[data.lift]) fail('这个项目已下架，请刷新后重试')
+  const lift = item.key
+  const weight = num(data.weight, 0, 500, '重量(kg)')
+  const reps = int(data.reps, 1, 200, '次数')
+  if (item.metric !== 'reps' && weight <= 0) fail('请填写重量')
   const now = Date.now()
   const date = data.date || cnDate(now)
-  const rm = oneRM(weight, reps)
+  // one_rm 列存的是「按该项目算法算出的成绩」，排行榜直接按它排名
+  const score = liftItems.computeValue(item.metric, weight, reps)
 
   return tx(async client => {
     const target = memberRow((await client.query(
@@ -313,13 +320,13 @@ async function saveStrength({ me, data }) {
     await client.query(
       `insert into strength_records (id, openid, lift, weight, reps, one_rm, date, operator, created_at)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [newId(), target._id, lift, weight, reps, rm, date, me._id, now]
+      [newId(), target._id, lift, weight, reps, score, date, me._id, now]
     )
 
     const bestLift = Object.assign({}, target.bestLift || {})
     let improved = false
-    if (!bestLift[lift] || rm > bestLift[lift].oneRM) {
-      bestLift[lift] = { oneRM: rm, weight, reps, date, at: now }
+    if (!bestLift[lift] || score > bestLift[lift].oneRM) {
+      bestLift[lift] = { oneRM: score, weight, reps, date, at: now }
       improved = true
     }
     const sbdTotal = sbdOf(bestLift)
@@ -330,9 +337,19 @@ async function saveStrength({ me, data }) {
     )
 
     return {
-      memberName: memberLabel(target), lift, liftName: LIFTS[lift],
-      weight, reps, oneRM: rm, improved, best: bestLift[lift],
-      sbdTotal, bodyScore: latestBody.score === undefined ? null : latestBody.score
+      memberName: memberLabel(target),
+      lift,
+      liftName: item.name,
+      unit: item.unit,
+      liftMetric: item.metric,
+      weight,
+      reps,
+      oneRM: score,
+      value: score,
+      improved,
+      best: bestLift[lift],
+      sbdTotal,
+      bodyScore: latestBody.score === undefined ? null : latestBody.score
     }
   })
 }
@@ -377,6 +394,7 @@ async function saveActivity({ me, data }) {
 
 async function fitnessOf(member, isSelf) {
   const openid = member._id
+  const items = await liftItems.list()
   const body = (await query(
     'select * from body_records where openid = $1 order by created_at desc limit 20', [openid]
   )).rows.map(bodyRow)
@@ -402,7 +420,7 @@ async function fitnessOf(member, isSelf) {
     sbdTotal: member.sbdTotal || 0,
     strengthHistory: strength,
     activity,
-    lifts: Object.keys(LIFTS).map(k => ({ key: k, name: LIFTS[k] })),
+    lifts: items.map(i => ({ key: i.key, name: i.name, unit: i.unit, metric: i.metric })),
     actionTypes: Object.keys(ACTIONS).map(k => ({ key: k, name: ACTIONS[k] }))
   }
 }
@@ -422,28 +440,69 @@ async function memberFitness({ me, data }) {
 
 // ---------- 排行榜 ----------
 
-// metric: absolute 比绝对重量；relative 比「1RM ÷ 体重」
+// 周期：all 总榜 / week 本周（周一起）/ month 本月，均按北京时间切分
+function periodRange(period, now) {
+  const todayStart = dayStart(cnDate(now))
+  if (period === 'week') {
+    // 用北京时间判断星期几，周一作为一周起点
+    const dow = new Date(todayStart + 8 * 3600e3).getUTCDay() // 0 = 周日
+    const offset = (dow + 6) % 7
+    return { from: todayStart - offset * DAY, label: '本周' }
+  }
+  if (period === 'month') {
+    const d = new Date(todayStart + 8 * 3600e3)
+    const from = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) - 8 * 3600e3
+    return { from, label: '本月' }
+  }
+  return { from: 0, label: '总榜' }
+}
+
+// metric: absolute 比绝对成绩；relative 比「成绩 ÷ 体重」
 // 相对体重榜只收自愿公开体重的会员，否则体重会被反推出来
 async function leaderboard({ me, data }) {
   need(me, 'member')
-  const lift = LIFTS[data.lift] ? data.lift : 'bench'
+  const items = await liftItems.list()
+  if (!items.length) fail('还没有配置排行榜项目')
+
+  const wanted = String(data.lift || '')
+  const item = items.find(i => i.key === wanted) || items[0]
   const metric = data.metric === 'relative' ? 'relative' : 'absolute'
-  const all = (await query(
-    "select * from members where best_lift <> '{}'::jsonb limit 500"
-  )).rows.map(memberRow)
+  const period = ['week', 'month'].includes(data.period) ? data.period : 'all'
+  const range = periodRange(period, Date.now())
+
+  // 每个会员在周期内取最好的一条成绩（one_rm 存的就是该项目算出的数值）
+  const best = (await query(
+    `select openid, max(one_rm)::numeric as best
+       from strength_records
+      where lift = $1 and created_at >= $2
+      group by openid
+      order by best desc
+      limit 500`,
+    [item.key, range.from]
+  )).rows
+
+  const openids = best.map(r => r.openid)
+  const members = openids.length
+    ? (await query('select * from members where openid = any($1::text[])', [openids])).rows.map(memberRow)
+    : []
+  const byId = {}
+  members.forEach(m => { byId[m._id] = m })
 
   const rows = []
-  for (const m of all) {
-    const best = m.bestLift && m.bestLift[lift]
-    if (!best || !best.oneRM) continue
+  for (const r of best) {
+    const m = byId[r.openid]
+    if (!m) continue
+    const value = Number(r.best) || 0
+    if (!value) continue
     const weight = m.latestBody && m.latestBody.weight
     const isPublic = !!m.isBodyPublic
-    const rel = weight > 0 ? round(best.oneRM / weight, 2) : null
+    const rel = weight > 0 ? round(value / weight, 2) : null
     if (metric === 'relative' && (!isPublic || !rel)) continue
     rows.push({
       openid: m._id,
       name: memberLabel(m),
-      oneRM: best.oneRM,
+      oneRM: value,               // 兼容旧字段名，实际是该项目算出的数值
+      value,
       weight: isPublic ? weight : null,
       relative: isPublic ? rel : null,
       bodyScore: isPublic && m.latestBody ? m.latestBody.score : null,
@@ -451,19 +510,54 @@ async function leaderboard({ me, data }) {
     })
   }
 
-  const key = metric === 'relative' ? 'relative' : 'oneRM'
-  rows.sort((a, b) => b[key] - a[key])
+  const sortKey = metric === 'relative' ? 'relative' : 'value'
+  rows.sort((a, b) => b[sortKey] - a[sortKey])
   rows.forEach((r, i) => { r.rank = i + 1 })
 
   return {
-    lift,
-    liftName: LIFTS[lift],
+    lift: item.key,
+    liftName: item.name,
+    unit: item.unit,
+    liftMetric: item.metric,
     metric,
+    period,
+    periodName: range.label,
+    periodFrom: range.from,
     total: rows.length,
     top: rows.slice(0, 20),
     me: rows.find(r => r.isMe) || null,
-    lifts: Object.keys(LIFTS).map(k => ({ key: k, name: LIFTS[k] }))
+    lifts: items.map(i => ({ key: i.key, name: i.name, unit: i.unit })),
+    periods: [
+      { key: 'week', name: '本周' },
+      { key: 'month', name: '本月' },
+      { key: 'all', name: '总榜' }
+    ]
   }
+}
+
+// ---------- 排行榜项目（管理员可增删） ----------
+
+async function listLiftItems({ me, data }) {
+  need(me, 'member')
+  const staff = (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.staff
+  const items = await liftItems.list({ includeDisabled: staff && !!data.includeDisabled })
+  return {
+    items,
+    metrics: Object.entries(liftItems.METRICS).map(([key, v]) => ({ key, name: v.name, unit: v.unit })),
+    canManage: me.role === 'admin'
+  }
+}
+
+async function saveLiftItem({ me, data }) {
+  return liftItems.save({ me, data })
+}
+
+async function setLiftItemEnabled({ me, data }) {
+  return liftItems.setEnabled({ me, data })
+}
+
+async function deleteLiftItem({ me, data }) {
+  return liftItems.remove({ me, data })
 }
 
 // ---------- 隐私开关 ----------
@@ -478,6 +572,7 @@ async function setBodyPublic({ me, data }) {
 module.exports = {
   saveBodyRecord, saveStrength, saveActivity,
   myFitness, memberFitness, leaderboard, setBodyPublic, bodyTrend,
+  listLiftItems, saveLiftItem, setLiftItemEnabled, deleteLiftItem,
   // 供内部/测试复用
   scoreBody, oneRM, bmiOf, LIFTS
 }

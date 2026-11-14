@@ -26,6 +26,7 @@
       <view wx:if="{{features.classes !== false || features.venues !== false}}" class="list-item" bindtap="goBookings"><text class="grow">我的预约</text><text class="muted">›</text></view>
       <view wx:if="{{features.fitness !== false}}" class="list-item" bindtap="goFitness"><text class="grow">我的身体数据</text><text class="muted">›</text></view>
       <view wx:if="{{features.rank !== false}}" class="list-item" bindtap="goRank"><text class="grow">力量排行榜</text><text class="muted">›</text></view>
+      <view wx:if="{{features.rank !== false}}" class="list-item" bindtap="goCompetitions"><text class="grow">竞赛</text><text class="muted">›</text></view>
       <view wx:if="{{isStaff}}" class="list-item" bindtap="goStaff"><text class="grow">员工工作台</text><text class="muted">›</text></view>
     </view>
 

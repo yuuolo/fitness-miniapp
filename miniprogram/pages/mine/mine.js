@@ -52,6 +52,10 @@ Page({
     wx.navigateTo({ url: '/pages/rank/rank' })
   },
 
+  goCompetitions() {
+    wx.navigateTo({ url: '/pages/competitions/competitions' })
+  },
+
   goStaff() {
     wx.navigateTo({ url: '/pages/staff/index/index' })
   },

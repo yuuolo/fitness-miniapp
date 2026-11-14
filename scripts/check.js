@@ -146,8 +146,8 @@ function check(root) {
 
   const serverActions = () => {
     const actions = new Set()
-    // 只统计真正的 action 模块；common/db/cron/notify/templates 是内部工具
-    const MODULES = ['system', 'member', 'booking', 'entry', 'admin', 'fitness', 'moment']
+    // 只统计真正的 action 模块；common/db/cron/notify/templates/lift-items 是内部工具
+    const MODULES = ['system', 'member', 'booking', 'entry', 'admin', 'fitness', 'moment', 'competition']
     const internal = new Set([
       'LIFTS', 'bmiOf', 'oneRM', 'scoreBody', 'publicMe', 'isInitialized',
       'markNoShows', 'remindClasses', 'remindExpiringCards'
