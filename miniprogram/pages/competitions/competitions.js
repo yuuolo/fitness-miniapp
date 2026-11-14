@@ -31,6 +31,6 @@ Page({
 
   goDetail(e) {
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({ url: '/pages/competitions/detail/detail?id=' + id })
+    wx.navigateTo({ url: '/pages/competition-detail/competition-detail?id=' + id })
   }
 })

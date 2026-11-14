@@ -7,7 +7,7 @@
     <view class="form-row">
       <view class="label">比赛项目</view>
       <picker mode="selector" range="{{lifts}}" range-key="name" value="{{liftIndex}}" bindchange="onLift">
-        <view class="picker-text">{{lifts[liftIndex].name || '选择项目'}}（{{lifts[liftIndex].unit || ''}}）</view>
+        <view class="picker-text">{{liftName}}</view>
       </picker>
     </view>
     <view class="form-row">

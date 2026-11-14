@@ -10,7 +10,7 @@
       <view class="card">
         <view class="between">
           <text class="title">{{competition.title}}</text>
-          <text class="tag {{competition.status === 'active' ? 'green' : (competition.status === 'upcoming' ? 'orange' : '')}}">{{competition.statusName}}</text>
+          <text class="tag">{{competition.statusName}}</text>
         </view>
         <view class="muted mt">{{competition.liftName}} · {{competition.startText}} 至 {{competition.endText}}</view>
         <view wx:if="{{competition.desc}}" class="mt">{{competition.desc}}</view>
@@ -44,7 +44,7 @@
           <view class="grow">
             <view>
               <text>{{item.memberName}}</text>
-              <text wx:if="{{item.openid === myRank.openid}}" class="tag orange">我</text>
+              <text wx:if="{{item.isMe}}" class="tag orange">我</text>
             </view>
             <view class="muted">{{item.recordedText}}{{item.note ? ' · ' + item.note : ''}}</view>
           </view>

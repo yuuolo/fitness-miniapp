@@ -11,7 +11,7 @@
     "pages/fitness/fitness",
     "pages/rank/rank",
     "pages/competitions/competitions",
-    "pages/competitions/detail/detail",
+    "pages/competition-detail/competition-detail",
     "pages/moments/moments",
     "pages/moments/post/post",
     "pages/moments/detail/detail",

@@ -129,7 +129,26 @@ function check(root) {
     if (missing.length) problems.push('wxml 引用的标识符在 JS 里没有: ' + page + ' -> ' + missing.join(', '))
   }
 
-  // ---------- 5. action 一致性 ----------
+  // ---------- 5. 页面里的相对 require 能否解析 ----------
+  // 少写一级 ../ 会让页面 JS 加载失败，页面组件注册不上，
+  // 表现为「点进去白屏」并报 Component is not found in path "wx://not-found"。
+  for (const page of app.pages) {
+    const jsPath = path.join(MP, page + '.js')
+    if (!fs.existsSync(jsPath)) continue
+    const text = read(jsPath)
+    const re = /require\(\s*'(\.[^']+)'\s*\)/g
+    let m
+    while ((m = re.exec(text)) !== null) {
+      const rel = m[1]
+      const base = path.resolve(path.dirname(jsPath), rel)
+      const candidates = [base, base + '.js', path.join(base, 'index.js')]
+      if (!candidates.some(c => fs.existsSync(c))) {
+        problems.push('require 路径解析不到: ' + page + '.js -> ' + rel)
+      }
+    }
+  }
+
+  // ---------- 6. action 一致性 ----------
   const clientActions = () => {
     const actions = new Set()
     for (const file of walk(MP, [])) {

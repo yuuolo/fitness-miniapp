@@ -18,6 +18,7 @@ Page({
     id: '',
     lifts: [],
     liftIndex: 0,
+    liftName: '选择项目',
     form: {
       title: '',
       desc: '',
@@ -46,13 +47,18 @@ Page({
   load() {
     return api.call('listLiftItems', {}, { silent: true }).then(items => {
       const lifts = (items && items.items) || []
-      this.setData({ lifts })
+      this.setData({
+        lifts,
+        liftName: lifts.length ? lifts[0].name + '（' + lifts[0].unit + '）' : '没有可用项目'
+      })
       if (!this.data.id) return
       return api.call('competitionDetail', { id: this.data.id }, { silent: true }).then(r => {
         const c = r.competition
         const idx = Math.max(lifts.findIndex(l => l.key === c.liftKey), 0)
+        const picked = lifts[idx]
         this.setData({
           liftIndex: idx,
+          liftName: picked ? picked.name + '（' + picked.unit + '）' : '没有可用项目',
           form: { title: c.title, desc: c.desc, prize: c.prize, rules: c.rules },
           startDate: dateOf(c.startAt),
           startTime: timeOf(c.startAt),
@@ -69,7 +75,12 @@ Page({
   },
 
   onLift(e) {
-    this.setData({ liftIndex: Number(e.detail.value) })
+    const idx = Number(e.detail.value)
+    const picked = this.data.lifts[idx]
+    this.setData({
+      liftIndex: idx,
+      liftName: picked ? picked.name + '（' + picked.unit + '）' : '选择项目'
+    })
   },
 
   onStartDate(e) { this.setData({ startDate: e.detail.value }) },

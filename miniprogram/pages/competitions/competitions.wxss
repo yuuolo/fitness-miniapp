@@ -1,4 +1,4 @@
-﻿.prize-box {
+.prize-box {
   display: flex;
   align-items: center;
   gap: 12rpx;

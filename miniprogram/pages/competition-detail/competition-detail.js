@@ -38,6 +38,8 @@ Page({
       const ranking = (r.ranking || []).map(x => Object.assign(x, {
         // 只有带视频的成绩才显示播放入口
         hasVideo: !!x.videoUrl,
+        // 「我」标记在这里算好，避免 WXML 里对可能为 null 的对象取属性
+        isMe: !!(r.myRank && x.openid === r.myRank.openid),
         valueText: x.value + ' ' + r.competition.unit
       }))
       const myEntries = (r.myEntries || []).map(x => Object.assign(x, {
