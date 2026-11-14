@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 起一个独立容器（不占生产端口、不配微信凭据、只连测试库）跑 HTTP 层端到端测试
+# 重建镜像 → 准备独立测试库 → 在容器里跑 HTTP 层测试
+# 用法：bash /tmp/run-http-tests.sh
 set -uo pipefail
 cd /opt/gym
 PW=$(sed -n 's/^POSTGRES_PASSWORD=//p' .env)

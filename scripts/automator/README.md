@@ -36,6 +36,11 @@ node interaction.js
 $env:GYM_SECRET = '<数据库 config.secret 的值>'
 $env:GYM_OPENID = '<测试会员 openid>'
 node entry-verify.js
+
+# 4. 功能开关：tab 是否按开关隐藏、页面是否显示「暂未开放」
+#    先用 deploy/scripts/toggle-features.sh 在服务器上切好开关
+$env:AUTO_FEATURES = 'all-on'                       # 或 classes-venues-cards-off
+node features-check.js
 ```
 
 `GYM_SECRET` / `GYM_OPENID` 只用于「构造一个合法的入场码去喂给前台页」，
