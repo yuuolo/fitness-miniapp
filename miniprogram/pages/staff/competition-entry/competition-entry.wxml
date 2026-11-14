@@ -47,7 +47,7 @@
     <view class="muted">视频凭证（可选）</view>
     <view wx:if="{{videoUrl}}" class="mt">
       <button class="btn ghost" bindtap="playVideo">▶ 预览</button>
-      <button class="btn gray" style="margin-left: 12rpx" bindtap="clearVideo">删除</button>
+      <button class="btn gray ml-sm" bindtap="clearVideo">删除</button>
     </view>
     <button wx:else class="btn mt" bindtap="chooseVideo" disabled="{{uploading}}">{{uploading ? '上传中…' : '拍摄或选择视频'}}</button>
     <view class="muted mt">单个视频不超过 12MB；会员在竞赛详情里可以点开看。</view>

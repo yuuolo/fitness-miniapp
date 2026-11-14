@@ -204,3 +204,64 @@ page {
   color: var(--ink);
   line-height: 1.2;
 }
+
+/* ---------- 工具类 ---------- */
+/* 排名序号列：固定宽度，避免用内联 style */
+.rank-no {
+  width: 70rpx;
+  flex: none;
+  text-align: center;
+  font-weight: 600;
+  color: var(--muted);
+}
+.rank-no.top { color: var(--brand); }
+
+/* 左右留白（picker 并排时用） */
+.ml { margin-left: 20rpx; }
+.ml-sm { margin-left: 12rpx; }
+.mt-sm { margin-top: 6rpx; }
+
+/* 右侧箭头 */
+.chevron {
+  color: var(--ph);
+  font-size: 32rpx;
+  margin-left: 12rpx;
+  flex: none;
+}
+
+/* 多行输入 */
+.textarea {
+  width: 100%;
+  min-height: 160rpx;
+  margin-top: 12rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+/* 卡片内的提示行（加载中 / 没有更多） */
+.list-hint {
+  text-align: center;
+  padding: 24rpx 0;
+  color: var(--muted);
+  font-size: 24rpx;
+}
+
+/* 页面级小提示块 */
+.hint-block {
+  margin: 0 8rpx 16rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+/* 块内居中的说明文字 */
+.note-center {
+  margin-top: 16rpx;
+  text-align: center;
+  color: var(--muted);
+  font-size: 24rpx;
+}
+
+/* 紧凑版空状态（卡片内部用） */
+.empty.sm { padding: 24rpx 0; }

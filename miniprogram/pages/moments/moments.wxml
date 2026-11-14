@@ -40,7 +40,7 @@
       </view>
     </view>
 
-    <view wx:if="{{loading}}" class="muted" style="text-align: center; padding: 24rpx">加载中…</view>
-    <view wx:elif="{{loaded && !hasMore && list.length}}" class="muted" style="text-align: center; padding: 24rpx">没有更多了</view>
+    <view wx:if="{{loading}}" class="list-hint">加载中…</view>
+    <view wx:elif="{{loaded && !hasMore && list.length}}" class="list-hint">没有更多了</view>
   </block>
 </view>

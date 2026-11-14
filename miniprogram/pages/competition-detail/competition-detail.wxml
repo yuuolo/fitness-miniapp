@@ -40,7 +40,7 @@
         </view>
         <view wx:if="{{!ranking.length}}" class="empty">还没有人参赛</view>
         <view wx:for="{{ranking}}" wx:key="openid" class="list-item">
-          <text class="muted" style="width: 70rpx">{{item.rank}}</text>
+          <text class="rank-no">{{item.rank}}</text>
           <view class="grow">
             <view>
               <text>{{item.memberName}}</text>

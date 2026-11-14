@@ -1,0 +1,42 @@
+/* 排行榜页：项目切换标签 + 排名行
+   之前这个页面没有 wxss，卧推/深蹲/硬拉等切换项完全没有样式 */
+
+.tabs {
+  display: flex;
+  white-space: nowrap;
+  margin-bottom: 20rpx;
+}
+.tab {
+  display: inline-block;
+  padding: 12rpx 28rpx;
+  margin-right: 12rpx;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--sub);
+  font-size: 26rpx;
+  box-shadow: var(--shadow);
+}
+.tab.on {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4rpx 14rpx rgba(233, 96, 58, 0.25);
+}
+
+/* 前三名给一点区分度 */
+.rank-no {
+  width: 70rpx;
+  flex: none;
+  text-align: center;
+  font-weight: 600;
+  color: var(--muted);
+}
+.rank-no.top {
+  color: var(--brand);
+}
+
+.board-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 40rpx 0;
+}
