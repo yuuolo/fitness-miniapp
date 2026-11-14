@@ -1,4 +1,9 @@
 <view class="page">
+  <view wx:if="{{first}}" class="card welcome">
+    <view class="title">欢迎光临</view>
+    <view class="muted mt">花 3 秒完善资料，约课、入场、看排行都用得上。</view>
+  </view>
+
   <view class="card">
     <view class="avatar-row">
       <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" disabled="{{uploading}}">
@@ -7,14 +12,14 @@
       </button>
       <view class="grow">
         <view>头像</view>
-        <view class="muted">点一下可以用微信头像</view>
+        <view class="muted">点一下直接带出微信头像，选完自动保存</view>
       </view>
     </view>
 
     <view class="form-row">
       <text class="label">昵称</text>
       <input type="nickname" value="{{nickName}}" bindinput="onNick" bindblur="onNick"
-        placeholder="点击可用微信昵称" maxlength="20" />
+        placeholder="点这里可用微信昵称" maxlength="20" />
     </view>
 
     <view class="form-row">
@@ -23,10 +28,19 @@
         placeholder="11 位手机号" />
     </view>
 
+    <button wx:if="{{!gotPhone}}" class="btn ghost block mt" open-type="getPhoneNumber" bindgetphonenumber="onGetPhone">
+      一键获取微信手机号
+    </button>
+    <view wx:if="{{gotPhone}}" class="muted mt">手机号已绑定：{{phone}}</view>
+
     <button class="btn block mt" bindtap="save" disabled="{{saving || uploading}}">保存</button>
+    <button wx:if="{{first}}" class="btn gray block mt" bindtap="later">稍后再说</button>
   </view>
 
   <view class="card">
-    <view class="muted">昵称和头像由微信提供，必须你点一下授权，小程序无法自动获取；手机号需要自己填写，约课时前台要用它联系你。</view>
+    <view class="muted">
+      头像和昵称必须由你点一下授权，微信不允许小程序静默获取（2022 年起的规定）。
+      手机号可以一键获取，但需要小程序完成微信认证；没有认证就手动填，一样能用。
+    </view>
   </view>
 </view>

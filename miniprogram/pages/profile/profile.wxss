@@ -28,3 +28,8 @@
   font-size: 48rpx;
   color: #b8bcc4;
 }
+
+.welcome {
+  background: linear-gradient(135deg, #fff5f0, #fff);
+  border: 1px solid #ffe0d3;
+}

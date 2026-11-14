@@ -31,7 +31,20 @@ Page({
       })
       if (!res.features || res.features.rank !== false) this.loadRank()
       else this.setData({ rankTop: [], rankMe: null, rankTotal: 0 })
+
+      // 资料没填完时，每次启动小程序自动引导一次去完善（只引导一次，避免反复弹）
+      if (res.initialized && res.me && !res.me.profileReady) this.promptProfile()
     })
+  },
+
+  promptProfile() {
+    const app = getApp()
+    if (!app.globalData) app.globalData = {}
+    if (app.globalData.profilePrompted) return
+    app.globalData.profilePrompted = true
+    setTimeout(() => {
+      wx.navigateTo({ url: '/pages/profile/profile?first=1' })
+    }, 500)
   },
 
   // 首页展示卧推绝对重量榜前十

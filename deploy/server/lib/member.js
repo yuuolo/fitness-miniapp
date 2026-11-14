@@ -1,4 +1,5 @@
 // 会员：首页、资料、我的卡、积分
+const https = require('https')
 const { query } = require('./db')
 const {
   DAY, cnDate, dayStart, fail, need, cardUsable,
@@ -6,6 +7,46 @@ const {
 } = require('./common')
 const { isInitialized } = require('./system')
 const features = require('./features')
+const { accessToken } = require('./notify')
+
+function publicMe(me) {
+  if (!me) return null
+  return {
+    nickName: me.nickName,
+    phone: me.phone,
+    role: me.role,
+    points: me.points || 0,
+    blockUntil: me.blockUntil || 0,
+    avatar: me.avatar || '',
+    // 前端用来提示「资料还没填完」
+    profileReady: !!(me.nickName && me.phone)
+  }
+}
+
+// 调微信接口（POST JSON）
+function postJson(url, body) {
+  return new Promise((resolve, reject) => {
+    const payload = Buffer.from(JSON.stringify(body || {}))
+    const req = https.request(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'content-length': payload.length }
+    }, res => {
+      let raw = ''
+      res.on('data', c => { raw += c })
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(raw))
+        } catch (e) {
+          reject(new Error('微信接口返回异常'))
+        }
+      })
+    })
+    req.setTimeout(10000, () => req.destroy(new Error('微信接口超时')))
+    req.on('error', reject)
+    req.write(payload)
+    req.end()
+  })
+}
 
 function publicMe(me) {
   if (!me) return null
@@ -101,4 +142,33 @@ async function myPoints({ openid, me }) {
   return { points: me.points || 0, logs }
 }
 
-module.exports = { home, updateProfile, myCards, myPoints, publicMe }
+// 一键获取手机号：小程序端 <button open-type="getPhoneNumber"> 拿到 code，
+// 服务端用它换真实号码（需要小程序已认证，个人主体用不了，会返回错误码）。
+async function bindPhone({ openid, me, data }) {
+  need(me, 'member')
+  const code = String(data.code || '').trim()
+  if (!code) fail('缺少手机号授权 code')
+
+  const at = await accessToken()
+  const res = await postJson(
+    'https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=' + encodeURIComponent(at),
+    { code }
+  )
+  if (res.errcode) {
+    // 常见：-6010 未认证主体 / 40029 code 无效 / 40001 token 失效
+    const tips = {
+      '-6010': '小程序未完成认证，无法一键获取手机号',
+      40029: '授权已过期，请重试',
+      40001: '服务端凭证失效，请稍后重试'
+    }
+    fail(tips[res.errcode] || ('获取手机号失败：' + (res.errmsg || res.errcode)))
+  }
+  const info = res.phone_info || {}
+  const phone = String(info.purePhoneNumber || info.phoneNumber || '').replace(/^\+?86/, '')
+  if (!/^1\d{10}$/.test(phone)) fail('获取到的手机号格式不正确')
+
+  await query('update members set phone = $2 where openid = $1', [openid, phone])
+  return publicMe(Object.assign({}, me, { phone }))
+}
+
+module.exports = { home, updateProfile, bindPhone, myCards, myPoints, publicMe }
