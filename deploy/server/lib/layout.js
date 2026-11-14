@@ -24,7 +24,7 @@ const BLOCK_TYPES = [
   { type: 'link', name: '自定义快捷入口', desc: '指向任意页面的一张卡片', scope: 'all' }
 ]
 
-// 可以做成快捷入口的页面
+// 可以做成快捷入口的页面（必须真实存在于 miniprogram/app.json）
 const PAGE_CATALOG = [
   { path: '/pages/entry/entry', name: '入场码', tab: false },
   { path: '/pages/cards/cards', name: '我的会员卡', tab: false },
@@ -38,10 +38,8 @@ const PAGE_CATALOG = [
   { path: '/pages/profile/profile', name: '个人资料', tab: false },
   { path: '/pages/mine/mine', name: '我的', tab: true },
   { path: '/pages/staff/index/index', name: '员工工作台', tab: false },
-  { path: '/pages/staff/schedule/schedule', name: '排课与签到', tab: false },
-  { path: '/pages/staff/members/members', name: '会员与办卡', tab: false },
-  { path: '/pages/staff/competitions/competitions', name: '竞赛管理', tab: false },
-  { path: '/pages/staff/venue-bookings/venue-bookings', name: '娱乐预约核销', tab: false }
+  { path: '/pages/staff/members/members', name: '会员资料与体测', tab: false },
+  { path: '/pages/staff/competitions/competitions', name: '竞赛管理', tab: false }
 ]
 
 const PAGE_PATHS = new Set(PAGE_CATALOG.map(p => p.path))
@@ -80,9 +78,9 @@ function defaults() {
   ]
   return {
     member: social,
-    coach: [block('hero'), block('stats'), block('quick'), block('competitions'), block('rank'), block('schedule-link', {
-      type: 'link', title: '排课与签到', desc: '今天要带的课', icon: '📋',
-      page: '/pages/staff/schedule/schedule', enabled: true
+    coach: [block('hero'), block('stats'), block('quick'), block('competitions'), block('rank'), block('members-link', {
+      type: 'link', title: '会员资料与体测', desc: '查会员、录体测', icon: '📋',
+      page: '/pages/staff/members/members', enabled: true
     })],
     staff: [block('stats'), block('hero'), block('entry'), block('quick'), block('bookings'), block('competitions')],
     admin: [block('stats'), block('hero'), block('entry'), block('quick'), block('competitions'), block('rank'), block('cards')]

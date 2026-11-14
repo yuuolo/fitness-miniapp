@@ -32,10 +32,25 @@ async function main() {
 
   const meta = layout.describe()
   assert.ok(meta.blocks.length >= 9)
-  assert.ok(meta.pages.length >= 15)
+  assert.ok(meta.pages.length >= 12, '可选页面至少 12 个，实际 ' + meta.pages.length)
   assert.strictEqual(meta.roles.length, 4)
   assert.ok(meta.defaults.member)
   ok('describe() 返回模块清单、页面清单、角色与默认值')
+
+  // 快捷入口只能指向真实存在的页面。容器镜像里没有 miniprogram 目录，
+  // 找得到 app.json 就对照检查，找不到就跳过（本地跑 node scripts/check.js 也会查这个）。
+  const fs = require('fs')
+  const path = require('path')
+  const appJsonPath = path.join(__dirname, '../../../miniprogram/app.json')
+  if (fs.existsSync(appJsonPath)) {
+    const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'))
+    const appPages = new Set(appJson.pages.map(p => '/' + p))
+    const dead = meta.pages.filter(p => !appPages.has(p.path))
+    assert.deepStrictEqual(dead.map(d => d.path), [], '快捷入口不能指向已删除的页面')
+    ok('布局里的快捷入口页面全部真实存在（无死链）')
+  } else {
+    console.log('  - 跳过 app.json 对照（容器内没有 miniprogram 目录）')
+  }
 
   // ---------- 2. 归一化 ----------
   const clean = layout.normalize({

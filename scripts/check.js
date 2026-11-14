@@ -148,7 +148,22 @@ function check(root) {
     }
   }
 
-  // ---------- 6. action 一致性 ----------
+  // ---------- 7. 首页布局里的快捷入口页面必须真实存在 ----------
+  // 删页面时最容易漏掉这里：布局里还留着指向已删页面的快捷入口，点了就白屏。
+  const layoutSrc = path.join(SERVER_LIB, 'layout.js')
+  if (fs.existsSync(layoutSrc)) {
+    const text = read(layoutSrc)
+    const cat = text.match(/const PAGE_CATALOG = \[([\s\S]*?)\n\]/)
+    if (cat) {
+      const paths = [...cat[1].matchAll(/path:\s*'([^']+)'/g)].map(m => m[1])
+      const appPages = new Set(app.pages.map(p => '/' + p))
+      for (const p of paths) {
+        if (!appPages.has(p)) problems.push('首页布局的快捷入口指向不存在的页面: ' + p)
+      }
+    }
+  }
+
+  // ---------- 8. action 一致性 ----------
   const clientActions = () => {
     const actions = new Set()
     for (const file of walk(MP, [])) {

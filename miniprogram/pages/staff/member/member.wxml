@@ -33,7 +33,7 @@
       <input type="digit" value="{{profileForm.height}}" data-key="height" bindinput="onProfileInput" placeholder="选填，如 175" />
     </view>
     <button class="btn block mt" bindtap="saveProfile">保存资料</button>
-    <view class="muted mt">手机号填了会员才能约课；这些信息会员自己也能在「我的」里改。</view>
+    <view class="muted mt">手机号填了会员才能记录联系信息；这些信息会员自己也能在「我的」里改。</view>
   </view>
 
   <view class="card">
@@ -46,57 +46,17 @@
     </view>
   </view>
 
-  <block wx:if="{{manage}}">
-    <view class="between section-title">
-      <text>会员卡</text>
-      <button class="btn" bindtap="toggleOpen">{{opening ? '收起' : '办卡'}}</button>
-    </view>
-
-    <view wx:if="{{opening}}" class="card">
-      <view class="form-row">
-        <text class="label">卡种</text>
-        <picker range="{{types}}" range-key="label" value="{{form.typeIndex}}" data-field="typeIndex" bindchange="onPick">
-          <view class="{{form.typeIndex >= 0 ? 'picker-text' : 'placeholder'}}">{{form.typeIndex >= 0 ? types[form.typeIndex].label : '请选择'}}</view>
-        </picker>
+  <view class="section-title">会员卡</view>
+  <view class="card">
+    <view wx:if="{{!cards.length}}" class="muted">还没有会员卡</view>
+    <view wx:for="{{cards}}" wx:key="_id" class="list-item">
+      <view class="grow">
+        <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
+        <view class="muted">{{item.summary}}</view>
       </view>
-      <view class="form-row"><text class="label">实收（元）</text><input type="digit" value="{{form.amount}}" data-field="amount" bindinput="onInput" placeholder="可按实际优惠修改" /></view>
-      <view class="form-row">
-        <text class="label">收款方式</text>
-        <picker range="{{payMethods}}" range-key="label" value="{{form.payIndex}}" data-field="payIndex" bindchange="onPick">
-          <view class="picker-text">{{payMethods[form.payIndex].label}}</view>
-        </picker>
-      </view>
-      <view class="form-row"><text class="label">备注</text><input value="{{form.remark}}" data-field="remark" bindinput="onInput" placeholder="选填，如活动价" /></view>
-      <button class="btn block mt" bindtap="submitCard">确认办卡</button>
+      <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
     </view>
-
-    <view class="card">
-      <view wx:if="{{!cards.length}}" class="muted">还没有会员卡</view>
-      <view wx:for="{{cards}}" wx:key="_id" class="list-item" data-index="{{index}}" bindtap="cardActions">
-        <view class="grow">
-          <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
-          <view class="muted">{{item.summary}}</view>
-        </view>
-        <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
-      </view>
-      <view wx:if="{{cards.length}}" class="muted mt">点击卡片可调整次数、有效期、停卡或作废</view>
-    </view>
-  </block>
-
-  <block wx:else>
-    <view class="section-title">会员卡</view>
-    <view class="card">
-      <view wx:if="{{!cards.length}}" class="muted">还没有会员卡</view>
-      <view wx:for="{{cards}}" wx:key="_id" class="list-item">
-        <view class="grow">
-          <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
-          <view class="muted">{{item.summary}}</view>
-        </view>
-        <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
-      </view>
-      <view class="muted mt">办卡和调整次数请找前台</view>
-    </view>
-  </block>
+  </view>
 
   <view class="section-title">最近预约</view>
   <view class="card">
