@@ -27,8 +27,8 @@
         <view class="sub">今天也要动起来 · 积分 {{me ? me.points : 0}}</view>
       </view>
 
-      <!-- 入场码 -->
-      <view wx:elif="{{item.type === 'entry'}}" class="entry-card" bindtap="openEntry">
+      <!-- 入场码（关掉会员卡功能时不显示） -->
+      <view wx:elif="{{item.type === 'entry' && features.cards !== false}}" class="entry-card" bindtap="openEntry">
         <view class="entry-btn">
           <view class="entry-text">出示入场码</view>
           <view class="entry-sub">前台扫码入场</view>
