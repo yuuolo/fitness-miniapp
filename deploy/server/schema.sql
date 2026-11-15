@@ -24,149 +24,14 @@ create table if not exists members (
   created_at     bigint not null default 0
 );
 
-create table if not exists card_types (
-  id         text primary key,
-  name       text not null,
-  kind       text not null,
-  times      int  not null default 0,
-  days       int  not null default 0,
-  price      int  not null default 0,
-  descr      text not null default '',
-  on_sale    boolean not null default true,
-  created_at bigint not null default 0
-);
 
-create table if not exists member_cards (
-  id                 text primary key,
-  openid             text not null references members(openid) on delete cascade,
-  type_id            text not null default '',
-  name               text not null default '',
-  kind               text not null default 'times',
-  remain_times       int  not null default 0,
-  total_times        int  not null default 0,
-  pending            int  not null default 0,
-  start_at           bigint not null default 0,
-  expire_at          bigint not null default 0,
-  status             text not null default 'active',
-  paused_at          bigint not null default 0,
-  expire_reminded_at bigint not null default 0,
-  operator           text not null default '',
-  created_at         bigint not null default 0
-);
-create index if not exists idx_cards_openid on member_cards (openid, created_at desc);
 
-create table if not exists card_logs (
-  id         text primary key,
-  card_id    text not null default '',
-  openid     text not null default '',
-  change     int  not null default 0,
-  reason     text not null default '',
-  operator   text not null default '',
-  created_at bigint not null default 0
-);
-create index if not exists idx_card_logs_card on card_logs (card_id, created_at desc);
 
-create table if not exists offline_payments (
-  id              text primary key,
-  openid          text not null default '',
-  member_name     text not null default '',
-  card_id         text not null default '',
-  type_name       text not null default '',
-  list_price      int  not null default 0,
-  amount          int  not null default 0,
-  pay_method      text not null default '',
-  pay_method_name text not null default '',
-  remark          text not null default '',
-  operator        text not null default '',
-  operator_name   text not null default '',
-  date            text not null,
-  created_at      bigint not null default 0
-);
-create index if not exists idx_payments_date on offline_payments (date, created_at desc);
 
-create table if not exists schedules (
-  id          text primary key,
-  course_name text not null default '',
-  kind        text not null default 'group',
-  coach_id    text not null default '',
-  coach_name  text not null default '',
-  start_at    bigint not null default 0,
-  duration    int  not null default 60,
-  capacity    int  not null default 1,
-  booked      int  not null default 0,
-  room        text not null default '',
-  status      text not null default 'active',
-  created_at  bigint not null default 0
-);
-create index if not exists idx_schedules_start on schedules (start_at);
 
-create table if not exists bookings (
-  id            text primary key,
-  type          text not null,
-  openid        text not null,
-  member_name   text not null default '',
-  member_phone  text not null default '',
-  schedule_id   text not null default '',
-  kind          text not null default '',
-  title         text not null default '',
-  coach_id      text not null default '',
-  coach_name    text not null default '',
-  room          text not null default '',
-  venue_id      text not null default '',
-  slot_id       text not null default '',
-  date          text not null default '',
-  hour          int  not null default 0,
-  start_at      bigint not null default 0,
-  end_at        bigint not null default 0,
-  price         int  not null default 0,
-  card_id       text not null default '',
-  card_name     text not null default '',
-  status        text not null default 'booked',
-  reminded_at   bigint not null default 0,
-  checked_at    bigint not null default 0,
-  operator      text not null default '',
-  cancelled_at  bigint not null default 0,
-  cancelled_by  text not null default '',
-  used_at       bigint not null default 0,
-  created_at    bigint not null default 0
-);
-create index if not exists idx_bookings_openid on bookings (openid, start_at desc);
-create index if not exists idx_bookings_schedule on bookings (schedule_id, status);
-create index if not exists idx_bookings_venue on bookings (venue_id, date);
 
-create table if not exists venues (
-  id         text primary key,
-  name       text not null,
-  descr      text not null default '',
-  open_hour  int  not null default 0,
-  close_hour int  not null default 24,
-  capacity   int  not null default 1,
-  price      int  not null default 0,
-  on_sale    boolean not null default true,
-  created_at bigint not null default 0
-);
 
-create table if not exists venue_slots (
-  id       text primary key,
-  venue_id text not null,
-  date     text not null,
-  hour     int  not null,
-  count    int  not null default 0
-);
 
-create table if not exists entry_logs (
-  id         text primary key,
-  openid     text not null default '',
-  date       text not null,
-  result     text not null default 'ok',
-  reason     text not null default '',
-  card_id    text not null default '',
-  card_name  text not null default '',
-  operator   text not null default '',
-  created_at bigint not null default 0
-);
-create index if not exists idx_entry_logs_openid on entry_logs (openid, created_at desc);
-create index if not exists idx_entry_logs_date on entry_logs (date, result);
 
 
 create table if not exists body_records (

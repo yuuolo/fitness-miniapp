@@ -32,18 +32,18 @@ async function main() {
   ok('未配置时全部功能默认开启（' + features.KEYS.length + ' 个）')
 
   // ---------- 2. 关闭一个 ----------
-  const afterOff = await features.set({ classes: false }, 'test')
-  assert.strictEqual(afterOff.classes, false)
-  assert.strictEqual(afterOff.cards, true, '其他开关不受影响')
+  const afterOff = await features.set({ moments: false }, 'test')
+  assert.strictEqual(afterOff.moments, false)
+  assert.strictEqual(afterOff.fitness, true, '其他开关不受影响')
   ok('关闭「团课」后其他开关保持不变')
 
-  await expectThrow(() => features.assertEnabled('classes'), '团课与私教预约', '关闭后 assertEnabled 抛出带功能名的业务错误')
-  await features.assertEnabled('cards')
+  await expectThrow(() => features.assertEnabled('moments'), '健身友圈', '关闭后 assertEnabled 抛出带功能名的业务错误')
+  await features.assertEnabled('fitness')
   ok('未关闭的功能 assertEnabled 正常通过')
 
   // ---------- 3. 落库 + 缓存失效 ----------
   const row = (await query("select value from config where key = 'features'")).rows[0].value
-  assert.strictEqual(row.classes, false, '关闭状态应写入 config 表')
+  assert.strictEqual(row.moments, false, '关闭状态应写入 config 表')
   assert.ok(row.updatedAt > 0)
   assert.strictEqual(row.updatedBy, 'test')
   ok('开关状态落库并记录操作人与时间')
@@ -51,16 +51,16 @@ async function main() {
   // ---------- 4. 描述接口 ----------
   const desc = await features.describe()
   assert.strictEqual(desc.features.length, features.KEYS.length)
-  const cls = desc.features.find(f => f.key === 'classes')
+  const cls = desc.features.find(f => f.key === 'moments')
   assert.strictEqual(cls.enabled, false)
   assert.ok(cls.name && cls.desc && cls.covers, '每个开关都应带名称、说明、覆盖范围')
-  assert.strictEqual(desc.state.classes, false)
+  assert.strictEqual(desc.state.moments, false)
   assert.strictEqual(desc.updatedBy, 'test')
   ok('描述接口返回名称/说明/覆盖范围与当前状态')
 
   // ---------- 5. 非法输入 ----------
   await expectThrow(() => features.set({ nope: false }, 'test'), '未知的功能开关', '未知 key 被拒绝')
-  await expectThrow(() => features.set({ cards: 'false' }, 'test'), 'true 或 false', '非布尔值被拒绝')
+  await expectThrow(() => features.set({ fitness: 'false' }, 'test'), 'true 或 false', '非布尔值被拒绝')
   ok('非法开关输入被拒绝')
 
   // ---------- 6. 全部关闭再全部打开 ----------
@@ -81,12 +81,12 @@ async function main() {
   // ---------- 7. 脏数据容错 ----------
   await query(
     "insert into config (key, value) values ('features', $1) on conflict (key) do update set value = excluded.value",
-    [JSON.stringify({ cards: 'yes', classes: null, nope: true })]
+    [JSON.stringify({ fitness: 'yes', moments: null, nope: true })]
   )
   await query("delete from config where key = 'features'") // 触发缓存失效
   const dirty = await features.get()
-  assert.strictEqual(dirty.cards, true, '非布尔值应回退为默认 true')
-  assert.strictEqual(dirty.classes, true)
+  assert.strictEqual(dirty.fitness, true, '非布尔值应回退为默认 true')
+  assert.strictEqual(dirty.moments, true)
   assert.ok(!('nope' in dirty), '未知键不应出现在结果里')
   ok('库里被写入脏数据时回退到安全默认值')
 

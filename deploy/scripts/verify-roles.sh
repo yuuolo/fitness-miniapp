@@ -52,7 +52,6 @@ echo -n "  办卡            "; api "$COACH" openCard '{"openid":"role-test-memb
 echo
 echo "───── 管理员能力 ─────"
 echo -n "  改会员资料      "; api "$ADMIN" staffUpdateProfile '{"openid":"role-test-member","phone":"13800003333"}'
-echo -n "  扫核验入场      "; api "$ADMIN" verifyEntry '{"code":"ROLE.test.x.y"}'
 echo -n "  设角色          "; api "$ADMIN" setRole '{"openid":"role-test-member","role":"member"}'
 
 echo

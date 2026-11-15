@@ -97,7 +97,7 @@ const INTERNAL_EXPORTS = new Set([
   'LIFTS', 'bmiOf', 'oneRM', 'scoreBody', 'publicMe', 'isInitialized',
   'markNoShows', 'remindClasses', 'remindExpiringCards', 'statusOf'
 ])
-const MODULES = ['system', 'member', 'booking', 'entry', 'admin', 'fitness', 'moment', 'competition']
+const MODULES = ['system', 'member', 'admin', 'fitness', 'moment', 'competition']
 const handlers = {}
 for (const name of MODULES) {
   const file = path.join(__dirname, 'lib', name + '.js')
@@ -117,31 +117,8 @@ console.log('actions (' + Object.keys(handlers).length + '):', Object.keys(handl
 // ---------- 功能开关：action → 所属模块 ----------
 // 关闭模块后，这些 action 统一返回「功能暂未开放」，防止旧链接/缓存页面绕过界面隐藏。
 const ACTION_FEATURE = {
-  // 会员卡
-  myCards: 'cards',
-  openCard: 'cards',
-  adjustCard: 'cards',
-  setCardStatus: 'cards',
-  listCardTypes: 'cards',
-  saveCardType: 'cards',
-  entryCode: 'cards',
-  verifyEntry: 'cards',
   // 团课与私教
-  listSchedules: 'classes',
-  bookSchedule: 'classes',
-  cancelSchedule: 'classes',
-  staffSchedules: 'classes',
-  saveSchedule: 'classes',
-  roster: 'classes',
-  markAttendance: 'classes',
   // 娱乐项目
-  listVenues: 'venues',
-  venueSlots: 'venues',
-  bookVenue: 'venues',
-  listAllVenues: 'venues',
-  saveVenue: 'venues',
-  venueBookings: 'venues',
-  useVenueBooking: 'venues',
   // 健身友圈
   momentList: 'moments',
   postMoment: 'moments',

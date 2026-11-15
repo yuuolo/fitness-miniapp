@@ -46,30 +46,6 @@
     </view>
   </view>
 
-  <view class="section-title">会员卡</view>
-  <view class="card">
-    <view wx:if="{{!cards.length}}" class="muted">还没有会员卡</view>
-    <view wx:for="{{cards}}" wx:key="_id" class="list-item">
-      <view class="grow">
-        <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
-        <view class="muted">{{item.summary}}</view>
-      </view>
-      <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
-    </view>
-  </view>
-
-  <view class="section-title">最近预约</view>
-  <view class="card">
-    <view wx:if="{{!bookings.length}}" class="muted">没有预约记录</view>
-    <view wx:for="{{bookings}}" wx:key="_id" class="list-item">
-      <view class="grow">
-        <view>{{item.title}} <text class="tag">{{item.typeName}}</text></view>
-        <view class="muted">{{item.timeText}}</view>
-      </view>
-      <text class="muted">{{item.statusName}}</text>
-    </view>
-  </view>
-
   <view class="section-title">最近入场</view>
   <view class="card">
     <view wx:if="{{!entries.length}}" class="muted">没有入场记录</view>

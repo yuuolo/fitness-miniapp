@@ -22,11 +22,6 @@ const BLOCK_TYPES = [
 
 // 可以做成快捷入口的页面（必须真实存在于 miniprogram/app.json）
 const PAGE_CATALOG = [
-  { path: '/pages/entry/entry', name: '入场码', tab: false },
-  { path: '/pages/cards/cards', name: '我的会员卡', tab: false },
-  { path: '/pages/bookings/bookings', name: '我的预约', tab: false },
-  { path: '/pages/schedule/schedule', name: '约团课', tab: true },
-  { path: '/pages/venues/venues', name: '娱乐预约', tab: true },
   { path: '/pages/moments/moments', name: '健身友圈', tab: true },
   { path: '/pages/rank/rank', name: '力量排行榜', tab: false },
   { path: '/pages/competitions/competitions', name: '竞赛', tab: false },

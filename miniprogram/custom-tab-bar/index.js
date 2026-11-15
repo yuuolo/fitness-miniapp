@@ -3,9 +3,7 @@ const features = require('../utils/features')
 // 完整 tab 列表；feature 为 null 表示永远显示
 const ALL_TABS = [
   { pagePath: '/pages/index/index', text: '首页', feature: null },
-  { pagePath: '/pages/schedule/schedule', text: '约课', feature: 'classes' },
   { pagePath: '/pages/moments/moments', text: '友圈', feature: 'moments' },
-  { pagePath: '/pages/venues/venues', text: '娱乐', feature: 'venues' },
   { pagePath: '/pages/mine/mine', text: '我的', feature: null }
 ]
 

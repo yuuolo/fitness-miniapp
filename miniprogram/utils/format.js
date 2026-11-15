@@ -46,35 +46,12 @@ function nextDays(n) {
   return list
 }
 
-const CARD_KINDS = { period: '期限卡', times: '次卡', lesson: '私教课包' }
-const CARD_STATUS = { active: '正常', paused: '停卡中', void: '已作废' }
-const BOOKING_STATUS = { booked: '已预约', attended: '已签到', absent: '缺席', cancelled: '已取消', used: '已核销' }
 // 角色只有三级：会员 / 教练 / 管理员（原「前台」已移除）
 const ROLE_NAMES = { member: '会员', coach: '教练', admin: '管理员' }
 
-function cardSummary(card) {
-  if (card.kind === 'period') return '有效期至 ' + fullDate(card.expireAt)
-  return '剩余 ' + card.remainTimes + ' 次 · ' + fullDate(card.expireAt) + ' 到期'
-}
 
-function decorateCard(card) {
-  const expired = card.expireAt && card.expireAt <= Date.now()
-  return Object.assign(card, {
-    kindName: CARD_KINDS[card.kind] || '',
-    statusName: card.status === 'active' && expired ? '已过期' : (CARD_STATUS[card.status] || card.status),
-    summary: cardSummary(card)
-  })
-}
 
-function decorateBooking(b) {
-  return Object.assign(b, {
-    timeText: md(b.startAt) + ' ' + hhmm(b.startAt) + '-' + hhmm(b.endAt),
-    statusName: BOOKING_STATUS[b.status] || b.status,
-    typeName: b.type === 'venue' ? '娱乐' : (b.kind === 'private' ? '私教' : '团课')
-  })
-}
 
 module.exports = {
-  pad, dateStr, hhmm, md, dateTime, fullDate, yuan, nextDays,
-  CARD_KINDS, CARD_STATUS, BOOKING_STATUS, ROLE_NAMES, decorateCard, decorateBooking
+  pad, dateStr, hhmm, md, dateTime, fullDate, yuan, nextDays, ROLE_NAMES
 }

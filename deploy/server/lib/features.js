@@ -13,24 +13,6 @@ const CACHE_MS = 5000
 // 顺序即管理页展示顺序
 const FEATURES = [
   {
-    key: 'cards',
-    name: '会员卡',
-    desc: '开卡、调次、停卡、作废；入场码也依赖会员卡',
-    covers: 'myCards / openCard / adjustCard / setCardStatus / listCardTypes / entryCode 等'
-  },
-  {
-    key: 'classes',
-    name: '团课与私教预约',
-    desc: '约课、排课、上课名单、签到与缺席',
-    covers: 'listSchedules / bookSchedule / roster / markAttendance / saveSchedule 等'
-  },
-  {
-    key: 'venues',
-    name: '娱乐项目预约',
-    desc: '攀岩、蹦床、台球等按时段预约与核销',
-    covers: 'listVenues / venueSlots / bookVenue / venueBookings 等'
-  },
-  {
     key: 'moments',
     name: '健身友圈',
     desc: '发动态、点赞、分享海报',

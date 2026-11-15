@@ -1,10 +1,7 @@
 // 会员：首页、资料、我的卡
 const https = require('https')
 const { query } = require('./db')
-const {
-  DAY, cnDate, dayStart, fail, need, cardUsable,
-  cardRow, cardTypeRow, bookingRow
-} = require('./common')
+const { fail, need } = require('./common')
 const { isInitialized } = require('./system')
 const features = require('./features')
 const layout = require('./layout')
@@ -116,20 +113,6 @@ async function updateProfile({ openid, me, data }) {
   return publicMe(Object.assign({}, me, patch))
 }
 
-async function myCards({ openid, me }) {
-  need(me, 'member')
-  const now = Date.now()
-  const cards = (await query(
-    'select * from member_cards where openid = $1 order by created_at desc limit 50', [openid]
-  )).rows.map(cardRow)
-  const types = (await query(
-    'select * from card_types where on_sale = true order by price asc'
-  )).rows.map(cardTypeRow)
-  return {
-    cards: cards.map(c => Object.assign(c, { usable: cardUsable(c, now) })),
-    types: types.map(t => Object.assign({ _id: t._id }, t))
-  }
-}
 
 
 // 一键获取手机号：小程序端 <button open-type="getPhoneNumber"> 拿到 code，
@@ -161,4 +144,4 @@ async function bindPhone({ openid, me, data }) {
   return publicMe(Object.assign({}, me, { phone }))
 }
 
-module.exports = { home, updateProfile, bindPhone, myCards, publicMe }
+module.exports = { home, updateProfile, bindPhone,  publicMe }

@@ -99,28 +99,6 @@ async function main() {
   await callOk('setRole', ADMIN, { openid: COACH, role: 'coach' })
   ok('更新资料 + 设置角色')
 
-  const types = await callOk('listCardTypes', STAFF)
-  assert.ok(types.length >= 4)
-  const timesType = types.find(t => t.kind === 'times')
-  const card = await callOk('openCard', STAFF, {
-    openid: MEMBER, typeId: timesType._id, amount: timesType.price, payMethod: 'cash'
-  })
-  assert.strictEqual(card.remainTimes, timesType.times)
-  ok('管理员办卡')
-
-  const myCards = await callOk('myCards', MEMBER)
-  assert.strictEqual(myCards.cards.length, 1)
-  assert.strictEqual(myCards.cards[0].usable, true)
-  ok('会员看到自己的卡')
-
-  const qr = await callOk('entryCode', MEMBER)
-  assert.ok(qr.image.startsWith('data:image/'))
-  ok('入场码返回二维码图片')
-
-  // 入场码字符串由服务端签名（图片无法在测试里解出），这里验证「伪造码被拒」入口
-  const bad = await call('verifyEntry', STAFF, { code: 'FE1.x.1.y' })
-  assert.strictEqual(bad.code, 400)
-  ok('伪造入场码被拒绝')
 
   const rank = await callOk('leaderboard', MEMBER, { lift: 'bench', metric: 'absolute' })
   assert.strictEqual(rank.total, 0)
@@ -186,7 +164,7 @@ async function main() {
   await query(
     `insert into config (key, value) values ('features', $1)
      on conflict (key) do update set value = excluded.value`,
-    [JSON.stringify({ cards: true, classes: true, venues: true, moments: true, fitness: true, rank: false })]
+    [JSON.stringify({ moments: true, fitness: true, rank: false })]
   )
   await sleep(5600)
 
@@ -195,27 +173,16 @@ async function main() {
   assert.ok(blocked.msg.indexOf('功能暂未开放') >= 0, '提示应说明功能未开放：' + blocked.msg)
   ok('关闭「力量排行榜」后接口返回「功能暂未开放」')
 
-  const stillOk = await call('myCards', MEMBER)
+  const stillOk = await call('momentList', MEMBER, {})
   assert.strictEqual(stillOk.code, 0, '只关排行榜不应影响其他功能')
   ok('只关闭一个模块时其他模块不受影响')
 
-  // 关掉会员卡后入场码也应被拦
-  await query(
-    `insert into config (key, value) values ('features', $1)
-     on conflict (key) do update set value = excluded.value`,
-    [JSON.stringify({ cards: false, classes: true, venues: true, moments: true, fitness: true, rank: true })]
-  )
-  await sleep(5600)
-  const codeBlocked = await call('entryCode', MEMBER)
-  assert.strictEqual(codeBlocked.code, 400)
-  assert.ok(codeBlocked.msg.indexOf('会员卡') >= 0, '提示应点名模块：' + codeBlocked.msg)
-  ok('关闭「会员卡」后入场码接口同样被拦')
 
   // 恢复全部开启
   await query(
     `insert into config (key, value) values ('features', $1)
      on conflict (key) do update set value = excluded.value`,
-    [JSON.stringify({ cards: true, classes: true, venues: true, moments: true, fitness: true, rank: true })]
+    [JSON.stringify({ moments: true, fitness: true, rank: true })]
   )
   await sleep(5600)
   const restored = await call('leaderboard', MEMBER, { lift: 'bench', metric: 'absolute' })

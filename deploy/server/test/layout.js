@@ -40,7 +40,7 @@ async function main() {
 
   const meta = layout.describe()
   assert.strictEqual(meta.blocks.length, 6, '可选模块只剩 6 种')
-  assert.ok(meta.pages.length >= 12, '可选页面至少 12 个，实际 ' + meta.pages.length)
+  assert.ok(meta.pages.length >= 8, '可选页面至少 8 个，实际 ' + meta.pages.length)
   assert.strictEqual(meta.roles.length, 3, '角色只有会员/教练/管理员')
   assert.ok(meta.defaults.member)
   ok('describe() 返回模块清单、页面清单、角色与默认值')

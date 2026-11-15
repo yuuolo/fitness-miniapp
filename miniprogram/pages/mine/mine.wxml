@@ -27,9 +27,6 @@
 
     <!-- 功能菜单 -->
     <view class="card menu">
-      <view wx:if="{{features.classes !== false || features.venues !== false}}" class="menu-item" bindtap="goBookings">
-        <view class="mi mi-list"></view><text class="grow">我的预约</text><text class="chevron">›</text>
-      </view>
       <view wx:if="{{features.fitness !== false}}" class="menu-item" bindtap="goFitness">
         <view class="mi mi-chart"></view><text class="grow">我的身体数据</text><text class="chevron">›</text>
       </view>

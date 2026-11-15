@@ -4,21 +4,15 @@
 const api = require('./api')
 
 const DEFAULTS = {
-  cards: true,    // 会员卡
-  classes: true,  // 团课与私教
-  venues: true,   // 娱乐项目
-  moments: true,  // 健身友圈
-  fitness: true,  // 健身数据
-  rank: true      // 排行榜
+  moments: true,
+  fitness: true,
+  rank: true
 }
 
 const LABELS = {
-  cards: '会员卡',
-  classes: '团课与私教',
-  venues: '娱乐项目',
   moments: '健身友圈',
   fitness: '健身数据',
-  rank: '排行榜'
+  rank: '力量排行榜'
 }
 
 let state = Object.assign({}, DEFAULTS)

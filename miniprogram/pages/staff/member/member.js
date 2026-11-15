@@ -14,8 +14,6 @@ Page({
     isAdmin: false,
     manage: false,
     member: null,
-    cards: [],
-    bookings: [],
     entries: [],
     roles: ROLES,
     roleIndex: 0,
@@ -48,8 +46,6 @@ Page({
           gender: res.member.gender || '',
           height: res.member.height || ''
         },
-        cards: res.cards.map(fmt.decorateCard),
-        bookings: res.bookings.map(fmt.decorateBooking),
         entries: res.entries.map(e => Object.assign(e, { time: fmt.dateTime(e.createdAt) }))
       })
     }, err => wx.showToast({ title: err.message || '加载失败', icon: 'none' }))

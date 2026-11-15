@@ -5,9 +5,7 @@ const features = require('../../utils/features')
 // tabBar 页面必须用 switchTab，其它用 navigateTo
 const TAB_PAGES = [
   '/pages/index/index',
-  '/pages/schedule/schedule',
   '/pages/moments/moments',
-  '/pages/venues/venues',
   '/pages/mine/mine'
 ]
 
@@ -153,13 +151,7 @@ Page({
     wx.navigateTo({ url: '/pages/profile/profile' })
   },
 
-  goSchedule() {
-    wx.switchTab({ url: '/pages/schedule/schedule' })
-  },
 
-  goVenues() {
-    wx.switchTab({ url: '/pages/venues/venues' })
-  },
 
   goMoments() {
     wx.switchTab({ url: '/pages/moments/moments' })

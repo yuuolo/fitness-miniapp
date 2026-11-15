@@ -45,23 +45,7 @@ async function post(action, openid, data) {
 // 每个 action 给一组「合法形状但可能因缺数据而失败」的参数
 const SAMPLE = {
   updateProfile: { nickName: '冒烟', phone: '13700001111' },
-  openCard: { amount: 100, payMethod: 'cash' },
-  adjustCard: { delta: 0 },
-  setCardStatus: {},
   setRole: {},
-  saveCardType: {},
-  saveSchedule: {},
-  cancelSchedule: {},
-  roster: {},
-  markAttendance: {},
-  venueBookings: {},
-  useVenueBooking: {},
-  saveVenue: {},
-  bookSchedule: {},
-  cancelBooking: {},
-  venueSlots: {},
-  bookVenue: {},
-  verifyEntry: {},
   saveBodyRecord: {},
   saveStrength: {},
   saveActivity: {},
@@ -78,8 +62,6 @@ const SAMPLE = {
   setPosterQr: {},
   memberDetail: {},
   searchMembers: {},
-  staffSchedules: {},
-  listSchedules: {},
   momentList: {}
 }
 

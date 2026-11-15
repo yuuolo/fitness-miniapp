@@ -42,9 +42,6 @@ Page({
   },
 
 
-  goBookings() {
-    wx.navigateTo({ url: '/pages/bookings/bookings' })
-  },
 
   goFitness() {
     wx.navigateTo({ url: '/pages/fitness/fitness' })

@@ -18,8 +18,7 @@ const KEEP = Number(process.env.BACKUP_KEEP || 14)
 
 // 备份顺序无关紧要，但恢复时先插没有外键依赖的表更稳
 const TABLES = [
-  'members', 'card_types', 'member_cards', 'card_logs', 'offline_payments',
-  'schedules', 'bookings', 'venues', 'venue_slots', 'entry_logs',
+  'members',
   'body_records', 'strength_records', 'activity_records',
   'moments', 'competitions', 'competition_entries', 'lift_items',
   'media', 'config'

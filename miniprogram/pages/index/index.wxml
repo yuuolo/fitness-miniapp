@@ -33,8 +33,6 @@
 
       <!-- 快捷入口 -->
       <view wx:elif="{{item.type === 'quick'}}" class="quick">
-        <view wx:if="{{features.classes !== false}}" class="q" bindtap="goSchedule"><view class="q-t">约团课</view><view class="muted">瑜伽 单车 搏击</view></view>
-        <view wx:if="{{features.venues !== false}}" class="q" bindtap="goVenues"><view class="q-t">娱乐预约</view><view class="muted">攀岩 蹦床 台球</view></view>
         <view wx:if="{{features.rank !== false}}" class="q" bindtap="goRank"><view class="q-t">排行榜</view><view class="muted">看看谁最强</view></view>
         <view wx:if="{{features.moments !== false}}" class="q" bindtap="goMoments"><view class="q-t">健身友圈</view><view class="muted">晒训练日常</view></view>
       </view>

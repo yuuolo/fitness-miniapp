@@ -16,40 +16,6 @@ module.exports = {
   miniprogramState: state,
   shopAddress: SHOP_ADDRESS,
 
-  // 预约成功（团课、私教、娱乐项目）
-  bookingSuccess: {
-    id: id('BOOKING_SUCCESS'),
-    page: 'pages/bookings/bookings',
-    fields: v => ({
-      thing8: v.title,
-      character_string5: v.time,
-      thing11: v.who,
-      thing10: v.place
-    })
-  },
 
-  // 开课前 2 小时提醒
-  classReminder: {
-    id: id('CLASS_REMINDER'),
-    page: 'pages/bookings/bookings',
-    fields: v => ({
-      thing6: v.who,
-      thing1: v.tip || '请提前 10 分钟到场',
-      thing2: v.place,
-      thing3: v.address || SHOP_ADDRESS,
-      time4: v.time
-    })
-  },
 
-  // 会员卡 3 天内到期提醒
-  cardExpire: {
-    id: id('CARD_EXPIRE'),
-    page: 'pages/cards/cards',
-    fields: v => ({
-      thing1: v.who,
-      thing2: v.tip,
-      thing6: v.cardName,
-      time3: v.expireDate
-    })
-  }
 }

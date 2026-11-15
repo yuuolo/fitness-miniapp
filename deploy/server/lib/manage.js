@@ -4,7 +4,6 @@
 // 之后每个管理请求带 x-admin-token。未配置 ADMIN_PASSWORD 时整个管理入口关闭。
 const crypto = require('crypto')
 const { query, one } = require('./db')
-const { cnDate } = require('./common')
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ''
 const SECRET = process.env.CONFIG_SECRET || process.env.POSTGRES_PASSWORD || 'gym-admin-dev'
@@ -91,24 +90,22 @@ function verify(token) {
 }
 
 async function counts() {
-  const today = cnDate(Date.now())
   const row = await one(
     `select
        (select count(*)::int from members) as members,
-       (select count(*)::int from member_cards where status = 'active') as active_cards,
-       (select count(*)::int from bookings where status = 'booked') as pending_bookings,
-       (select count(*)::int from schedules where status = 'active' and start_at > $1) as upcoming_schedules,
        (select count(*)::int from moments where status = 'normal') as moments,
-       (select count(*)::int from entry_logs where date = $2 and result = 'ok') as today_entries`,
-    [Date.now(), today]
+       (select count(*)::int from competitions) as competitions,
+       (select count(*)::int from body_records) as body_records,
+       (select count(*)::int from strength_records) as strength_records,
+       (select count(*)::int from media) as media`
   )
   return {
     members: row.members,
-    activeCards: row.active_cards,
-    pendingBookings: row.pending_bookings,
-    upcomingSchedules: row.upcoming_schedules,
     moments: row.moments,
-    todayEntries: row.today_entries
+    competitions: row.competitions,
+    bodyRecords: row.body_records,
+    strengthRecords: row.strength_records,
+    media: row.media
   }
 }
 
@@ -132,9 +129,6 @@ async function status() {
       hasSecret: !!process.env.WX_SECRET,
       miniprogramState: process.env.WX_MP_STATE || 'developer',
       templates: {
-        bookingSuccess: !!process.env.WX_TPL_BOOKING_SUCCESS,
-        classReminder: !!process.env.WX_TPL_CLASS_REMINDER,
-        cardExpire: !!process.env.WX_TPL_CARD_EXPIRE
       },
       shopAddress: process.env.SHOP_ADDRESS || '',
       publicBaseUrl: process.env.PUBLIC_BASE_URL || ''

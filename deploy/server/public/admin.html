@@ -460,11 +460,11 @@
     var d = s.data
     $('bizData').innerHTML = [
       ['会员总数', d.members],
-      ['有效会员卡', d.activeCards],
-      ['待上课预约', d.pendingBookings],
-      ['未开始课程', d.upcomingSchedules],
       ['友圈动态', d.moments],
-      ['今日入场', d.todayEntries]
+      ['竞赛', d.competitions],
+      ['体测记录', d.bodyRecords],
+      ['力量成绩', d.strengthRecords],
+      ['图片文件', d.media]
     ].map(function (x) {
       return '<div class="kv"><span class="k">' + esc(x[0]) + '</span><span class="v">' + esc(x[1]) + '</span></div>'
     }).join('')
@@ -477,7 +477,6 @@
       ['小程序 AppID', c.appid || '未配置'],
       ['AppSecret', c.hasSecret ? '已配置' : '未配置'],
       ['跳转版本', c.miniprogramState],
-      ['订阅消息模板', [c.templates.bookingSuccess && '预约成功', c.templates.classReminder && '课前提醒', c.templates.cardExpire && '到期提醒'].filter(Boolean).join('、') || '未配置'],
       ['场地地址', c.shopAddress || '—'],
       ['上传地址前缀', c.publicBaseUrl || '—'],
       ['最近定时任务', cronText]

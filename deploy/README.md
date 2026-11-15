@@ -307,6 +307,21 @@ ssh gym 'sudo systemctl disable --now gym-backup.timer'
 
 如果以后要做「仅本人可见」，需要改成签名 URL 方案，小程序侧也要跟着改。
 
+## 已彻底删除的三条功能线
+
+**会员卡 / 团课与私教预约 / 娱乐项目预约** 三个功能已整条线删除（不是隐藏）：
+
+- 服务端：`booking.js` / `entry.js` 两个模块删除，执行 22 个 action 与相关辅助函数
+- 数据库：9 张表删除（card_types / member_cards / card_logs / offline_payments /
+  schedules / bookings / venues / venue_slots / entry_logs）
+- 小程序：5 个页面删除（cards / schedule / venues / bookings / entry），
+  tabBar 从 5 个减到 3 个（首页 / 友圈 / 我的）
+- 定时任务：记缺席、课前提醒、卡到期提醒三个任务删除，只剩每日备份
+- 管理页：功能开关从 6 个减到 3 个
+
+现在系统只剩三块业务：**身体数据（含报告识别）/ 力量排行榜与竞赛 / 健身友圈**。
+
+
 ## 体测报告识别
 
 教练在「会员详情 → 身体数据与力量成绩 → 从体测报告识别」里，**选一张报告图就能自动填表**。
