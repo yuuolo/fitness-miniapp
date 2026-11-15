@@ -32,9 +32,15 @@ Page({
         blockedText: me.blockUntil > Date.now() ? '因缺席次数过多，' + fmt.fullDate(me.blockUntil) + ' 前暂停预约' : ''
       })
       if (res.initialized) {
-        api.call('myPoints', {}, { silent: true }).then(p => {
-          this.setData({ logs: p.logs.map(l => Object.assign(l, { time: fmt.dateTime(l.createdAt) })) })
-        })
+        // 积分功能关掉时不再请求积分记录
+        const feat = res.features || {}
+        if (feat.points !== false) {
+          api.call('myPoints', {}, { silent: true }).then(p => {
+            this.setData({ logs: p.logs.map(l => Object.assign(l, { time: fmt.dateTime(l.createdAt) })) })
+          }, () => {})
+        } else {
+          this.setData({ logs: [] })
+        }
       }
     }, err => this.setData({ loaded: true, initialized: false, me: null, logs: [] }))
   },

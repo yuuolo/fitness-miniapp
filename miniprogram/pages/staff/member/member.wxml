@@ -1,7 +1,7 @@
 <view class="page" wx:if="{{member}}">
   <view class="card">
     <view class="title">{{member.nickName || '未设置昵称'}}</view>
-    <view class="muted">{{member.phone || '未填手机号'}} · {{member.since}} 加入 · 积分 {{member.points || 0}}</view>
+    <view class="muted">{{member.phone || '未填手机号'}} · {{member.since}} 加入</view>
     <view wx:if="{{member.height}}" class="muted">身高 {{member.height}} cm</view>
     <view class="form-row" wx:if="{{isAdmin}}">
       <text class="label">角色</text>

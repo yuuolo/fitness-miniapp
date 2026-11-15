@@ -47,26 +47,28 @@
       </view>
     </view>
 
-    <!-- 积分 -->
-    <view class="card points-card">
-      <view class="between">
-        <view>
-          <view class="muted">我的积分</view>
-          <view class="points-n">{{me.points || 0}}</view>
+    <!-- 积分（可在管理页关掉） -->
+    <block wx:if="{{features.points !== false}}">
+      <view class="card points-card">
+        <view class="between">
+          <view>
+            <view class="muted">我的积分</view>
+            <view class="points-n">{{me.points || 0}}</view>
+          </view>
+          <text class="muted">每天首次到店 +10，上课签到 +5</text>
         </view>
-        <text class="muted">每天首次到店 +10，上课签到 +5</text>
       </view>
-    </view>
 
-    <view class="card">
-      <view wx:if="{{!logs.length}}" class="empty sm">还没有积分记录</view>
-      <view wx:for="{{logs}}" wx:key="_id" class="list-item">
-        <view class="grow">
-          <view>{{item.source}}</view>
-          <view class="muted">{{item.time}}</view>
+      <view class="card">
+        <view wx:if="{{!logs.length}}" class="empty sm">还没有积分记录</view>
+        <view wx:for="{{logs}}" wx:key="_id" class="list-item">
+          <view class="grow">
+            <view>{{item.source}}</view>
+            <view class="muted">{{item.time}}</view>
+          </view>
+          <text class="price">{{item.change > 0 ? '+' : ''}}{{item.change}}</text>
         </view>
-        <text class="price">{{item.change > 0 ? '+' : ''}}{{item.change}}</text>
       </view>
-    </view>
+    </block>
   </block>
 </view>

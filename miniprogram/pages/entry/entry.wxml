@@ -10,7 +10,7 @@
       <image wx:if="{{image}}" class="qr" src="{{image}}" mode="aspectFit" />
       <view wx:else class="qr placeholder"></view>
       <view class="muted">请向前台出示，{{countdown}} 秒后自动刷新</view>
-      <view class="muted">截图无效，每天首次入场 +10 积分</view>
+      <view class="muted">截图无效{{pointsOn ? '，每天首次入场 +10 积分' : ''}}</view>
     </block>
   </view>
 </view>

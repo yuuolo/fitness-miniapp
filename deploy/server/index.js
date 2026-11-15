@@ -170,7 +170,9 @@ const ACTION_FEATURE = {
   recordCompetitionEntry: 'rank',
   competitionEntries: 'rank',
   deleteCompetitionEntry: 'rank',
-  myCompetitions: 'rank'
+  myCompetitions: 'rank',
+  // 积分
+  myPoints: 'points'
 }
 
 const app = express()

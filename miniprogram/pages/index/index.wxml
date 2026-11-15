@@ -21,10 +21,13 @@
     <!-- 按管理员配置的布局顺序渲染 -->
     <block wx:for="{{layout}}" wx:key="id">
 
-      <!-- 欢迎与积分 -->
+      <!-- 欢迎（积分可在管理页关掉） -->
       <view wx:if="{{item.type === 'hero'}}" class="hero">
         <view class="hello">你好，{{me && me.nickName ? me.nickName : '欢迎光临'}}</view>
-        <view class="sub">今天也要动起来 · 积分 {{me ? me.points : 0}}</view>
+        <view class="sub">
+          <text>今天也要动起来</text>
+          <text wx:if="{{features.points !== false}}"> · 积分 {{me ? me.points : 0}}</text>
+        </view>
       </view>
 
       <!-- 入场码（关掉会员卡功能时不显示） -->

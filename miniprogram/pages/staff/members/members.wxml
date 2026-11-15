@@ -10,7 +10,7 @@
     <view wx:for="{{list}}" wx:key="_id" class="list-item" data-id="{{item._id}}" bindtap="open">
       <view class="grow">
         <view>{{item.nickName || '未设置昵称'}} <text wx:if="{{item.role !== 'member'}}" class="tag orange">{{item.roleName}}</text></view>
-        <view class="muted">{{item.phone || '未填手机号'}} · {{item.since}} 加入 · 积分 {{item.points || 0}}</view>
+        <view class="muted">{{item.phone || '未填手机号'}} · {{item.since}} 加入</view>
       </view>
       <text class="muted">›</text>
     </view>

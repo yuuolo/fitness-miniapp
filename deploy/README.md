@@ -286,6 +286,7 @@ ssh gym 'sudo systemctl disable --now gym-backup.timer'
 | 健身友圈 | 隐藏「友圈」tab；友圈接口全部拦截 |
 | 健身数据 | 隐藏「我的身体数据」入口；相关接口拦截 |
 | 力量排行榜 | 隐藏首页榜单与排行入口；排行榜接口拦截 |
+| 积分 | 隐藏首页积分、我的积分卡片与记录、员工端会员积分；只关展示，加分逻辑照常 |
 
 工作方式：
 
@@ -385,12 +386,17 @@ ssh gym 'sudo systemctl disable --now gym-backup.timer'
 | 健身友圈 | 开启 | 正常 |
 | 健身数据 | 开启 | 正常 |
 | 力量排行榜 | 开启 | 正常 |
+| 积分 | 关闭 | 首页欢迎语、我的积分卡片与积分记录、员工端会员列表/详情里的积分全部隐藏 |
 
 会员端最终只剩三个 tab：**首页 / 友圈 / 我的**。
 
+积分的加分逻辑（入场 +10、签到 +5）仍在后台正常记录，关掉的只是展示；
+以后打开开关，历史积分会照常显示。
+
 想恢复：管理页「功能开关」把对应开关打开即可，然后重新启用上面的管理功能。
 命令行改法：`bash deploy/scripts/toggle-features.sh all-on`（全部开启）、
-`classes-venues-cards-off`（当前配置）、`core-only`（只留友圈和我的）。
+`classes-venues-cards-off`（当前配置）、`core-only`（只留友圈和我的）；
+积分单独用 `bash deploy/scripts/toggle-points.sh on|off|show`。
 
 ## 界面规范
 
