@@ -44,5 +44,12 @@
       </view>
       <text class="muted">›</text>
     </view>
+    <view class="list-item" bindtap="goPublicProfile">
+      <view class="grow">
+        <view>查看公开资料</view>
+        <view class="muted">只读页面，会员都能看到，还会和我的数据做对比</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
   </view>
 </view>

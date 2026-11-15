@@ -85,6 +85,12 @@ Page({
 
   // ---------- 身体数据 ----------
 
+  // 看 TA 的公开资料页（只读，含和我的身体数据 PK）
+  goPublicProfile() {
+    if (!this.id) return
+    wx.navigateTo({ url: '/pages/member/member?openid=' + this.id })
+  },
+
   goFitness() {
     wx.navigateTo({ url: '/pages/staff/fitness/fitness?id=' + this.id })
   },
