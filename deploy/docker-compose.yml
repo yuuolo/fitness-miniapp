@@ -35,18 +35,32 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       # 云存储 AccessKey 等敏感配置的加密密钥（换掉会导致已保存的密钥失效）
       CONFIG_SECRET: ${CONFIG_SECRET:-}
+      # 体测报告图片识别（自建 OCR 服务，见 ./ocr）
+      OCR_URL: ${OCR_URL:-}
+      OCR_TIMEOUT: ${OCR_TIMEOUT:-20000}
     depends_on:
       db:
         condition: service_healthy
+    # 对外 80：域名由外部 nginx 反代到这里（TLS 在 nginx 上）
+    ports:
+      - "80:3000"
+
+  ocr:
+    build: ./ocr
+    restart: unless-stopped
+    environment:
+      PYTHONUNBUFFERED: "1"
     expose:
-      - "3000"
+      - "8000"
 
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    # 生产环境用外部 nginx 终止 TLS，caddy 默认不启动；需要时 --profile caddy
+    profiles: ["caddy"]
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     environment:
       DOMAIN: ${DOMAIN}
     volumes:

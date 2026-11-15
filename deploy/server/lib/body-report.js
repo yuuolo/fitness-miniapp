@@ -131,11 +131,115 @@ function parseDate(text) {
 }
 
 /**
+ * 节段分析（按坐标配对）
+ *
+ * 报告上脂肪和肌肉是左右并排的两张图，每张图里「数值在部位名正上方同一列」：
+ *      1.5kg        1.5kg         ← 数值行
+ *      左上肢        右上肢        ← 部位名行
+ *                11.5kg
+ *                躯干
+ * 光看文字顺序会串（OCR 是按行读的），所以有坐标时优先按空间位置配对：
+ * 同一个部位名上方的、水平位置几乎对齐的数值，就是它的值。
+ */
+const SEG_LABELS = ['左上肢', '右上肢', '躯干', '左下肢', '右下肢']
+const SEG_KEYS = {
+  左上肢: 'leftArm', 右上肢: 'rightArm', 躯干: 'trunk', 左下肢: 'leftLeg', 右下肢: 'rightLeg'
+}
+
+function numOf(text) {
+  const m = String(text || '').match(/(\d+(?:\.\d+)?)/)
+  return m ? Number(m[1]) : null
+}
+
+function segmentsFromBoxes(items) {
+  if (!Array.isArray(items) || items.length < 10) return null
+
+  // 两块面板的横向分界：以右栏标题的左边为界线。
+  // 不能用两个标题的中点——脂肪面板右列（右上肢/躯干/右下肢）在 x≈515，
+  // 中点会算到 361，把它们误判成右栏的肌肉。
+  let fatX = null
+  let muscleX = null
+  items.forEach(it => {
+    const t = String(it.text || '')
+    if (fatX === null && t.indexOf('节段脂肪') >= 0) fatX = it.x
+    if (muscleX === null && t.indexOf('节段肌肉') >= 0) muscleX = it.x
+  })
+  const hasPanels = fatX !== null && muscleX !== null
+  const boundary = hasPanels ? muscleX - 20 : null
+
+  const labels = items.filter(it => SEG_LABELS.indexOf(String(it.text || '').trim()) >= 0)
+  const numbers = items.filter(it => {
+    const t = String(it.text || '').trim()
+    return /^\d+(\.\d+)?\s*(kg|KG|Kg)?$/.test(t)
+  })
+  if (!labels.length || !numbers.length) return null
+
+  const fat = {}
+  const muscle = {}
+  let matched = 0
+
+  labels.forEach(label => {
+    const name = String(label.text).trim()
+    const key = SEG_KEYS[name]
+    if (!key) return
+    const panel = hasPanels ? (label.x >= boundary ? 'muscle' : 'fat') : null
+
+    // 候选：同一个面板、水平基本对齐、垂直在标签上方 5~95 像素
+    const candidates = numbers
+      .filter(n => {
+        if (hasPanels) {
+          const np = n.x >= boundary ? 'muscle' : 'fat'
+          if (np !== panel) return false
+        }
+        const dx = Math.abs((n.x + (n.w || 0) / 2) - (label.x + (label.w || 0) / 2))
+        const dy = label.y - n.y
+        return dx <= 60 && dy >= 5 && dy <= 95
+      })
+      .sort((a, b) => b.y - a.y) // 取最靠近标签的上方那个
+
+    if (!candidates.length) return
+    const value = numOf(candidates[0].text)
+    if (value === null) return
+    if (panel === 'muscle') muscle[key] = round(value, 2)
+    else fat[key] = round(value, 2)
+    matched++
+  })
+
+  // 至少要凑齐一半，才认为空间配对可靠
+  if (matched < 5) return null
+  return {
+    fat: Object.keys(fat).length ? fat : null,
+    muscle: Object.keys(muscle).length ? muscle : null,
+    matched
+  }
+}
+
+// 身体形态是「人体剪影」下面的一行字（倒三角型 / 匀称型 …）。
+// 纯文本匹配会误吞右边的「身体类型」格子（那些也是「…型」），所以按坐标取。
+const SHAPES = ['倒三角型', '匀称型', '沙漏型', '梨型', '苹果型', '矩形型', '矩形', '瘦长型', '运动型', '健壮型']
+
+function bodyShapeFromBoxes(items) {
+  if (!Array.isArray(items) || !items.length) return null
+  const header = items.find(it => String(it.text || '').indexOf('身体形态') >= 0)
+  if (!header) return null
+  const hits = items
+    .filter(it => SHAPES.indexOf(String(it.text || '').trim()) >= 0)
+    .filter(it => {
+      const dy = it.y - header.y
+      const dx = Math.abs(it.x - header.x)
+      return dy > 20 && dy < 420 && dx < 240
+    })
+    .sort((a, b) => a.y - b.y)
+  return hits.length ? String(hits[0].text).trim() : null
+}
+
+/**
  * 解析报告文字
  * @param {string} raw 报告文字（OCR 或手工粘贴）
+ * @param {Array} [items] OCR 返回的带坐标识别项；有的话节段数据按坐标配对，更准
  * @returns {{fields: object, meta: object, warnings: string[], filled: string[]}}
  */
-function parse(raw) {
+function parse(raw, items) {
   const text = normalize(raw)
   const warnings = []
   const fields = {}
@@ -195,10 +299,17 @@ function parse(raw) {
   put('fatFreeMass', numberNear(text, '去脂体重'), '去脂体重')
 
   // ---------- 形态 / 类型 / 得分 ----------
-  const shape = textAfter(text, '身体形态', 16).match(/[\u4e00-\u9fa5]{2,6}型/)
-  if (shape) {
-    fields.bodyShape = shape[0]
+  // 身体形态优先按坐标取：右边「身体类型」格子里也都是「…型」，纯文本会误吞
+  const shapeFromBox = items ? bodyShapeFromBoxes(items) : null
+  if (shapeFromBox) {
+    fields.bodyShape = shapeFromBox
     filled.push('身体形态')
+  } else {
+    const shape = textAfter(text, '身体形态', 16).match(/[\u4e00-\u9fa5]{2,6}型/)
+    if (shape && shape[0] !== '身体类型') {
+      fields.bodyShape = shape[0]
+      filled.push('身体形态')
+    }
   }
   const typeText = textAfter(text, '身体类型', 40)
   const typeHit = typeText.match(/(肥胖|偏胖|标准型|健康型|匀称型|隐形肥胖|肌肉型|瘦弱型|运动员型|偏瘦型)/)
@@ -209,15 +320,33 @@ function parse(raw) {
   put('deviceScore', parseScore(text), '身体得分')
 
   // ---------- 节段 ----------
-  const segFat = parseSegments(text, '节段脂肪', '节段肌肉')
-  if (Object.keys(segFat).length) {
-    fields.segmentFat = segFat
+  // 有坐标时按空间位置配对（OCR 的真实版面会串行，必须用坐标）
+  const spatial = items ? segmentsFromBoxes(items) : null
+
+  if (spatial && spatial.fat) {
+    fields.segmentFat = spatial.fat
     filled.push('节段脂肪')
+  } else {
+    const segFat = parseSegments(text, '节段脂肪', '节段肌肉')
+    if (Object.keys(segFat).length) {
+      fields.segmentFat = segFat
+      filled.push('节段脂肪')
+    }
   }
-  const segMuscle = parseSegments(text, '节段肌肉', '身体得分')
-  if (Object.keys(segMuscle).length) {
-    fields.segmentMuscle = segMuscle
+
+  if (spatial && spatial.muscle) {
+    fields.segmentMuscle = spatial.muscle
     filled.push('节段肌肉')
+  } else {
+    const segMuscle = parseSegments(text, '节段肌肉', '身体得分')
+    if (Object.keys(segMuscle).length) {
+      fields.segmentMuscle = segMuscle
+      filled.push('节段肌肉')
+    }
+  }
+
+  if (warnings.length >= 0 && (!fields.segmentFat || !fields.segmentMuscle)) {
+    warnings.push('节段数据不完整，可以手动补上或换一张更清晰的报告图')
   }
 
   // ---------- 设备名 ----------
@@ -249,4 +378,4 @@ function parse(raw) {
   return { fields, meta, warnings, filled }
 }
 
-module.exports = { parse, normalize, parseSegments, parseDate, parseScore }
+module.exports = { parse, normalize, parseSegments, segmentsFromBoxes, parseDate, parseScore }

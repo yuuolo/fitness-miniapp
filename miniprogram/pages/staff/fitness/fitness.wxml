@@ -10,14 +10,15 @@
     </view>
 
     <block wx:if="{{showRecognize}}">
-      <button class="btn ghost block mt" bindtap="chooseAndOcr" disabled="{{recognizing}}">
-        {{recognizing ? '识别中…' : '选择报告图识别'}}
+      <button class="btn block mt" bindtap="chooseAndOcr" disabled="{{recognizing}}">
+        {{recognizing ? '识别中…' : '选择报告图，自动识别'}}
       </button>
+      <view class="list-hint">拍清楚一点、别裁掉边缘，识别约 3~5 秒</view>
 
-      <view class="muted mt">没有配置识别服务？用微信打开报告图 →「提取文字」→ 粘贴到下面：</view>
+      <view class="muted mt-sm">识别不准时，可以手动补：用微信打开报告图 →「提取文字」→ 粘贴到下面再解析</view>
       <textarea class="textarea" value="{{reportText}}" bindinput="onReportText"
         maxlength="8000" placeholder="把报告文字粘贴到这里，例如：体重 80.25kg 体脂率 27.6% …" />
-      <button class="btn block mt" bindtap="parseReportText" disabled="{{recognizing}}">解析文字</button>
+      <button class="btn ghost block mt" bindtap="parseReportText" disabled="{{recognizing}}">解析粘贴的文字</button>
 
       <view wx:if="{{recognizeMsg}}" class="note-center">{{recognizeMsg}}</view>
     </block>

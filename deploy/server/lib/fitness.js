@@ -615,15 +615,17 @@ async function ocrBodyReport({ me, data }) {
   }
   const img = await readUploadedImage(data && data.fileID)
 
-  let text = ''
+  let recognized = { text: '', items: [] }
   try {
-    text = await ocr.recognize(img.buffer, img.mime)
+    recognized = await ocr.recognize(img.buffer, img.mime)
   } catch (e) {
     fail(e.message)
   }
+  const text = recognized.text || ''
   if (!text) fail('没识别出文字，换一张清晰点的图，或改用粘贴文字')
 
-  const result = bodyReport.parse(text)
+  // 带上坐标：报告的节段数据必须按空间位置配对，否则会串行
+  const result = bodyReport.parse(text, recognized.items)
   if (!result.filled.length) {
     fail('识别到文字但没解析出体测指标，建议改用粘贴文字的方式')
   }
@@ -632,7 +634,10 @@ async function ocrBodyReport({ me, data }) {
     meta: result.meta,
     warnings: result.warnings,
     filled: result.filled,
-    rawText: text.slice(0, 2000)
+    rawText: text.slice(0, 2000),
+    // 让前端知道这次是靠坐标解析的（节段更准）
+    spatial: !!(recognized.items && recognized.items.length),
+    boxes: (recognized.items || []).length
   }
 }
 

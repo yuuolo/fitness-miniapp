@@ -52,7 +52,9 @@ function extractText(payload) {
  * 识别一张图片
  * @param {Buffer} buffer 图片二进制
  * @param {string} mime 图片类型
- * @returns {Promise<string>} 识别出的文字（可能为空）
+ * @returns {Promise<{text: string, items: Array}>}
+ *   text  纯文字（按阅读顺序）
+ *   items 每个词的文字与方框坐标，用来做「数值↔部位」的空间配对
  */
 async function recognize(buffer, mime) {
   if (!isConfigured()) {
@@ -88,7 +90,10 @@ async function recognize(buffer, mime) {
       throw err
     }
     const payload = await res.json().catch(() => null)
-    return extractText(payload).trim()
+    return {
+      text: extractText(payload).trim(),
+      items: extractItems(payload)
+    }
   } catch (e) {
     if (e.name === 'AbortError') {
       const err = new Error('识别超时，请重试或改用粘贴文字')
@@ -99,6 +104,43 @@ async function recognize(buffer, mime) {
   } finally {
     clearTimeout(timer)
   }
+}
+
+/** 从返回结构里抽出带坐标的词项（支持自建网关的 items 结构） */
+function extractItems(payload) {
+  if (!payload || typeof payload !== 'object') return []
+  // 自建 RapidOCR 网关的格式
+  if (Array.isArray(payload.items)) {
+    return payload.items
+      .filter(it => it && typeof it.text === 'string' && typeof it.x === 'number' && typeof it.y === 'number')
+      .map(it => ({
+        text: it.text,
+        score: Number(it.score) || 0,
+        x: Number(it.x) || 0,
+        y: Number(it.y) || 0,
+        w: Number(it.w) || 0,
+        h: Number(it.h) || 0
+      }))
+  }
+  // 腾讯云带坐标的结构
+  const tencent = payload.Response && payload.Response.TextDetections
+  if (Array.isArray(tencent)) {
+    return tencent
+      .filter(x => x && x.DetectedText && x.ItemPolygon)
+      .map(x => {
+        const xs = x.ItemPolygon.XCoordinates || []
+        const ys = x.ItemPolygon.YCoordinates || []
+        return {
+          text: x.DetectedText,
+          score: (Number(x.Confidence) || 0) / 100,
+          x: Math.min.apply(null, xs),
+          y: Math.min.apply(null, ys),
+          w: Math.max.apply(null, xs) - Math.min.apply(null, xs),
+          h: Math.max.apply(null, ys) - Math.min.apply(null, ys)
+        }
+      })
+  }
+  return []
 }
 
 function describe() {
@@ -112,4 +154,4 @@ function describe() {
   }
 }
 
-module.exports = { isConfigured, recognize, extractText, describe }
+module.exports = { isConfigured, recognize, extractText, extractItems, describe }

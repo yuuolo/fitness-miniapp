@@ -186,6 +186,72 @@ function main() {
   const cnDate = report.parse('测量时间: 2026年7月19日\n体重 70kg\n身高 170cm\n体脂率 20%')
   assert.strictEqual(cnDate.fields.date, '2026-07-19'); ok('中文日期格式也能识别')
 
+  // ---------- 空间配对（真实 OCR 坐标）----------
+  // 报告上脂肪/肌肉是左右两块，每块里「数值在部位名正上方同一列」。
+  // OCR 按行读会把数值和部位名拆成两行、两块还会交错，只看文字顺序必然串。
+  // 下面的坐标取自小米 S800 报告的真实识别结果。
+  console.log('\n=== 空间配对（有坐标时）===')
+  const box = (text, x, y, w) => ({ text, x, y, w: w || 40, h: 24, score: 0.99 })
+
+  const ITEMS = [
+    // 两块面板的标题
+    box('节段脂肪分析', 59, 912, 129),
+    box('节段肌肉分析', 663, 910, 132),
+    box('身体形态', 700, 367),
+    box('倒三角型', 706, 631, 63),
+    box('身体类型', 1059, 367),
+    // 脂肪（左栏）：左上肢 1.5 / 右上肢 1.5 / 躯干 11.5 / 左下肢 3.3 / 右下肢 3.3
+    box('1.5kg', 91, 987, 49),
+    box('左上肢', 95, 1012, 41),
+    box('1.5kg', 511, 987, 50),
+    box('右上肢', 515, 1012, 41),
+    box('11.5kg', 511, 1053, 58),
+    box('躯干', 515, 1080, 26),
+    box('3.3kg', 92, 1123, 49),
+    box('左下肢', 94, 1148, 41),
+    box('3.3kg', 511, 1121, 51),
+    box('右下肢', 513, 1146, 44),
+    // 肌肉（右栏）：左上肢 2.9 / 右上肢 2.9 / 躯干 25.4 / 左下肢 9.1 / 右下肢 9.1
+    box('2.9kg', 697, 987, 50),
+    box('左上肢', 701, 1012, 41),
+    box('2.9kg', 1117, 987, 50),
+    box('右上肢', 1121, 1012, 41),
+    box('25.4kg', 1118, 1053, 61),
+    box('躯干', 1121, 1079, 26),
+    box('9.1kg', 698, 1123, 45),
+    box('左下肢', 700, 1148, 41),
+    box('9.1kg', 1117, 1123, 46),
+    box('右下肢', 1121, 1148, 40)
+  ]
+
+  const spatial = report.parse('体重 80.25kg 体脂率 27.6% 身高 175cm', ITEMS)
+  assert.deepStrictEqual(spatial.fields.segmentFat, {
+    leftArm: 1.5, rightArm: 1.5, trunk: 11.5, leftLeg: 3.3, rightLeg: 3.3
+  }); ok('按坐标配出节段脂肪五项（左右两列都没串）')
+  assert.deepStrictEqual(spatial.fields.segmentMuscle, {
+    leftArm: 2.9, rightArm: 2.9, trunk: 25.4, leftLeg: 9.1, rightLeg: 9.1
+  }); ok('按坐标配出节段肌肉五项')
+  assert.strictEqual(spatial.fields.bodyShape, '倒三角型'); ok('身体形态按坐标取，不会误吞「身体类型」')
+
+  // 没有坐标时不能瞎配，应该给出提示
+  const noBox = report.parse('体重 80.25kg 体脂率 27.6% 身高 175cm')
+  assert.ok(!noBox.fields.segmentFat); ok('没有坐标时不硬凑节段数据')
+  assert.ok(noBox.warnings.some(w => w.indexOf('节段') >= 0)); ok('节段缺失时给提示')
+
+  // 坐标错乱（数值远离部位名）也不该乱配
+  const messy = report.parse('体重 70kg', [
+    box('节段脂肪分析', 10, 900),
+    box('节段肌肉分析', 900, 900),
+    box('左上肢', 100, 1000),
+    box('右上肢', 500, 1000),
+    box('躯干', 500, 1100),
+    box('左下肢', 100, 1200),
+    box('右下肢', 500, 1200),
+    box('9.9kg', 700, 300, 50)
+  ])
+  assert.ok(!messy.fields.segmentFat || Object.keys(messy.fields.segmentFat).length < 3)
+  ok('坐标对不上时宁可留空，不乱填')
+
   console.log('\n全部 ' + passed + ' 项断言通过')
 }
 
