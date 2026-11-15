@@ -25,6 +25,54 @@
       </view>
     </view>
 
+    <!-- 和我 PK -->
+    <block wx:if="{{!member.isMe && pk}}">
+      <view class="card pk-card">
+        <view class="between">
+          <text class="title">和我 PK</text>
+          <text class="muted" wx:if="{{pk.ready}}">我 {{pk.myWins}} 胜 · TA {{pk.theirWins}} 胜</text>
+        </view>
+
+        <!-- 两边都有数据：显示对比 -->
+        <block wx:if="{{pk.ready}}">
+          <view class="pk-score">
+            <view class="pk-side {{pk.verdict === 'me' ? 'win' : ''}}">
+              <view class="pk-who">我</view>
+              <view class="pk-num">{{pk.myScore}}</view>
+            </view>
+            <view class="pk-vs">
+              <text class="pk-vs-t">VS</text>
+              <text class="pk-vs-d">{{pk.scoreGap === 0 ? '平分' : (pk.scoreGap > 0 ? 'TA 高 ' + pk.scoreGap + ' 分' : '我高 ' + (-pk.scoreGap) + ' 分')}}</text>
+            </view>
+            <view class="pk-side {{pk.verdict === 'them' ? 'win' : ''}}">
+              <view class="pk-who">{{member.nickName || 'TA'}}</view>
+              <view class="pk-num">{{pk.theirScore}}</view>
+            </view>
+          </view>
+          <view class="muted mt-sm pk-note">我 {{pk.myDate}} 测量 · TA {{pk.theirDate}} 测量</view>
+
+          <view class="pk-rows">
+            <view wx:for="{{pk.rows}}" wx:key="key" class="pk-row">
+              <text class="pk-name">{{item.name}}</text>
+              <text class="pk-val {{item.win === 'me' ? 'better' : ''}}">{{item.mine}}{{item.unit}}</text>
+              <text class="pk-diff {{item.win === 'me' ? 'me' : (item.win === 'them' ? 'them' : '')}}">{{item.diffText}}</text>
+              <text class="pk-val {{item.win === 'them' ? 'better' : ''}}">{{item.theirs}}{{item.unit}}</text>
+            </view>
+          </view>
+          <view class="muted mt-sm pk-note">
+            体脂率、内脏脂肪越低越好；肌肉量、骨骼肌、身体评分越高越好；体重和 BMI 只比差值。
+          </view>
+        </block>
+
+        <!-- 缺一边数据 -->
+        <block wx:else>
+          <view class="muted mt">
+            {{!pk.hasMine ? '你还没有身体数据，录一次才能和 TA 比。' : 'TA 还没有身体数据，等教练录一次就能比了。'}}
+          </view>
+        </block>
+      </view>
+    </block>
+
     <!-- 身体评分 -->
     <view wx:if="{{hasBody}}" class="card">
       <view class="between">
