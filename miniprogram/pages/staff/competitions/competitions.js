@@ -1,16 +1,13 @@
 const api = require('../../../utils/api')
-const theme = require('../../../utils/theme')
 
 Page({
   data: {
-    themeClass: 'theme-auto',
     loaded: false,
     list: [],
     lifts: []
   },
 
   onShow() {
-    theme.sync(this)
     this.load()
   },
 

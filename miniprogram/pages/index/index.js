@@ -1,5 +1,4 @@
 const api = require('../../utils/api')
-const theme = require('../../utils/theme')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
 
@@ -24,7 +23,6 @@ function withPct(list, unit) {
 
 Page({
   data: {
-    themeClass: 'theme-auto',
     loaded: false,
     initialized: true,
     me: null,
@@ -44,7 +42,6 @@ Page({
   },
 
   onShow() {
-    theme.sync(this)
     this.syncTabBar()
     this.load()
   },

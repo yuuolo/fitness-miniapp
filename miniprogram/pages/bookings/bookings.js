@@ -1,15 +1,12 @@
-const theme = require('../../utils/theme')
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
 
 const CANCEL_BEFORE = 2 * 3600e3
 
 Page({
-  data: {
-    themeClass: 'theme-auto', list: [], loaded: false },
+  data: { list: [], loaded: false },
 
   onShow() {
-    theme.sync(this)
     this.load()
   },
 

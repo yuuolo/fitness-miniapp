@@ -484,29 +484,15 @@ OCR_TIMEOUT=15000                         # 可选，毫秒
 
 ### 深色模式
 
-有两种驱动方式：
+跟随系统：手机切深色，小程序自动跟着变，**没有应用内开关**。
 
-1. **跟随系统**（默认）——手机切深色，小程序跟着变
-2. **手动切换**——「我的 → 外观」里选 跟随系统 / 浅色 / 深色，选择存在本地
+- `app.json` 开 `darkmode` + `themeLocation`，导航栏与窗口底色走 `theme.json`
+- `app.wxss` 末尾用 `@media (prefers-color-scheme: dark) { page { ... } }` 覆盖 27 个变量
+- 深色下主色提亮为 `#f0704a`，文字用暖白 `#ece8e4`，阴影加重
+- 因为所有页面都用 `var()`，加新页面不用额外写深色样式
 
-实现方式（微信没有用 JS 改 `prefers-color-scheme` 的 API，所以用类名驱动）：
-
-- `utils/theme.js` 管理模式，写到 storage，并通过 `subscribe` 通知订阅者
-- 每个页面根节点挂 `{{themeClass}}`，`onShow` 里调 `theme.sync(this)`
-- `app.wxss` 里三组变量：
-  ```css
-  page, .theme-light, .theme-auto { /* 浅色变量 */ }
-  .theme-dark                     { /* 深色变量 */ }
-  @media (prefers-color-scheme: dark) { .theme-auto { /* 深色变量 */ } }
-  ```
-- 自定义 tabBar 同样带 `{{themeClass}}`，并在 `theme.subscribe` 里刷新
-  （它是独立组件，颜色自带硬编码兜底，不依赖 page 变量）
-
-深色下主色提亮为 `#f0704a`，文字用暖白 `#ece8e4`，阴影加重。
-因为所有页面都用 `var()`，**加新页面不用写深色样式**，只要记得挂主题类。
-
-> 新增页面时注意两点：根节点写 `class="page {{themeClass}}"`，
-> `onShow` 里调用 `theme.sync(this)`，否则手动切换对它不生效。
+> 自定义 tabBar 是独立组件，不保证能继承 `page` 上的变量，
+> 所以它的颜色自带硬编码兜底，并单独写了自己的深色媒体查询。
 
 ### 图标
 

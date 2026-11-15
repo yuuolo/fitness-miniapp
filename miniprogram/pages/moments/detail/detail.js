@@ -1,4 +1,3 @@
-const theme = require('../../../utils/theme')
 const api = require('../../../utils/api')
 
 const W = 750
@@ -49,11 +48,7 @@ function loadImage(canvas, src) {
 
 Page({
 
-  onShow() {
-    theme.sync(this)
-  },
-  data: {
-    themeClass: 'theme-auto', m: null, loaded: false, error: '', isStaff: false },
+  data: { m: null, loaded: false, error: '', isStaff: false },
 
   onLoad(query) {
     const q = query || {}

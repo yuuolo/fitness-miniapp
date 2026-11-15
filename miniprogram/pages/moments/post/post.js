@@ -1,4 +1,3 @@
-const theme = require('../../../utils/theme')
 const api = require('../../../utils/api')
 
 // 友圈视频限制：时长 + 压缩后大小，避免把云存储 5GB 额度很快吃满
@@ -12,11 +11,7 @@ function fmtMB(bytes) {
 
 Page({
 
-  onShow() {
-    theme.sync(this)
-  },
   data: {
-    themeClass: 'theme-auto',
     content: '',
     media: [],
     totalText: '',

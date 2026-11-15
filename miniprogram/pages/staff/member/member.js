@@ -1,5 +1,4 @@
 const api = require('../../../utils/api')
-const theme = require('../../../utils/theme')
 const fmt = require('../../../utils/format')
 
 // 角色只有三级（原「前台」已移除）
@@ -11,11 +10,7 @@ const ROLES = [
 
 Page({
 
-  onShow() {
-    theme.sync(this)
-  },
   data: {
-    themeClass: 'theme-auto',
     isAdmin: false,
     manage: false,
     member: null,

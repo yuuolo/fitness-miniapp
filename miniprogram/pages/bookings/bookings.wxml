@@ -1,4 +1,4 @@
-<view class="page {{themeClass}}">
+<view class="page">
   <view wx:if="{{loaded && !list.length}}" class="empty">还没有预约记录</view>
   <view wx:for="{{list}}" wx:key="_id" class="card between">
     <view class="grow">

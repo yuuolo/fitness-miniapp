@@ -1,11 +1,9 @@
 const api = require('../../utils/api')
-const theme = require('../../utils/theme')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
 
 Page({
   data: {
-    themeClass: 'theme-auto',
     id: '',
     loaded: false,
     disabled: false,
@@ -20,7 +18,6 @@ Page({
   },
 
   onShow() {
-    theme.sync(this)
     features.ensure().then(f => {
       if (f.rank === false) {
         this.setData({ disabled: true, loaded: true })

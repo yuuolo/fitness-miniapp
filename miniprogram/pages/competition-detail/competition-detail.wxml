@@ -1,4 +1,4 @@
-<view class="page {{themeClass}}">
+<view class="page">
   <view wx:if="{{disabled}}" class="feature-off">
     <view class="t">排行榜暂未开放</view>
   </view>

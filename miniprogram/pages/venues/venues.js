@@ -1,12 +1,10 @@
-const theme = require('../../utils/theme')
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
 const { subscribe } = require('../../utils/subscribe')
 
 Page({
-  data: {
-    themeClass: 'theme-auto', venues: [], venueIndex: 0, days: [], date: '', venue: null, slots: [], busy: false, disabled: false },
+  data: { venues: [], venueIndex: 0, days: [], date: '', venue: null, slots: [], busy: false, disabled: false },
 
   onLoad() {
     const days = fmt.nextDays(7)
@@ -21,7 +19,6 @@ Page({
   },
 
   onShow() {
-    theme.sync(this)
     this.syncTabBar()
     // 功能关闭时直接显示占位
     features.ensure().then(f => {

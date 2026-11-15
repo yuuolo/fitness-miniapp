@@ -1,5 +1,4 @@
 const api = require('../../../utils/api')
-const theme = require('../../../utils/theme')
 
 function pad(n) { return String(n).padStart(2, '0') }
 function dateOf(ms) {
@@ -16,11 +15,7 @@ function toMs(date, time) {
 
 Page({
 
-  onShow() {
-    theme.sync(this)
-  },
   data: {
-    themeClass: 'theme-auto',
     id: '',
     lifts: [],
     liftIndex: 0,

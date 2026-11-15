@@ -1,4 +1,4 @@
-<view class="page {{themeClass}}">
+<view class="page">
   <view wx:if="{{disabled}}" class="feature-off">
     <view class="t">团课暂未开放</view>
     <view class="d">门店还没开放约课。想了解课程安排，可以到前台咨询。</view>

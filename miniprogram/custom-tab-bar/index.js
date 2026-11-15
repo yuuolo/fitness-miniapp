@@ -1,5 +1,4 @@
 const features = require('../utils/features')
-const theme = require('../utils/theme')
 
 // 完整 tab 列表；feature 为 null 表示永远显示
 const ALL_TABS = [
@@ -13,20 +12,17 @@ const ALL_TABS = [
 Component({
   data: {
     tabs: ALL_TABS,
-    themeClass: 'theme-auto',
     current: '',
     ready: false
   },
 
   attached() {
     this.off = features.subscribe(() => this.refresh())
-    this.offTheme = theme.subscribe(() => this.refresh())
     features.ensure().then(() => this.refresh())
   },
 
   detached() {
     if (this.off) this.off()
-    if (this.offTheme) this.offTheme()
   },
 
   pageLifetimes: {
@@ -42,7 +38,7 @@ Component({
       const pages = getCurrentPages()
       const cur = pages[pages.length - 1]
       const route = cur && cur.route ? '/' + cur.route : ''
-      this.setData({ tabs, current: route, ready: true, themeClass: theme.cls() })
+      this.setData({ tabs, current: route, ready: true })
     },
 
     onTap(e) {

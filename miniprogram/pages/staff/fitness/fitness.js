@@ -1,4 +1,3 @@
-const theme = require('../../../utils/theme')
 const api = require('../../../utils/api')
 
 const GENDERS = [
@@ -41,11 +40,7 @@ const RAW_FIELDS = [
 
 Page({
 
-  onShow() {
-    theme.sync(this)
-  },
   data: {
-    themeClass: 'theme-auto',
     id: '', f: null, loaded: false,
     genders: GENDERS, genderIndex: 2,
     lifts: [], liftIndex: 0, actionTypes: [], typeIndex: 0,

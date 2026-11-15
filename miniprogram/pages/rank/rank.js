@@ -1,5 +1,4 @@
 const api = require('../../utils/api')
-const theme = require('../../utils/theme')
 const features = require('../../utils/features')
 
 // 条形图比例：以第一名为 100%；相对体重榜按 relative 算
@@ -14,7 +13,6 @@ function withPct(list, metric) {
 
 Page({
   data: {
-    themeClass: 'theme-auto',
     loaded: false,
     disabled: false,
     lifts: [],
@@ -25,7 +23,6 @@ Page({
   },
 
   onShow() {
-    theme.sync(this)
     features.ensure().then(f => {
       if (f.rank === false) {
         this.setData({ disabled: true, loaded: true })

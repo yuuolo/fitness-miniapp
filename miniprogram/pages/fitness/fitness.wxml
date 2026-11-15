@@ -1,4 +1,4 @@
-<view class="page {{themeClass}}">
+<view class="page">
   <view wx:if="{{loaded && !hasBody}}" class="card">
     <view class="title">还没有身体数据</view>
     <view class="muted mt">身体数据由教练用体测设备测量后录入。录入后会在这里看到体重、体脂率和身体评分。</view>

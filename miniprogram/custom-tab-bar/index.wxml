@@ -1,4 +1,4 @@
-<view class="tabbar {{themeClass}}" wx:if="{{ready}}">
+<view class="tabbar" wx:if="{{ready}}">
   <view
     wx:for="{{tabs}}"
     wx:key="pagePath"

@@ -1,4 +1,3 @@
-const theme = require('../../utils/theme')
 const api = require('../../utils/api')
 
 const PERIODS = [
@@ -71,7 +70,6 @@ function buildSeg(b) {
 
 Page({
   data: {
-    themeClass: 'theme-auto',
     loaded: false, f: null, isPublic: false,
     hasBody: false, score: 0, scoreDetail: [],
     metrics: [], bestList: [], bodyList: [], actList: [],
@@ -80,7 +78,6 @@ Page({
   },
 
   onShow() {
-    theme.sync(this)
     this.load()
   },
 
