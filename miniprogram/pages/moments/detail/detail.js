@@ -48,14 +48,19 @@ function loadImage(canvas, src) {
 
 Page({
 
-  data: { m: null, loaded: false, error: '', isStaff: false },
+  data: { m: null, loaded: false, error: '', isStaff: false, posterOn: true },
 
   onLoad(query) {
     const q = query || {}
     // 判断能否上传静态小程序码（员工/教练才行）
     api.call('home', {}, { silent: true }).then(res => {
       const role = res.me && res.me.role
-      this.setData({ isStaff: !!role && role !== 'member' })
+      const feat = (res && res.features) || {}
+      this.setData({
+        isStaff: !!role && role !== 'member',
+        // 管理页可以关掉「友圈海报」
+        posterOn: feat.poster !== false
+      })
     }, () => {})
     // 扫海报上的小程序码进来：scene 形如 s=xxxxxxxxxx
     if (q.scene) {

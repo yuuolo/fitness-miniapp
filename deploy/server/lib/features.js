@@ -19,6 +19,12 @@ const FEATURES = [
     covers: 'momentList / postMoment / likeMoment / momentPoster 等'
   },
   {
+    key: 'poster',
+    name: '友圈海报',
+    desc: '动态详情里生成分享海报（带小程序码，可保存到相册）',
+    covers: 'momentPoster'
+  },
+  {
     key: 'fitness',
     name: '健身数据',
     desc: '身体数据、力量成绩、运动记录',

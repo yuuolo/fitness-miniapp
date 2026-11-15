@@ -125,7 +125,7 @@ const ACTION_FEATURE = {
   momentDetail: 'moments',
   deleteMoment: 'moments',
   likeMoment: 'moments',
-  momentPoster: 'moments',
+  momentPoster: 'poster',
   momentByShort: 'moments',
   setPosterQr: 'moments',
   // 健身数据

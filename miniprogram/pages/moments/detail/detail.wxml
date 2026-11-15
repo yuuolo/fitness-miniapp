@@ -21,15 +21,14 @@
 
   <view class="card">
     <view class="between">
-      <view class="like {{m.liked ? 'on' : ''}}" bindtap="like">{{m.liked ? '♥ 已赞' : '♡ 点赞'}} {{m.likeCount}}</view>
-      <button wx:if="{{m.canDelete}}" class="btn gray" bindtap="remove">删除</button>
+      <view class="row">
+        <view class="like {{m.liked ? 'on' : ''}}" bindtap="like">{{m.liked ? '♥ 已赞' : '♡ 点赞'}} {{m.likeCount}}</view>
+        <button wx:if="{{posterOn}}" class="mini-btn ml" bindtap="makePoster">生成海报</button>
+      </view>
+      <button wx:if="{{m.canDelete}}" class="mini-btn gray" bindtap="remove">删除</button>
     </view>
-  </view>
-
-  <view class="card">
-    <button class="btn block" bindtap="makePoster">生成分享海报</button>
-    <view class="muted mt">海报里带这张动态的内容和专属小程序码，保存到相册后发朋友圈即可。</view>
-    <view wx:if="{{isStaff}}" class="muted mt" bindtap="uploadPosterQr">
+    <view wx:if="{{posterOn}}" class="muted mt-sm">海报带这张动态的内容和专属小程序码，保存到相册后发朋友圈即可。</view>
+    <view wx:if="{{isStaff && posterOn}}" class="muted mt-sm" bindtap="uploadPosterQr">
       <text class="link">上传小程序码</text>（个人主体未认证时微信不生成动态码，可在这里传一张后台下载的静态码）
     </view>
   </view>
