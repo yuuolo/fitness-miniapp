@@ -1,5 +1,29 @@
 <view class="page {{themeClass}}" wx:if="{{f}}">
+    <!-- 从体测报告识别 -->
   <view class="card">
+    <view class="between" bindtap="toggleRecognize">
+      <view>
+        <view class="title">从体测报告识别</view>
+        <view class="muted">支持小米八电极体脂秤等设备的报告图，自动填入下方表单</view>
+      </view>
+      <text class="muted">{{showRecognize ? '收起' : '展开 ›'}}</text>
+    </view>
+
+    <block wx:if="{{showRecognize}}">
+      <button class="btn ghost block mt" bindtap="chooseAndOcr" disabled="{{recognizing}}">
+        {{recognizing ? '识别中…' : '选择报告图识别'}}
+      </button>
+
+      <view class="muted mt">没有配置识别服务？用微信打开报告图 →「提取文字」→ 粘贴到下面：</view>
+      <textarea class="textarea" value="{{reportText}}" bindinput="onReportText"
+        maxlength="8000" placeholder="把报告文字粘贴到这里，例如：体重 80.25kg 体脂率 27.6% …" />
+      <button class="btn block mt" bindtap="parseReportText" disabled="{{recognizing}}">解析文字</button>
+
+      <view wx:if="{{recognizeMsg}}" class="note-center">{{recognizeMsg}}</view>
+    </block>
+  </view>
+
+<view class="card">
     <view class="between">
       <text class="title">{{f.memberName}}</text>
       <text wx:if="{{f.latestBody && f.latestBody.score != null}}" class="tag orange">评分 {{f.latestBody.score}}</text>

@@ -157,6 +157,8 @@ const ACTION_FEATURE = {
   myFitness: 'fitness',
   memberFitness: 'fitness',
   bodyTrend: 'fitness',
+  parseBodyReport: 'fitness',
+  ocrBodyReport: 'fitness',
   // 排行榜与竞赛
   leaderboard: 'rank',
   listLiftItems: 'rank',

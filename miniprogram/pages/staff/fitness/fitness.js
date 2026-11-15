@@ -75,6 +75,101 @@ Page({
     }, () => this.setData({ loaded: true }))
   },
 
+
+  // ---------- 体测报告识别 ----------
+
+  toggleRecognize() {
+    this.setData({ showRecognize: !this.data.showRecognize, recognizeMsg: '' })
+  },
+
+  onReportText(e) {
+    this.setData({ reportText: e.detail.value })
+  },
+
+  // 把解析出来的字段填进表单（教练核对后再保存）
+  applyParsed(fields, meta, warnings) {
+    const body = Object.assign({}, EMPTY_BODY, this.data.body)
+    const KEYS = RAW_FIELDS
+    let count = 0
+    KEYS.forEach(k => {
+      if (fields[k] === undefined || fields[k] === null) return
+      body[k] = String(fields[k])
+      count++
+    })
+    // 节段数据是嵌套对象，单独处理
+    if (fields.segmentFat) {
+      const sf = Object.assign({}, EMPTY_BODY.segmentFat, body.segmentFat || {})
+      SEG_KEYS.forEach(s => {
+        if (fields.segmentFat[s.key] !== undefined) {
+          sf[s.key] = String(fields.segmentFat[s.key])
+          count++
+        }
+      })
+      body.segmentFat = sf
+    }
+    if (fields.segmentMuscle) {
+      const sm = Object.assign({}, EMPTY_BODY.segmentMuscle, body.segmentMuscle || {})
+      SEG_KEYS.forEach(s => {
+        if (fields.segmentMuscle[s.key] !== undefined) {
+          sm[s.key] = String(fields.segmentMuscle[s.key])
+          count++
+        }
+      })
+      body.segmentMuscle = sm
+    }
+
+    const gi = GENDERS.findIndex(g => g.value === (fields.gender || meta.gender || ''))
+    const patch = { body }
+    if (gi >= 0) patch.genderIndex = gi
+
+    const tip = '已填入 ' + count + ' 项' + (warnings && warnings.length ? '；' + warnings[0] : '')
+    patch.recognizeMsg = tip
+    this.setData(patch)
+    wx.showToast({ title: '已填入 ' + count + ' 项', icon: 'none' })
+  },
+
+  // 1) 图片识别（需要服务器配了 OCR 服务）
+  chooseAndOcr() {
+    if (this.data.recognizing) return
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      sizeType: ['compressed'],
+      success: res => {
+        const file = (res.tempFiles || [])[0]
+        if (!file) return
+        this.setData({ recognizing: true })
+        wx.showLoading({ title: '上传中', mask: true })
+        api.upload(file.tempFilePath, 'jpg').then(fileID => {
+          wx.showLoading({ title: '识别中', mask: true })
+          return api.call('ocrBodyReport', { fileID }, { silent: true })
+        }).then(r => {
+          wx.hideLoading()
+          this.setData({ recognizing: false })
+          this.applyParsed(r.fields, r.meta || {}, r.warnings || [])
+        }).catch(err => {
+          wx.hideLoading()
+          this.setData({ recognizing: false, recognizeMsg: err.message || '识别失败' })
+        })
+      }
+    })
+  },
+
+  // 2) 粘贴文字解析（没有 OCR 服务时用微信「提取文字」拿到文本再粘进来）
+  parseReportText() {
+    const text = String(this.data.reportText || '').trim()
+    if (!text) return wx.showToast({ title: '先把报告文字粘贴进来', icon: 'none' })
+    if (this.data.recognizing) return
+    this.setData({ recognizing: true })
+    api.call('parseBodyReport', { text }, { loading: '解析中' }).then(r => {
+      this.setData({ recognizing: false })
+      this.applyParsed(r.fields, r.meta || {}, r.warnings || [])
+    }).catch(err => {
+      this.setData({ recognizing: false, recognizeMsg: err.message || '解析失败' })
+    })
+  },
+
   toggleDevice() {
     this.setData({ showDevice: !this.data.showDevice })
   },
