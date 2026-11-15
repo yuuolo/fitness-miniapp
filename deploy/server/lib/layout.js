@@ -111,7 +111,7 @@ function normalize(raw) {
       }
       if (type === 'link') {
         out.page = PAGE_PATHS.has(item.page) ? item.page : ''
-        out.icon = String(item.icon || '🔗').slice(0, 4)
+        out.icon = String(item.icon || '').slice(0, 4)
         if (!out.page) return null
       }
       if (meta.feature) out.feature = meta.feature
@@ -204,7 +204,7 @@ function makeLink({ title, desc, icon, page }) {
     id: newId('lnk'),
     title: String(title || '').slice(0, 20) || (PAGE_CATALOG.find(p => p.path === page) || {}).name || '快捷入口',
     desc: String(desc || '').slice(0, 30),
-    icon: String(icon || '🔗').slice(0, 4),
+    icon: String(icon || '').slice(0, 4),
     page
   })
 }

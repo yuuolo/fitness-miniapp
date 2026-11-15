@@ -158,7 +158,7 @@
 
       <!-- 自定义快捷入口 -->
       <view wx:elif="{{item.type === 'link'}}" class="card link-card" data-page="{{item.page}}" bindtap="goLink">
-        <view class="link-icon">{{item.icon || '🔗'}}</view>
+        <view class="link-icon"></view>
         <view class="grow">
           <view class="title">{{item.title}}</view>
           <view wx:if="{{item.desc}}" class="muted">{{item.desc}}</view>

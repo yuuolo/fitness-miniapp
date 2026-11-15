@@ -281,7 +281,7 @@
     </div>
 
         <div class="card">
-      <h2>首页布局 <span class="tag">按角色编排首页模块</span></h2>
+      <h2>首页布局 <span class="tag">按角色编排首页模块</span><span class="tag" id="layoutRoleTag">会员</span></h2>
       <div class="hint" style="margin-bottom:12px">
         每个角色一套布局：上下移动调整顺序，开关决定显示与否。
         还能把任意页面做成「快捷入口卡片」放到首页更靠前的位置。
@@ -306,8 +306,8 @@
           <input id="linkDesc" placeholder="例如：看实时排名" maxlength="30">
         </div>
         <div class="field">
-          <label>图标（emoji）</label>
-          <input id="linkIcon" placeholder="🏆" maxlength="4">
+          <label>图标</label>
+          <input value="统一使用链接图标（不用填）" disabled>
         </div>
       </div>
       <div class="actions">
@@ -598,8 +598,20 @@
   var layoutData = { roles: {}, meta: null }
   var currentRole = 'member'
 
+  // 接口失败时也要有可用的角色列表，否则角色 tab 会整块消失
+  var FALLBACK_ROLES = [
+    { key: 'member', name: '会员' },
+    { key: 'coach', name: '教练' },
+    { key: 'admin', name: '管理员' }
+  ]
+
   function needMeta() {
-    return layoutData.meta || { blocks: [], pages: [], roles: [], defaults: {}, maxLinks: 8, maxBlocks: 20 }
+    var meta = layoutData.meta || {}
+    if (!meta.roles || !meta.roles.length) meta.roles = FALLBACK_ROLES
+    if (!meta.blocks) meta.blocks = []
+    if (!meta.pages) meta.pages = []
+    if (!meta.defaults) meta.defaults = {}
+    return meta
   }
 
   function renderRoles() {
@@ -613,8 +625,28 @@
         currentRole = this.getAttribute('data-role')
         renderRoles()
         renderLayoutList()
+        var tagEl = $('layoutRoleTag')
+        if (tagEl) tagEl.textContent = roleName(currentRole)
       })
     })
+  }
+
+  function roleName(role) {
+    var hit = needMeta().roles.find(function (r) { return r.key === role })
+    return hit ? hit.name : role
+  }
+
+  // 有改动还没保存时给「保存布局」加个高亮，避免忘记点
+  function markDirty(on) {
+    var btn = $('layoutSaveBtn')
+    if (!btn) return
+    if (on) {
+      btn.classList.add('dirty')
+      btn.textContent = '保存布局 ●'
+    } else {
+      btn.classList.remove('dirty')
+      btn.textContent = '保存布局'
+    }
   }
 
   function blocksOf(role) {
@@ -675,6 +707,7 @@
           arr.splice(i, 1)
         }
         renderLayoutList()
+        markDirty(true)
       })
     })
   }
@@ -683,12 +716,17 @@
     layoutData = { roles: data.roles || {}, meta: data.meta || null }
     renderRoles()
     renderLayoutList()
+    markDirty(false)
     var when = data.updatedAt ? new Date(data.updatedAt).toLocaleString('zh-CN') : ''
     if (when) showMsg($('layoutMsg'), '当前布局最后由 ' + (data.updatedBy || '管理员') + ' 于 ' + when + ' 保存', 'info')
   }
 
   function loadLayout() {
-    return api('/api/admin/layout').then(renderLayout)
+    return api('/api/admin/layout').then(renderLayout).catch(function (e) {
+      // 原来是静默失败：角色 tab 变空、恢复默认点了没反应，用户根本不知道发生了什么
+      showMsg($('layoutMsg'), '加载布局失败：' + e.message + '，点「重新加载」重试', 'err')
+      throw e
+    })
   }
 
   $('layoutSaveBtn').addEventListener('click', function () {
@@ -699,6 +737,7 @@
       .then(function (data) {
         layoutData.roles = data.roles
         renderLayoutList()
+        markDirty(false)
         showMsg($('layoutMsg'), '已保存，会员下次进首页就会生效', 'ok')
       })
       .catch(function (e) { showMsg($('layoutMsg'), e.message, 'err') })
@@ -712,12 +751,21 @@
 
   $('layoutResetBtn').addEventListener('click', function () {
     var meta = needMeta()
-    var def = (meta.defaults || {})[currentRole]
-    if (!def) return showMsg($('layoutMsg'), '没有可用的默认布局', 'err')
-    if (!confirm('把这个角色的布局恢复成默认？（还没保存，点「保存布局」才生效）')) return
+    var def = meta.defaults[currentRole]
+    if (!def || !def.length) {
+      return showMsg($('layoutMsg'), '这个角色还没有默认布局可用，请点「重新加载」', 'err')
+    }
+    var current = blocksOf(currentRole)
+    // 已经完全一致时明确告诉用户，避免「点了没反应」的错觉
+    if (JSON.stringify(current) === JSON.stringify(def)) {
+      return showMsg($('layoutMsg'), '当前「' + roleName(currentRole) + '」已经是默认布局了，不需要恢复', 'info')
+    }
+    if (!confirm('把「' + roleName(currentRole) + '」的布局恢复成默认？\n\n恢复后还要点「保存布局」才会生效。')) return
     layoutData.roles[currentRole] = JSON.parse(JSON.stringify(def))
     renderLayoutList()
-    showMsg($('layoutMsg'), '已恢复默认，记得点「保存布局」', 'info')
+    markDirty(true)
+    showMsg($('layoutMsg'),
+      '已恢复默认（' + def.length + ' 个模块），记得点「保存布局」才会对会员生效', 'info')
   })
 
   $('linkAddBtn').addEventListener('click', function () {
@@ -731,15 +779,15 @@
       body: {
         page: page,
         title: $('linkTitle').value.trim(),
-        desc: $('linkDesc').value.trim(),
-        icon: $('linkIcon').value.trim()
+        desc: $('linkDesc').value.trim()
       }
     }).then(function (block) {
       blocksOf(currentRole).push(block)
       $('linkTitle').value = ''
       $('linkDesc').value = ''
       renderLayoutList()
-      showMsg($('layoutMsg'), '已添加到首页，记得点「保存布局」', 'ok')
+      markDirty(true)
+      showMsg($('layoutMsg'), '已添加到「' + roleName(currentRole) + '」首页，记得点「保存布局」', 'ok')
     }).catch(function (e) {
       showMsg($('layoutMsg'), e.message, 'err')
     }).finally(function () { btn.disabled = false })

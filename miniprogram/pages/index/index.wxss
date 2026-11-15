@@ -71,15 +71,14 @@
 /* 自定义快捷入口卡片 */
 .link-card { display: flex; align-items: center; }
 .link-card:active { background: var(--line-soft); }
+/* 快捷入口图标：统一用内联 SVG（原来渲染 emoji，各机型字形与配色不一致） */
 .link-icon {
   width: 72rpx;
   height: 72rpx;
+  flex: none;
   border-radius: var(--r-md);
-  background: var(--brand-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36rpx;
+  background: var(--brand-soft) url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNlOTYwM2EiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMC4yIDEzLjhsMy42LTMuNiIvPjxwYXRoIGQ9Ik0xMi42IDcuMmwxLjQtMS40YTMuNiAzLjYgMCAxIDEgNS4xIDUuMWwtMS40IDEuNCIvPjxwYXRoIGQ9Ik0xMS40IDE2LjhsLTEuNCAxLjRhMy42IDMuNiAwIDAgMS01LjEtNS4xbDEuNC0xLjQiLz48L3N2Zz4=") no-repeat center;
+  background-size: 40rpx 40rpx;
   margin-right: 20rpx;
 }
 
