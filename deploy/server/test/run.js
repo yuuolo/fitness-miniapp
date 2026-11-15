@@ -234,8 +234,23 @@ async function main() {
   ok('点赞与取消点赞')
 
   await expectFail(() => act('deleteMoment', OTHER, { id: moment1._id }), '只能删除自己', '不能删别人的动态')
-  await act('deleteMoment', MEMBER, { id: moment1._id })
-  await expectFail(() => act('momentDetail', MEMBER, { id: moment1._id }), '不存在', '删除后详情不可见')
+  // 教练也不行（只有作者本人和管理员能删）
+  await expectFail(() => act('deleteMoment', COACH, { id: moment1._id }), '只能删除自己', '教练也不能删别人的动态')
+
+  // 管理员可以删任意会员的动态
+  const adminView = await act('momentDetail', ADMIN, { id: moment1._id })
+  assert.strictEqual(adminView.canDelete, true, '管理员应能删除任意动态')
+  await act('deleteMoment', ADMIN, { id: moment1._id })
+  assert.strictEqual(
+    (await query('select status from moments where id = $1', [moment1._id])).rows[0].status,
+    'deleted'
+  )
+  ok('管理员可以删除其他会员的动态（教练不行）')
+
+  // 作者本人删除另一条
+  const own = await act('postMoment', MEMBER, { content: '自己的动态，作者来删' })
+  await act('deleteMoment', MEMBER, { id: own._id })
+  await expectFail(() => act('momentDetail', MEMBER, { id: own._id }), '不存在', '删除后详情不可见')
 
   const coachShort = (await query('select short from moments where id = $1', [byCoach._id])).rows[0].short
   const byShort = await act('momentByShort', MEMBER, { short: coachShort })

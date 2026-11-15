@@ -63,6 +63,25 @@ Page({
     wx.navigateTo({ url: '/pages/moments/post/post' })
   },
 
+  // 删除动态：作者删自己的，管理员可以删任何人的
+  remove(e) {
+    const id = e.currentTarget.dataset.id
+    const mine = e.currentTarget.dataset.mine
+    wx.showModal({
+      title: '删除动态',
+      content: mine ? '删除后其他会员看不到这条动态，确定吗？' : '这是其他会员的动态，删除后对方和所有人都看不到，确定吗？',
+      success: res => {
+        if (!res.confirm) return
+        api.call('deleteMoment', { id }, { loading: '删除中' }).then(() => {
+          this.setData({ list: this.data.list.filter(m => m._id !== id) })
+          wx.showToast({ title: '已删除', icon: 'none' })
+        }, err => {
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' })
+        })
+      }
+    })
+  },
+
   goDetail(e) {
     wx.navigateTo({ url: '/pages/moments/detail/detail?id=' + e.currentTarget.dataset.id })
   },

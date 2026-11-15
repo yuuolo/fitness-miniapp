@@ -34,8 +34,12 @@
 
       <view class="between mt">
         <text class="muted">{{item.time}}</text>
-        <view class="like {{item.liked ? 'on' : ''}}" catchtap="like" data-id="{{item._id}}">
-          {{item.liked ? '♥' : '♡'}} {{item.likeCount}}
+        <view class="moment-ops">
+          <!-- 作者本人和管理员都能删；管理员可以删别人的 -->
+          <text wx:if="{{item.canDelete}}" class="op-del" catchtap="remove" data-id="{{item._id}}" data-mine="{{item.isMine}}">删除</text>
+          <view class="like {{item.liked ? 'on' : ''}}" catchtap="like" data-id="{{item._id}}">
+            {{item.liked ? '♥' : '♡'}} {{item.likeCount}}
+          </view>
         </view>
       </view>
     </view>

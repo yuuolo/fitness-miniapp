@@ -109,7 +109,7 @@ Page({
   remove() {
     wx.showModal({
       title: '删除动态',
-      content: '删除后其他会员看不到这条动态，确定吗？',
+      content: this.data.m.isMine ? '删除后其他会员看不到这条动态，确定吗？' : '这是其他会员的动态，删除后所有人都看不到，确定吗？',
       confirmColor: '#d93a3a',
       success: r => {
         if (!r.confirm) return

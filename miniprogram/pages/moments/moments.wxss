@@ -20,3 +20,18 @@
   color: var(--brand);
   background: var(--brand-soft);
 }
+
+/* 动态右下角操作区：删除 + 点赞 */
+.moment-ops {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+.op-del {
+  font-size: 24rpx;
+  color: var(--muted);
+  padding: 4rpx 8rpx;
+}
+.op-del:active {
+  color: var(--danger);
+}
