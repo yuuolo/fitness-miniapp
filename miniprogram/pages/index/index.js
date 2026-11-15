@@ -11,6 +11,16 @@ const TAB_PAGES = [
   '/pages/mine/mine'
 ]
 
+// 条形图比例：以第一名为 100%，其它按比例算出宽度
+// 最小值给 4%，避免最后几名短到看不见
+function withPct(list, unit) {
+  const top = list.length ? Number(list[0].value) || 0 : 0
+  return list.map(it => Object.assign({}, it, {
+    pct: top > 0 ? Math.max(4, Math.round(((Number(it.value) || 0) / top) * 100)) : 0,
+    unit: it.unit || unit || 'kg'
+  }))
+}
+
 Page({
   data: {
     loaded: false,
@@ -90,11 +100,11 @@ Page({
     return api.call('dashboard', {}, { silent: true }).then(stat => this.setData({ stat }), () => {})
   },
 
-  // 首页展示排行榜前 5
+  // 首页展示排行榜前 5，并算出条形图比例
   loadRank() {
     return api.call('leaderboard', { lift: 'bench', metric: 'absolute' }, { silent: true }).then(r => {
       this.setData({
-        rankTop: (r.top || []).slice(0, 5),
+        rankTop: withPct((r.top || []).slice(0, 5), r.unit),
         rankMe: r.me,
         rankTotal: r.total,
         rankName: r.liftName

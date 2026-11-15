@@ -1,6 +1,16 @@
 const api = require('../../utils/api')
 const features = require('../../utils/features')
 
+// 条形图比例：以第一名为 100%；相对体重榜按 relative 算
+// 最小值给 4%，避免最后几名短到看不见
+function withPct(list, metric) {
+  const key = metric === 'relative' ? 'relative' : 'value'
+  const top = list.length ? Number(list[0][key]) || 0 : 0
+  return list.map(it => Object.assign({}, it, {
+    pct: top > 0 ? Math.max(4, Math.round(((Number(it[key]) || 0) / top) * 100)) : 0
+  }))
+}
+
 Page({
   data: {
     loaded: false,
@@ -32,13 +42,15 @@ Page({
     return api.call('leaderboard', { lift, period, metric }).then(r => {
       // 连点切换时丢掉过期的返回
       if (lift !== this.data.lift || period !== this.data.period || metric !== this.data.metric) return
+      const board = Object.assign({}, r, { top: withPct(r.top || [], r.metric) })
+      const me = r.me ? withPct([r.me], r.metric)[0] : null
       this.setData({
         loaded: true,
         lifts: r.lifts,
         lift: r.lift,
         period: r.period,
         metric: r.metric,
-        board: r
+        board: Object.assign({}, board, { me })
       })
     }, () => this.setData({ loaded: true }))
   },

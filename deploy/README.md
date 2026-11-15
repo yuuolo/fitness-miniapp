@@ -392,6 +392,62 @@ ssh gym 'sudo systemctl disable --now gym-backup.timer'
 命令行改法：`bash deploy/scripts/toggle-features.sh all-on`（全部开启）、
 `classes-venues-cards-off`（当前配置）、`core-only`（只留友圈和我的）。
 
+## 界面规范
+
+### 配色
+
+所有颜色走 `miniprogram/app.wxss` 里的 27 个设计变量，页面样式只用 `var()`，
+不再写死色值（`scripts/check-wxss-health.js` 会检查是否有残留）：
+
+| 类别 | 变量 |
+| --- | --- |
+| 品牌色 | `--brand` `--brand-strong` `--brand-soft` `--brand-line` `--brand-grad-a/b` |
+| 文字 | `--ink` `--sub` `--muted` `--ph` |
+| 背景线条 | `--bg` `--surface` `--line` `--line-soft` `--fill` |
+| 语义色 | `--ok` `--ok-soft` `--warn` `--warn-soft` `--danger` `--danger-soft` |
+| 圆角 | `--r-sm` 12rpx / `--r-md` 18rpx / `--r-lg` 24rpx / `--r-pill` |
+| 阴影 | `--shadow` `--shadow-up` |
+
+底色是**暖米色** `#f7f4f1`、文字是**暖黑** `#23201d`，和橙色主色同一色温——
+这是整体「和谐」的关键。改主题只需要改这一组变量。
+
+要换主色时，记得连 `--brand-soft` `--brand-line` `--brand-grad-*` 一起改。
+
+### 深色模式
+
+`app.json` 已开 `"darkmode": true` + `themeLocation: "theme.json"`：
+
+- `theme.json` 定义导航栏/窗口底色在两种模式下的取值
+- `app.wxss` 末尾用 `@media (prefers-color-scheme: dark)` 覆盖那 27 个变量
+- 深色下主色提亮为 `#f0704a`，文字用暖白 `#ece8e4`，阴影加重
+- 因为所有页面都用 `var()`，加新页面时**不用额外写深色样式**
+
+### 图标
+
+菜单图标用**内联 SVG**（base64 作背景图），不用 emoji——emoji 在各机型上
+字形和颜色都不同，且无法跟随主题色。图标定义在 `pages/mine/mine.wxss` 的
+`.mi-*` 类里，统一 1.8 线宽、圆头端点、暖灰描边。
+
+### 图表
+
+排行榜的条形图用 `view` 的宽度百分比实现，不引第三方图表库：
+以第一名为 100%，其余按比例，最小 4%（避免最后几名看不见），
+第一名用品牌渐变，其余用浅色。逻辑在 `pages/index/index.js` 和
+`pages/rank/rank.js` 的 `withPct()`。
+
+### 自查工具
+
+```bash
+node scripts/check.js                # 页面/绑定/action 一致性
+node scripts/check-wxss-health.js    # 变量引用、括号、硬编码色值
+node scripts/check-wxml-health.js    # 重复属性、{{ }} 成对、内联 style
+node scripts/find-unstyled-classes.js # 用了但没样式的类（抓过排行榜 tabs 的问题）
+node scripts/analyze-ui.js           # 颜色/圆角/字号/类复用统计
+node scripts/browser/palette-preview.js  # 生成配色样张
+node scripts/browser/dark-preview.js     # 生成浅色/深色对比图
+node scripts/browser/before-after.js     # 生成改造前后对比图
+```
+
 ## 常见问题
 
 | 现象 | 原因 |

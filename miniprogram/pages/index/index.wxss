@@ -48,6 +48,26 @@
   box-shadow: none;
 }
 
+/* 排行榜条形图：用 view 宽度百分比画，不引图表库 */
+.rank-row { align-items: flex-start; }
+.bar-track {
+  height: 10rpx;
+  border-radius: var(--r-pill);
+  background: var(--fill);
+  margin: 10rpx 0 6rpx;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--brand-line);
+  transition: width 0.35s ease;
+}
+/* 第一名用实色突出，其余用浅色，避免整屏都在抢注意力 */
+.bar-fill.first {
+  background: linear-gradient(90deg, var(--brand-grad-a), var(--brand-grad-b));
+}
+
 /* 自定义快捷入口卡片 */
 .link-card { display: flex; align-items: center; }
 .link-card:active { background: var(--line-soft); }

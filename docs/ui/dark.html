@@ -1,0 +1,213 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #8f8880; font: 14px/1.6 -apple-system, "Microsoft YaHei", sans-serif; padding: 24px; }
+  h1 { font-size: 18px; color: #fff; margin-bottom: 4px; }
+  .lead { font-size: 12px; color: rgba(255,255,255,.75); margin-bottom: 18px; }
+  .wrap { display: flex; gap: 24px; align-items: flex-start; }
+  .col { width: 300px; }
+  .lab { font-size: 12px; color: rgba(255,255,255,.85); text-align: center; margin-bottom: 7px; }
+  .screen { border-radius: 18px; padding: 11px; border: 1px solid rgba(0,0,0,.08); }
+  .hero { border-radius: 12px; padding: 17px 13px; color: #fff; margin-bottom: 10px; }
+  .hello { font-size: 18px; font-weight: 600; }
+  .hsub { font-size: 10px; opacity: .9; margin-top: 4px; }
+  .card { padding: 12px; margin-bottom: 10px; }
+  .between { display: flex; align-items: center; justify-content: space-between; }
+  .row { display: flex; gap: 8px; padding: 9px 0; border-bottom: 1px solid rgba(128,128,128,.12); }
+  .row:last-of-type { border-bottom: 0; }
+  .no { width: 14px; flex: none; font-weight: 600; font-size: 12px; text-align: center; }
+  .grow { flex: 1; }
+  .track { height: 5px; border-radius: 99px; margin: 6px 0 0; overflow: hidden; }
+  .fill { height: 100%; border-radius: 99px; }
+  .mutedline { font-size: 11px; margin-top: 8px; }
+  .q { flex: 1; padding: 11px; }
+  .menu { padding: 4px 13px; margin-top: 10px; }
+  .mi { display: flex; justify-content: space-between; padding: 9px 0; font-size: 13px; border-bottom: 1px solid rgba(128,128,128,.12); }
+  .mi:last-child { border-bottom: 0; }
+  .tabbar { display: flex; border-top: 1px solid; border-radius: 0 0 12px 12px; margin: 10px -11px -11px; }
+  .tb { flex: 1; text-align: center; padding: 8px 0; font-size: 12px; }
+  .tb.on { font-weight: 600; position: relative; }
+  .tb.on::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:20px; height:2px; border-radius:0 0 2px 2px; background: currentColor; }
+</style></head><body>
+  <h1>深色模式</h1>
+  <div class="lead">同一套变量，只覆盖颜色。深色下主色提亮到 #f0704a，文字用暖白，阴影加重。</div>
+  <div class="wrap">
+    
+  <div class="col">
+    <div class="lab">浅色（当前默认）</div>
+    <div class="screen" style="background:#f7f4f1">
+      <div class="hero" style="background:linear-gradient(135deg,#e9603a,#f18a5f)">
+        <div class="hello">你好，店长</div>
+        <div class="hsub">今天也要动起来 · 积分 120</div>
+      </div>
+
+      <div class="card" style="background:#ffffff;border-radius:12px;box-shadow:0 4rpx 20rpx rgba(35, 32, 29, 0.05)">
+        <div class="between">
+          <span style="color:#23201d;font-size:15px;font-weight:600">卧推排行榜</span>
+          <span style="color:#9c948c;font-size:11px">查看全部 ›</span>
+        </div>
+        
+          <div class="row">
+            <div class="no" style="color:#e9603a">1</div>
+            <div class="grow">
+              <div class="between">
+                <span style="color:#23201d;font-size:13px">阿强</span>
+                <span style="color:#e9603a;font-weight:600;font-size:13px">163.3 kg</span>
+              </div>
+              <div class="track" style="background:#f4efea">
+                <div class="fill" style="width:100%;background:linear-gradient(90deg,#e9603a,#f18a5f)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="no" style="color:#e9603a">2</div>
+            <div class="grow">
+              <div class="between">
+                <span style="color:#23201d;font-size:13px">小林</span>
+                <span style="color:#e9603a;font-weight:600;font-size:13px">132 kg</span>
+              </div>
+              <div class="track" style="background:#f4efea">
+                <div class="fill" style="width:81%;background:#f7d5c6"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="no" style="color:#e9603a">3</div>
+            <div class="grow">
+              <div class="between">
+                <span style="color:#23201d;font-size:13px">老王</span>
+                <span style="color:#e9603a;font-weight:600;font-size:13px">116.7 kg</span>
+              </div>
+              <div class="track" style="background:#f4efea">
+                <div class="fill" style="width:71%;background:#f7d5c6"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="no" style="color:#9c948c">4</div>
+            <div class="grow">
+              <div class="between">
+                <span style="color:#23201d;font-size:13px">小陈</span>
+                <span style="color:#e9603a;font-weight:600;font-size:13px">93.5 kg</span>
+              </div>
+              <div class="track" style="background:#f4efea">
+                <div class="fill" style="width:57%;background:#f7d5c6"></div>
+              </div>
+            </div>
+          </div>
+        <div class="mutedline" style="color:#9c948c">我的排名第 2 名 · 共 4 人</div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <div class="q" style="background:#ffffff;border-radius:9px;box-shadow:0 4rpx 20rpx rgba(35, 32, 29, 0.05)">
+          <div style="color:#23201d;font-size:13px;font-weight:600">约团课</div>
+          <div style="color:#9c948c;font-size:11px">瑜伽 单车</div>
+        </div>
+        <div class="q" style="background:#ffffff;border-radius:9px;box-shadow:0 4rpx 20rpx rgba(35, 32, 29, 0.05)">
+          <div style="color:#23201d;font-size:13px;font-weight:600">健身友圈</div>
+          <div style="color:#9c948c;font-size:11px">晒训练</div>
+        </div>
+      </div>
+
+      <div class="menu" style="background:#ffffff;border-radius:12px;box-shadow:0 4rpx 20rpx rgba(35, 32, 29, 0.05)">
+        <div class="mi"><span style="color:#23201d">身体数据</span><span style="color:#c3bab1">›</span></div>
+        <div class="mi"><span style="color:#23201d">力量排行榜</span><span style="color:#c3bab1">›</span></div>
+      </div>
+
+      <div class="tabbar" style="background:#ffffff;border-color:#efe8e1">
+        <div class="tb on" style="color:#e9603a">首页</div>
+        <div class="tb" style="color:#9c948c">友圈</div>
+        <div class="tb" style="color:#9c948c">我的</div>
+      </div>
+    </div>
+  </div>
+    
+  <div class="col">
+    <div class="lab">深色（跟随系统）</div>
+    <div class="screen" style="background:#121110">
+      <div class="hero" style="background:linear-gradient(135deg,#ef6b45,#f28a60)">
+        <div class="hello">你好，店长</div>
+        <div class="hsub">今天也要动起来 · 积分 120</div>
+      </div>
+
+      <div class="card" style="background:#1c1a18;border-radius:12px;box-shadow:0 4rpx 20rpx rgba(0, 0, 0, 0.35)">
+        <div class="between">
+          <span style="color:#ece8e4;font-size:15px;font-weight:600">卧推排行榜</span>
+          <span style="color:#948c84;font-size:11px">查看全部 ›</span>
+        </div>
+        
+          <div class="row">
+            <div class="no" style="color:#f0704a">1</div>
+            <div class="grow">
+              <div class="between">
+                <span style="color:#ece8e4;font-size:13px">阿强</span>
+                <span style="color:#f0704a;font-weight:600;font-size:13px">163.3 kg</span>
+              </div>
+              <div class="track" style="background:#262320">
+                <div class="fill" style="width:100%;background:linear-gradient(90deg,#ef6b45,#f28a60)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="no" style="color:#f0704a">2</div>
+            <div class="grow">
+              <div class="between">
+                <span style="color:#ece8e4;font-size:13px">小林</span>
+                <span style="color:#f0704a;font-weight:600;font-size:13px">132 kg</span>
+              </div>
+              <div class="track" style="background:#262320">
+                <div class="fill" style="width:81%;background:rgba(240, 112, 74, 0.38)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="no" style="color:#f0704a">3</div>
+            <div class="grow">
+              <div class="between">
+                <span style="color:#ece8e4;font-size:13px">老王</span>
+                <span style="color:#f0704a;font-weight:600;font-size:13px">116.7 kg</span>
+              </div>
+              <div class="track" style="background:#262320">
+                <div class="fill" style="width:71%;background:rgba(240, 112, 74, 0.38)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="no" style="color:#948c84">4</div>
+            <div class="grow">
+              <div class="between">
+                <span style="color:#ece8e4;font-size:13px">小陈</span>
+                <span style="color:#f0704a;font-weight:600;font-size:13px">93.5 kg</span>
+              </div>
+              <div class="track" style="background:#262320">
+                <div class="fill" style="width:57%;background:rgba(240, 112, 74, 0.38)"></div>
+              </div>
+            </div>
+          </div>
+        <div class="mutedline" style="color:#948c84">我的排名第 2 名 · 共 4 人</div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <div class="q" style="background:#1c1a18;border-radius:9px;box-shadow:0 4rpx 20rpx rgba(0, 0, 0, 0.35)">
+          <div style="color:#ece8e4;font-size:13px;font-weight:600">约团课</div>
+          <div style="color:#948c84;font-size:11px">瑜伽 单车</div>
+        </div>
+        <div class="q" style="background:#1c1a18;border-radius:9px;box-shadow:0 4rpx 20rpx rgba(0, 0, 0, 0.35)">
+          <div style="color:#ece8e4;font-size:13px;font-weight:600">健身友圈</div>
+          <div style="color:#948c84;font-size:11px">晒训练</div>
+        </div>
+      </div>
+
+      <div class="menu" style="background:#1c1a18;border-radius:12px;box-shadow:0 4rpx 20rpx rgba(0, 0, 0, 0.35)">
+        <div class="mi"><span style="color:#ece8e4">身体数据</span><span style="color:#6f6860">›</span></div>
+        <div class="mi"><span style="color:#ece8e4">力量排行榜</span><span style="color:#6f6860">›</span></div>
+      </div>
+
+      <div class="tabbar" style="background:#1c1a18;border-color:#302d29">
+        <div class="tb on" style="color:#f0704a">首页</div>
+        <div class="tb" style="color:#948c84">友圈</div>
+        <div class="tb" style="color:#948c84">我的</div>
+      </div>
+    </div>
+  </div>
+  </div>
+</body></html>

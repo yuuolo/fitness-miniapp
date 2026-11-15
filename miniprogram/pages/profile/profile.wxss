@@ -30,6 +30,6 @@
 }
 
 .welcome {
-  background: linear-gradient(135deg, var(--brand-soft), #fff);
+  background: linear-gradient(135deg, var(--brand-soft), var(--surface));
   border: 1px solid var(--brand-line);
 }

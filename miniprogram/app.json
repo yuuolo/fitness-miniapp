@@ -24,10 +24,11 @@
     "pages/staff/competition-entry/competition-entry"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#ffffff",
-    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "@navBgColor",
+    "navigationBarTextStyle": "@navTextStyle",
     "navigationBarTitleText": "健身娱乐",
-    "backgroundColor": "#f7f4f1"
+    "backgroundColor": "@bgColor",
+    "backgroundTextStyle": "@bgTextStyle"
   },
   "tabBar": {
     "custom": true,
@@ -59,5 +60,7 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "darkmode": true,
+  "themeLocation": "theme.json"
 }
