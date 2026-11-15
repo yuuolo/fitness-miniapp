@@ -106,10 +106,13 @@ async function main() {
     const entry = await mp.navigateTo('/pages/entry/entry')
     await sleep(3000)
     const ed = await entry.data()
-    if (ed.image && String(ed.image).indexOf('data:image') === 0) {
+    // 会员卡功能关闭时，入场码会被服务端拒绝，这是预期行为而不是故障
+    const cardsOff = ed.disabled === true || /暂未开放/.test(String(ed.error || ''))
+    if (cardsOff) {
+      ok('会员卡功能已关闭，入场码按预期不可用')
+    } else if (ed.image && String(ed.image).indexOf('data:image') === 0) {
       ok('入场二维码已生成（' + String(ed.image).length + ' 字节 data URL）')
     } else if (ed.error) {
-      log('    提示：' + ed.error + '（若没有可入场的卡属正常）')
       bad('入场码未生成', ed.error)
     } else {
       bad('入场码既无图片也无错误')

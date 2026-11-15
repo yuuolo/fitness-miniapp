@@ -28,22 +28,22 @@
     <!-- 功能菜单 -->
     <view class="card menu">
       <view wx:if="{{features.cards !== false}}" class="menu-item" bindtap="goCards">
-        <text class="mi-icon">💳</text><text class="grow">我的会员卡</text><text class="chevron">›</text>
+        <view class="mi mi-card"></view><text class="grow">我的会员卡</text><text class="chevron">›</text>
       </view>
       <view wx:if="{{features.classes !== false || features.venues !== false}}" class="menu-item" bindtap="goBookings">
-        <text class="mi-icon">📋</text><text class="grow">我的预约</text><text class="chevron">›</text>
+        <view class="mi mi-list"></view><text class="grow">我的预约</text><text class="chevron">›</text>
       </view>
       <view wx:if="{{features.fitness !== false}}" class="menu-item" bindtap="goFitness">
-        <text class="mi-icon">📊</text><text class="grow">我的身体数据</text><text class="chevron">›</text>
+        <view class="mi mi-chart"></view><text class="grow">我的身体数据</text><text class="chevron">›</text>
       </view>
       <view wx:if="{{features.rank !== false}}" class="menu-item" bindtap="goRank">
-        <text class="mi-icon">🏆</text><text class="grow">力量排行榜</text><text class="chevron">›</text>
+        <view class="mi mi-trophy"></view><text class="grow">力量排行榜</text><text class="chevron">›</text>
       </view>
       <view wx:if="{{features.rank !== false}}" class="menu-item" bindtap="goCompetitions">
-        <text class="mi-icon">🔥</text><text class="grow">竞赛</text><text class="chevron">›</text>
+        <view class="mi mi-flame"></view><text class="grow">竞赛</text><text class="chevron">›</text>
       </view>
       <view wx:if="{{isStaff}}" class="menu-item" bindtap="goStaff">
-        <text class="mi-icon">🧰</text><text class="grow">员工工作台</text><text class="chevron">›</text>
+        <view class="mi mi-tool"></view><text class="grow">员工工作台</text><text class="chevron">›</text>
       </view>
     </view>
 
