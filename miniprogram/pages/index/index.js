@@ -19,6 +19,106 @@ function withPct(list, unit) {
   }))
 }
 
+// ---------- 快捷入口：六边形能力图 ----------
+// 不用图表库也不用 canvas：算出雷达图的点和线，拼成 SVG，转 base64 当背景图。
+// 这样在 wxss 里由 view 承载就行，深色模式、缩放都不用额外处理。
+const B64CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+function base64(str) {
+  let out = ''
+  for (let i = 0; i < str.length; i += 3) {
+    const c1 = str.charCodeAt(i)
+    const c2 = str.charCodeAt(i + 1)
+    const c3 = str.charCodeAt(i + 2)
+    out += B64CHARS[c1 >> 2]
+    out += B64CHARS[((c1 & 3) << 4) | (isNaN(c2) ? 0 : c2 >> 4)]
+    if (isNaN(c2)) { out += '=='; break }
+    out += B64CHARS[((c2 & 15) << 2) | (isNaN(c3) ? 0 : c3 >> 6)]
+    if (isNaN(c3)) { out += '='; break }
+    out += B64CHARS[c3 & 63]
+  }
+  return out
+}
+
+// 六个维度，值都是 0~100；拿不到数据的维度记 0
+function radarValues(f) {
+  const body = (f && f.latestBody) || {}
+  const best = (f && f.bestLift) || {}
+  const weight = Number(body.weight) || 0
+  const ratio = (v) => (weight > 0 ? (Number(v) || 0) / weight : 0)
+  const clamp01 = (x) => Math.max(0, Math.min(1, x))
+
+  // 力量：相对体重的倍数，按「新手 ~ 较强」区间映射
+  const bench = clamp01((ratio(best.bench) - 0.3) / 1.1) * 100
+  const squat = clamp01((ratio(best.squat) - 0.5) / 1.4) * 100
+  const dead = clamp01((ratio(best.deadlift) - 0.7) / 1.7) * 100
+  // 体脂：越低越好，8% 满分、35% 零分
+  const fat = Number(body.bodyFat) > 0 ? clamp01((35 - body.bodyFat) / 27) * 100 : 0
+  // 肌肉率：35% 零分、55% 满分
+  const muscle = Number(body.muscleRate) > 0 ? clamp01((body.muscleRate - 35) / 20) * 100 : 0
+  // 综合评分
+  const score = Number(body.score) > 0 ? Number(body.score) : 0
+
+  return [
+    { key: 'bench', label: '卧推', value: round1(bench) },
+    { key: 'squat', label: '深蹲', value: round1(squat) },
+    { key: 'dead', label: '硬拉', value: round1(dead) },
+    { key: 'fat', label: '体脂', value: round1(fat) },
+    { key: 'muscle', label: '肌肉', value: round1(muscle) },
+    { key: 'score', label: '综合', value: round1(score) }
+  ]
+}
+
+function round1(n) {
+  return Math.round((Number(n) || 0) * 10) / 10
+}
+
+// 生成雷达图 SVG（6 边形，20~100 分档）
+function radarSvg(values) {
+  const SIZE = 120
+  const C = SIZE / 2
+  const R = 44
+  const N = 6
+
+  const point = (i, ratio) => {
+    // 从正上方开始，顺时针分布
+    const angle = -Math.PI / 2 + (Math.PI * 2 * i) / N
+    return [C + Math.cos(angle) * R * ratio, C + Math.sin(angle) * R * ratio]
+  }
+  const poly = (ratio) => {
+    const pts = []
+    for (let i = 0; i < N; i++) {
+      const [x, y] = point(i, ratio)
+      pts.push(x.toFixed(1) + ',' + y.toFixed(1))
+    }
+    return pts.join(' ')
+  }
+
+  // 网格：外框 + 两圈内环
+  let grid = ''
+  ;[1, 0.66, 0.33].forEach(r => {
+    grid += '<polygon points="' + poly(r) + '" fill="none" stroke="#c9c2ba" stroke-width="1" opacity="0.55"/>'
+  })
+  // 轴线
+  for (let i = 0; i < N; i++) {
+    const [x, y] = point(i, 1)
+    grid += '<line x1="' + C + '" y1="' + C + '" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) +
+      '" stroke="#c9c2ba" stroke-width="1" opacity="0.45"/>'
+  }
+  // 数据多边形
+  const dataPts = values.map((v, i) => {
+    const [x, y] = point(i, Math.max(0.04, Math.min(1, v.value / 100)))
+    return x.toFixed(1) + ',' + y.toFixed(1)
+  }).join(' ')
+
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + SIZE + ' ' + SIZE + '">' +
+    grid +
+    '<polygon points="' + dataPts + '" fill="#e9603a" fill-opacity="0.35" stroke="#e9603a" stroke-width="2" stroke-linejoin="round"/>' +
+    '</svg>'
+
+  return 'data:image/svg+xml;base64,' + base64(svg)
+}
+
 Page({
   data: {
     loaded: false,
@@ -33,7 +133,13 @@ Page({
     rankTotal: 0,
     rankName: '卧推',
     competitions: [],
-    moments: []
+    moments: [],
+    // 快捷入口：六边形能力图（排行榜格子）
+    radarSvg: '',
+    radarScore: null,
+    radarEmpty: true,
+    // 快捷入口：最近两条动态的缩略图（友圈格子）
+    momentThumbs: []
   },
 
   onShow() {
@@ -85,8 +191,28 @@ Page({
 
     if (hasBlock.competitions && feat.rank !== false) this.loadCompetitions()
     if (hasBlock.moments && feat.moments !== false) this.loadMoments()
+    // 快捷入口里的能力图（排行榜格子）
+    if (hasBlock.quick && feat.fitness !== false) this.loadRadar()
+    // 快捷入口里的友圈缩略图：即使没有「友圈预览」模块也要拉
+    if (hasBlock.quick && feat.moments !== false && !hasBlock.moments) this.loadMoments()
   },
 
+
+  // 快捷入口：拉自己的身体数据，算六边形能力图
+  loadRadar() {
+    return api.call('myFitness', {}, { silent: true }).then(f => {
+      const values = radarValues(f)
+      // 六个维度全是 0 说明还没录数据
+      const empty = values.every(v => v.value <= 0)
+      const score = values[values.length - 1]
+      this.setData({
+        radarEmpty: empty,
+        radarScore: empty ? null : Math.round(score.value),
+        radarSvg: empty ? '' : radarSvg(values),
+        radarValues: values
+      })
+    }, () => {})
+  },
 
   // 首页展示排行榜前 5，并算出条形图比例
   loadRank() {
@@ -110,15 +236,34 @@ Page({
   },
 
   loadMoments() {
-    return api.call('momentList', { page: 1 }, { silent: true }).then(r => {
-      const list = (r.list || []).slice(0, 3).map(m => ({
-        _id: m._id,
-        nickName: m.nickName,
-        content: (m.content || '').slice(0, 40),
-        image: (m.images && m.images.length) ? m.images[0] : '',
-        timeText: m.timeText || ''
-      }))
-      this.setData({ moments: list })
+    return api.call('momentList', {}, { silent: true }).then(r => {
+      const raw = r.list || []
+      // 友圈预览：作者名/时间/首图（服务端字段是 authorName / time / media）
+      const list = raw.slice(0, 3).map(m => {
+        const first = (m.media || [])[0] || null
+        return {
+          _id: m._id,
+          authorName: m.authorName || '会员',
+          content: (m.content || '').slice(0, 40),
+          image: first ? (first.thumb || first.fileID || '') : '',
+          isVideo: !!(first && first.type === 'video'),
+          timeText: m.time || ''
+        }
+      })
+
+      // 快捷入口缩略图：最近两条有图片或视频的动态
+      const momentThumbs = []
+      for (const m of raw) {
+        const first = (m.media || [])[0]
+        if (!first) continue
+        momentThumbs.push({
+          src: first.thumb || first.fileID || '',
+          video: first.type === 'video'
+        })
+        if (momentThumbs.length >= 2) break
+      }
+
+      this.setData({ moments: list, momentThumbs })
     }, () => {})
   },
 
