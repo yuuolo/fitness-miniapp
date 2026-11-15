@@ -1,0 +1,101 @@
+<view class="page">
+  <view wx:if="{{loaded && !member}}" class="card">
+    <view class="title">找不到这位会员</view>
+    <view class="muted mt">可能账号已注销，或链接不完整。</view>
+  </view>
+
+  <block wx:else>
+    <!-- 基本资料 -->
+    <view class="card member-head">
+      <image wx:if="{{member.avatar}}" class="avatar" src="{{member.avatar}}" mode="aspectFill" />
+      <view wx:else class="avatar avatar-empty">＋</view>
+      <view class="grow ml">
+        <view class="row">
+          <text class="title">{{member.nickName || '未设置昵称'}}</text>
+          <text class="tag orange ml-sm">{{member.roleName}}</text>
+          <text wx:if="{{member.isMe}}" class="tag ml-sm">我</text>
+        </view>
+        <view class="muted mt-sm">
+          <text wx:if="{{member.gender === 'male'}}">男</text>
+          <text wx:elif="{{member.gender === 'female'}}">女</text>
+          <text wx:if="{{member.height}}"> · {{member.height}} cm</text>
+          <text wx:if="{{member.since}}"> · {{member.since}} 加入</text>
+        </view>
+        <view wx:if="{{member.phone}}" class="muted">{{member.phone}}</view>
+      </view>
+    </view>
+
+    <!-- 身体评分 -->
+    <view wx:if="{{hasBody}}" class="card">
+      <view class="between">
+        <text class="title">身体评分</text>
+        <view class="row">
+          <text wx:if="{{f.latestBody.deviceScore}}" class="tag">设备 {{f.latestBody.deviceScore}} 分</text>
+          <text class="tag orange">{{score}} 分</text>
+        </view>
+      </view>
+      <view class="muted mt">{{f.latestBody.date}} 测量{{f.latestBody.deviceName ? ' · ' + f.latestBody.deviceName : ''}}</view>
+      <view wx:for="{{scoreDetail}}" wx:key="key" class="form-row">
+        <text class="label">{{item.label}}</text>
+        <text class="grow">{{item.score}} / {{item.max}}</text>
+      </view>
+    </view>
+
+    <!-- 身体指标 -->
+    <block wx:if="{{metrics.length}}">
+      <view class="section-title">身体指标</view>
+      <view class="card">
+        <view class="grid">
+          <view wx:for="{{metrics}}" wx:key="key" class="grid-cell">
+            <view class="grid-v">{{item.value}}<text wx:if="{{item.unit}}" class="grid-u">{{item.unit}}</text></view>
+            <view class="muted">{{item.name}}</view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 历史身体资料 -->
+    <block wx:if="{{bodyList.length}}">
+      <view class="section-title between">
+        <text>历史身体资料</text>
+        <text class="muted">{{bodyList.length}} 条</text>
+      </view>
+      <view class="card">
+        <view wx:for="{{bodyList}}" wx:key="id" wx:if="{{showAllHistory || index < 5}}" class="list-item">
+          <view class="grow">
+            <view class="title-sm">{{item.date}}</view>
+            <view class="muted">体重 {{item.weight}}kg · 体脂 {{item.bodyFat}}% · 肌肉 {{item.muscle}}kg</view>
+          </view>
+          <text class="tag orange">{{item.score}} 分</text>
+        </view>
+        <view wx:if="{{bodyList.length > 5}}" class="list-hint" bindtap="toggleHistory">
+          {{showAllHistory ? '收起' : '展开全部 ' + bodyList.length + ' 条'}}
+        </view>
+      </view>
+    </block>
+
+    <!-- 力量成绩 -->
+    <block wx:if="{{bestList.length}}">
+      <view class="section-title">力量成绩</view>
+      <view class="card">
+        <view wx:for="{{bestList}}" wx:key="key" class="list-item">
+          <text class="grow">{{item.name}}</text>
+          <text wx:if="{{item.has}}" class="price">{{item.oneRM}} kg</text>
+          <text wx:else class="muted">还没有成绩</text>
+        </view>
+        <view wx:if="{{f.sbdTotal}}" class="list-item">
+          <text class="grow">三项合计</text>
+          <text class="price">{{f.sbdTotal}} kg</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="hint-block">身体数据对全店会员可见；手机号只对本人、教练和管理员显示。</view>
+
+    <!-- 没有数据 -->
+    <view wx:if="{{loaded && !hasBody && !bodyList.length}}" class="card">
+      <view class="title">还没有身体数据</view>
+      <view class="muted mt">教练用体测设备测量后录入，这里就会显示最新数据和历史记录。</view>
+    </view>
+  </block>
+</view>

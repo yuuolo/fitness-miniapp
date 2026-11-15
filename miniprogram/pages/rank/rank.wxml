@@ -31,7 +31,7 @@
 
     <view class="card">
       <view wx:if="{{loaded && board && !board.top.length}}" class="board-empty">{{board.periodName}}还没有人上榜</view>
-      <view wx:for="{{board.top}}" wx:key="openid" class="list-item rank-row">
+      <view wx:for="{{board.top}}" wx:key="openid" class="list-item rank-row" data-openid="{{item.openid}}" bindtap="goMember">
         <text class="rank-no {{item.rank <= 3 ? 'top' : ''}}">{{item.rank}}</text>
         <view class="grow">
           <view class="between">

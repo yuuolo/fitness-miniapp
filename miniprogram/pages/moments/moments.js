@@ -82,6 +82,13 @@ Page({
     })
   },
 
+  // 点作者看会员资料
+  goMember(e) {
+    const openid = e.currentTarget.dataset.openid
+    if (!openid) return
+    wx.navigateTo({ url: '/pages/member/member?openid=' + openid })
+  },
+
   goDetail(e) {
     wx.navigateTo({ url: '/pages/moments/detail/detail?id=' + e.currentTarget.dataset.id })
   },

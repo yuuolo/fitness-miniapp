@@ -2,7 +2,7 @@
 const { query, tx } = require('./db')
 const {
   DAY, cnDate, dayStart, fail, need, newId, memberLabel, memberRow,
-  bodyRow, strengthRow, activityRow, ROLE_LEVEL
+  bodyRow, strengthRow, activityRow, ROLE_LEVEL, ROLE_NAMES
 } = require('./common')
 const liftItems = require('./lift-items')
 const bodyReport = require('./body-report')
@@ -434,11 +434,36 @@ async function myFitness({ me }) {
   return fitnessOf(fresh, true)
 }
 
+// 会员公开资料：任何人都能看，手机号只给自己 / 教练 / 管理员
+async function memberProfile({ me, data }) {
+  need(me, 'member')
+  const m = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
+  if (!m) fail('会员不存在')
+  const myLevel = ROLE_LEVEL[me.role] || 0
+  const canSeePhone = m._id === me._id || myLevel >= ROLE_LEVEL.coach
+  return {
+    _id: m._id,
+    nickName: m.nickName || '',
+    avatar: m.avatar || '',
+    role: m.role,
+    roleName: ROLE_NAMES[m.role] || '会员',
+    gender: m.gender || '',
+    height: m.height || 0,
+    phone: canSeePhone ? (m.phone || '') : '',
+    since: m.createdAt ? cnDate(m.createdAt) : '',
+    isMe: m._id === me._id,
+    bestLift: m.bestLift || {},
+    sbdTotal: m.sbdTotal || 0
+  }
+}
+
+// 任何会员都能看别人的身体数据（含历史）；前台不需要是教练
 async function memberFitness({ me, data }) {
-  need(me, 'coach')
+  need(me, 'member')
   const target = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
   if (!target) fail('会员不存在')
-  return fitnessOf(target, false)
+  // 第二个参数是「是否隐藏身体明细」，现在对所有人可见
+  return fitnessOf(target, true)
 }
 
 // ---------- 排行榜 ----------
@@ -652,7 +677,7 @@ async function setBodyPublic({ me, data }) {
 
 module.exports = {
   saveBodyRecord, saveStrength, saveActivity,
-  myFitness, memberFitness, leaderboard, setBodyPublic, bodyTrend,
+  myFitness, memberFitness, memberProfile, leaderboard, setBodyPublic, bodyTrend,
   listLiftItems, saveLiftItem, setLiftItemEnabled, deleteLiftItem,
   parseBodyReport, ocrBodyReport,
   // 供内部/测试复用

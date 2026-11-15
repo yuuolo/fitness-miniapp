@@ -98,6 +98,13 @@ Page({
     })
   },
 
+  // 点作者看会员资料
+  goMember(e) {
+    const openid = e.currentTarget.dataset.openid
+    if (!openid) return
+    wx.navigateTo({ url: '/pages/member/member?openid=' + openid })
+  },
+
   like() {
     const m = this.data.m
     if (!m) return

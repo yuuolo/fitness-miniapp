@@ -73,6 +73,13 @@ Page({
     this.load()
   },
 
+  // 点榜单里的会员看他的资料（任何人都能看）
+  goMember(e) {
+    const openid = e.currentTarget.dataset.openid
+    if (!openid) return
+    wx.navigateTo({ url: '/pages/member/member?openid=' + openid })
+  },
+
   goCompetitions() {
     wx.navigateTo({ url: '/pages/competitions/competitions' })
   }

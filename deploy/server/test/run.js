@@ -203,14 +203,33 @@ async function main() {
 
   await act('setBodyPublic', MEMBER, { isPublic: false })
   const staffView = await act('memberFitness', STAFF, { openid: MEMBER })
-  assert.strictEqual(staffView.latestBody.weight, null)
+  // 需求变更：身体数据对所有人可见，公开开关只决定是否进「相对体重榜」
+  assert.ok(staffView.latestBody.weight > 0, '关闭公开后体重依然可见（人人可见）')
   assert.ok(staffView.latestBody.score > 0)
-  ok('未公开身体数据时只暴露评分')
+  ok('身体数据对所有人可见（公开开关只影响相对体重榜）')
 
   // 友圈测试需要第二个会员（点赞、删别人的动态）
   const OTHER = 'openid-other'
   await ensureMember(OTHER)
   await act('updateProfile', OTHER, { nickName: '小红', phone: '13800004444' })
+
+  // ---------- 任何人都能看会员资料与身体数据 ----------
+  const prof = await act('memberProfile', OTHER, { openid: MEMBER })
+  assert.strictEqual(prof.nickName, '小明')
+  assert.strictEqual(prof.roleName, '会员')
+  assert.strictEqual(prof.phone, '', '普通会员看不到别人的手机号')
+
+  const adminProf = await act('memberProfile', ADMIN, { openid: MEMBER })
+  assert.ok(adminProf.phone, '管理员能看到手机号')
+
+  const meProf = await act('memberProfile', MEMBER, { openid: MEMBER })
+  assert.ok(meProf.phone, '自己能看到自己的手机号')
+
+  const mateFitness = await act('memberFitness', OTHER, { openid: MEMBER })
+  assert.ok(mateFitness.latestBody, '普通会员也能看到别人的最新身体数据')
+  assert.ok(mateFitness.latestBody.weight > 0, '体重对所有人可见（不再受公开开关限制）')
+  assert.ok(mateFitness.bodyHistory.length > 0, '能看到别人的历史身体资料')
+  ok('任何会员都能看别人的资料、身体数据与历史（手机号仅自己/教练/管理员可见）')
 
   // ---------- 健身友圈 ----------
   await expectFail(() => act('postMoment', MEMBER, { content: '' }), '写点什么', '空动态被拒绝')

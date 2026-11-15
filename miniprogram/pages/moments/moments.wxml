@@ -17,7 +17,7 @@
     <view wx:for="{{list}}" wx:key="_id" class="card">
       <view class="between" bindtap="goDetail" data-id="{{item._id}}">
         <view>
-          <text class="title">{{item.authorName}}</text>
+          <text class="title" data-openid="{{item.openid}}" catchtap="goMember">{{item.authorName}}</text>
           <text wx:if="{{item.coachName}}" class="tag">教练 {{item.coachName}} 代拍</text>
         </view>
         <text class="muted">{{item.date}}</text>

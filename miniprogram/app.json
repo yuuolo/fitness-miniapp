@@ -4,6 +4,7 @@
     "pages/mine/mine",
     "pages/profile/profile",
     "pages/fitness/fitness",
+    "pages/member/member",
     "pages/rank/rank",
     "pages/competitions/competitions",
     "pages/competition-detail/competition-detail",

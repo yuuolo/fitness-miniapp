@@ -2,7 +2,7 @@
   <view class="card">
     <view class="between">
       <view>
-        <text class="title">{{m.authorName}}</text>
+        <text class="title" data-openid="{{m.openid}}" catchtap="goMember">{{m.authorName}}</text>
         <text wx:if="{{m.coachName}}" class="tag">教练 {{m.coachName}} 代拍</text>
       </view>
       <text class="muted">{{m.date}}</text>

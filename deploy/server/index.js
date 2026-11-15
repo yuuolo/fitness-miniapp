@@ -134,6 +134,7 @@ const ACTION_FEATURE = {
   saveActivity: 'fitness',
   myFitness: 'fitness',
   memberFitness: 'fitness',
+  memberProfile: 'fitness',
   bodyTrend: 'fitness',
   parseBodyReport: 'fitness',
   ocrBodyReport: 'fitness',
