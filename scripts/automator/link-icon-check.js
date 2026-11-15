@@ -1,4 +1,4 @@
-// 验证首页快捷入口卡片：图标渲染、点击跳转
+// 验证：快捷入口「没选图标就不显示图标」
 const automator = require('miniprogram-automator')
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
@@ -10,56 +10,57 @@ const bad = (m, d) => { log('  ✗ ' + m + (d ? ' -> ' + d : '')); failures++ }
 async function main() {
   const mp = await automator.connect({ wsEndpoint: process.env.AUTO_ENDPOINT || 'ws://127.0.0.1:9421' })
   await mp.reLaunch('/pages/index/index')
-  await sleep(4500)
+  await sleep(5000)
   const home = await mp.currentPage()
   const d = await home.data()
 
-  log('[1] 首页布局里的快捷入口')
-  const linkBlocks = (d.layout || []).filter(b => b.type === 'link')
-  log('  数量: ' + linkBlocks.length)
-  linkBlocks.forEach(b => log('  · ' + b.title + ' -> ' + b.page + ' (icon="' + (b.icon || '') + '")'))
-  if (!linkBlocks.length) {
-    log('  没有快捷入口，跳过')
-    await mp.disconnect()
-    process.exit(0)
-  }
-  ok('布局里有自定义快捷入口')
+  const links = (d.layout || []).filter(b => b.type === 'link')
+  log('[1] 布局里的快捷入口')
+  links.forEach(b => log('  ' + JSON.stringify({ title: b.title, icon: b.icon || '', page: b.page })))
+  if (!links.length) { log('  没有快捷入口'); await mp.disconnect(); process.exit(0) }
 
-  log('\n[2] 卡片与图标渲染')
   const cards = await home.$$('.link-card')
-  log('  .link-card 数量: ' + cards.length)
-  if (cards.length) ok('快捷入口卡片已渲染')
-  else bad('卡片没渲染')
+  log('\n[2] 卡片数量: ' + cards.length + '（布局里 ' + links.length + ' 个）')
+  if (cards.length !== links.length) bad('卡片数量与布局不一致')
 
-  const icons = await home.$$('.link-icon')
-  log('  .link-icon 数量: ' + icons.length)
-  if (icons.length) {
-    const size = await icons[0].size()
-    log('  图标尺寸: ' + size.width + 'x' + size.height)
-    if (size.width > 0 && size.height > 0) ok('图标有实际尺寸（SVG 背景生效）')
-    else bad('图标尺寸为 0')
+  log('\n[3] 逐个检查图标节点')
+  for (let i = 0; i < cards.length; i++) {
+    const block = links[i] || {}
+    const cardText = String(await cards[i].text()).trim()
+    const icons = await cards[i].$$('.link-icon')
+    const hasIconNode = icons.length > 0
+    let iconText = ''
+    let iconSize = null
+    if (hasIconNode) {
+      iconText = String(await icons[0].text()).trim()
+      iconSize = await icons[0].size()
+    }
+    log('  「' + (block.title || '?') + '」icon="' + (block.icon || '') + '"')
+    log('    卡片文本: "' + cardText + '"')
+    log('    图标节点: ' + (hasIconNode ? '有，内容 "' + iconText + '" 尺寸 ' + iconSize.width + 'x' + iconSize.height : '无'))
 
-    // 确认卡片里不再有 emoji 文本
-    const txt = String(await cards[0].text()).trim()
-    log('  卡片文本: "' + txt + '"')
-    const emojiRe = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u
-    if (emojiRe.test(txt)) bad('卡片里还有 emoji')
-    else ok('卡片里没有 emoji 字符（图标走 SVG 背景）')
+    if (!block.icon) {
+      if (!hasIconNode) ok('没选图标 → 不渲染图标节点')
+      else bad('没选图标却渲染了图标', cardText)
+    } else {
+      if (hasIconNode) ok('选了图标 → 正常渲染')
+      else bad('选了图标却没渲染')
+    }
   }
 
-  log('\n[3] 点击跳转')
-  const before = (await mp.currentPage()).path
-  await cards[0].tap()
-  await sleep(2800)
-  const rawAfter = (await mp.currentPage()).path
-  const after = rawAfter.charAt(0) === '/' ? rawAfter : '/' + rawAfter
-  log('  ' + before + ' -> ' + after)
-  if (after !== before && after === '/pages/competitions/competitions') ok('跳到目标页面')
-  else if (after !== before) ok('有跳转（' + after + '）')
-  else bad('没有跳转')
+  log('\n[4] 没有「统一链接图标」的痕迹')
+  const allIcons = await home.$$('.link-icon')
+  let svgBacked = 0
+  for (const el of allIcons) {
+    // 旧实现是空节点 + SVG 背景；新实现必须有文字内容
+    const t = String(await el.text()).trim()
+    if (!t) svgBacked++
+  }
+  if (svgBacked === 0) ok('没有空白图标节点（SVG 兜底已移除）')
+  else bad('仍有 ' + svgBacked + ' 个空白图标节点')
 
   await mp.reLaunch('/pages/index/index')
-  await sleep(600)
+  await sleep(500)
   await mp.disconnect()
   log('')
   log(failures ? failures + ' 项失败' : '全部通过')

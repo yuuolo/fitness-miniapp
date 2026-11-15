@@ -308,8 +308,8 @@
           <input id="linkDesc" placeholder="例如：看实时排名" maxlength="30">
         </div>
         <div class="field">
-          <label>图标</label>
-          <input value="统一使用链接图标（不用填）" disabled>
+          <label>图标（可留空）</label>
+          <input id="linkIcon" placeholder="留空则不显示图标" maxlength="4">
         </div>
       </div>
       <div class="actions">
@@ -669,7 +669,7 @@
     } else {
       $('layoutList').innerHTML = list.map(function (b, i) {
         var tm = typeMeta(b.type)
-        var title = b.type === 'link' ? (b.icon || '🔗') + ' ' + b.title : b.title
+        var title = b.type === 'link' ? (b.icon ? b.icon + ' ' : '') + b.title : b.title
         var desc = b.type === 'link' ? (b.page || '') : (b.desc || tm.desc)
         return '<div class="blk ' + (b.enabled ? '' : 'is-off') + '">' +
           '<div class="grow">' +
@@ -781,12 +781,14 @@
       body: {
         page: page,
         title: $('linkTitle').value.trim(),
-        desc: $('linkDesc').value.trim()
+        desc: $('linkDesc').value.trim(),
+        icon: ($('linkIcon').value || '').trim()
       }
     }).then(function (block) {
       blocksOf(currentRole).push(block)
       $('linkTitle').value = ''
       $('linkDesc').value = ''
+      $('linkIcon').value = ''
       renderLayoutList()
       markDirty(true)
       showMsg($('layoutMsg'), '已添加到「' + roleName(currentRole) + '」首页，记得点「保存布局」', 'ok')
