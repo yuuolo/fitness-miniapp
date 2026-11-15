@@ -1,6 +1,8 @@
 // 全 action 冒烟测试：用最小/空参数逐个调用，确保没有 500（即没有未处理的 TypeError）。
 // 400（业务校验）是正常结果，500 则说明代码有 bug。
 // 用法：BASE=http://gym-http-test:3000 DEV_LOGIN_TOKEN=xxx node test/smoke.js
+// 生产库保护：测试会清表，绝不能在 gym 上跑
+require('./_guard')
 const MODULES = ['system', 'member', 'booking', 'entry', 'admin', 'fitness', 'moment']
 const INTERNAL = new Set([
   'LIFTS', 'bmiOf', 'oneRM', 'scoreBody', 'publicMe', 'isInitialized',

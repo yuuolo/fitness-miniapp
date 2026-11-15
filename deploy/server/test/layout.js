@@ -1,5 +1,7 @@
 // 首页布局：默认值、校验、按角色过滤、保存与缓存
 // 用法：DATABASE_URL=postgres://.../gym_layout node test/layout.js
+// 生产库保护：测试会清表，绝不能在 gym 上跑
+require('./_guard')
 const assert = require('assert')
 const { query, pool, ensureSchema } = require('../lib/db')
 const { memberRow } = require('../lib/common')
@@ -23,15 +25,21 @@ async function main() {
   // ---------- 1. 默认值 ----------
   const def = layout.defaults()
   assert.deepStrictEqual(Object.keys(def).sort(), ['admin', 'coach', 'member'])
-  assert.strictEqual(def.member.length, 6)
+  assert.strictEqual(def.member.length, 4)
   assert.strictEqual(def.member[0].type, 'hero')
-  assert.ok(def.member.some(b => b.type === 'entry'))
-  assert.ok(def.admin.some(b => b.type === 'stats'), '管理员默认带今日概况')
+  assert.ok(def.member.some(b => b.type === 'hero'))
+  assert.ok(def.admin.some(b => b.type === 'hero'), '管理员默认带欢迎模块')
+  // 这 4 个模块已彻底删除，不应再出现
+  // 注意：上一行没有分号，这里的数组字面量必须以 ; 开头，否则会被当成下标访问
+  ;['entry', 'stats', 'cards', 'bookings'].forEach(type => {
+    assert.ok(!def.member.some(b => b.type === type), '默认布局不应再有 ' + type)
+    assert.ok(!def.admin.some(b => b.type === type), '默认布局不应再有 ' + type)
+  })
   assert.ok(def.coach.some(b => b.type === 'link'), '教练默认带一个自定义入口')
   ok('三个角色都有默认布局，且带各自特色的模块')
 
   const meta = layout.describe()
-  assert.ok(meta.blocks.length >= 9)
+  assert.strictEqual(meta.blocks.length, 6, '可选模块只剩 6 种')
   assert.ok(meta.pages.length >= 12, '可选页面至少 12 个，实际 ' + meta.pages.length)
   assert.strictEqual(meta.roles.length, 3, '角色只有会员/教练/管理员')
   assert.ok(meta.defaults.member)
@@ -73,10 +81,10 @@ async function main() {
 
   // ---------- 3. 读默认 ----------
   const fresh = await layout.get(true)
-  assert.strictEqual(fresh.roles.member.length, 6)
+  assert.strictEqual(fresh.roles.member.length, 4)
   assert.strictEqual(fresh.updatedAt, 0)
   const memberBlocks = await layout.forRole('member')
-  assert.strictEqual(memberBlocks.length, 6)
+  assert.strictEqual(memberBlocks.length, 4)
   ok('没配置过时读出来就是默认布局')
 
   // ---------- 4. 自定义快捷入口 ----------
@@ -94,7 +102,7 @@ async function main() {
   )
 
   // ---------- 5. 保存与权限 ----------
-  const admin = memberRow({ openid: 'layout-admin', nick_name: '测试管理员', role: 'admin', points: 0 })
+  const admin = memberRow({ openid: 'layout-admin', nick_name: '测试管理员', role: 'admin' })
   const member = memberRow({ openid: 'layout-member', nick_name: '小明', role: 'member', points: 0 })
 
   await expectFail(
@@ -103,11 +111,11 @@ async function main() {
   )
 
   const roles = layout.defaults()
-  // 会员首页：把竞赛入口放到第一位，并隐藏会员卡
+  // 会员首页：把自定义入口放到第一位，并隐藏友圈预览
   roles.member = [
     link,
-    { id: 'hero', type: 'hero', title: '欢迎与积分', enabled: true },
-    { id: 'cards', type: 'cards', title: '我的会员卡', enabled: false }
+    { id: 'hero', type: 'hero', title: '欢迎', enabled: true },
+    { id: 'moments', type: 'moments', title: '友圈预览', enabled: false }
   ]
   const saved = await layout.save({ me: admin, data: { roles } })
   assert.strictEqual(saved.updatedBy, '测试管理员')
@@ -122,7 +130,7 @@ async function main() {
 
   // ---------- 6. 按角色过滤隐藏项 ----------
   const active = await layout.forRole('member')
-  assert.strictEqual(active.length, 2, '隐藏的会员卡不应出现在生效列表里')
+  assert.ok(active.length >= 1, '隐藏的模块不应出现在生效列表里')
   assert.deepStrictEqual(active.map(b => b.type), ['link', 'hero'])
   ok('forRole 过滤掉隐藏模块')
 
@@ -152,7 +160,7 @@ async function main() {
 
   // ---------- 8. 缓存 ----------
   const roles2 = layout.defaults()
-  roles2.member = [{ id: 'hero', type: 'hero', title: '欢迎与积分', enabled: true }]
+  roles2.member = [{ id: 'hero', type: 'hero', title: '欢迎', enabled: true }]
   await layout.save({ me: admin, data: { roles: roles2 } })
   const afterSave = await layout.forRole('member')   // 不强制刷新，验证缓存被清掉
   assert.strictEqual(afterSave.length, 1)

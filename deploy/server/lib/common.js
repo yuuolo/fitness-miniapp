@@ -91,7 +91,6 @@ function memberRow(r) {
     nickName: r.nick_name || '',
     phone: r.phone || '',
     role: r.role || 'member',
-    points: r.points || 0,
     noShow: r.no_show || 0,
     blockUntil: r.block_until || 0,
     avatar: r.avatar || '',
@@ -225,9 +224,6 @@ function entryLogRow(r) {
   }
 }
 
-function pointsLogRow(r) {
-  return { _id: r.id, openid: r.openid, change: r.change, source: r.source, createdAt: r.created_at }
-}
 
 const BODY_COLUMNS = {
   body_fat: 'bodyFat',
@@ -334,13 +330,6 @@ async function configSet(key, value) {
 }
 
 // executor 可以是 pool（{query}）或事务 client
-async function addPoints(executor, openid, change, source) {
-  await executor.query('update members set points = points + $2 where openid = $1', [openid, change])
-  await executor.query(
-    'insert into points_logs (id, openid, change, source, created_at) values ($1, $2, $3, $4, $5)',
-    [newId(), openid, change, source, Date.now()]
-  )
-}
 
 async function addCardLog(executor, card, change, reason, operator) {
   await executor.query(
@@ -379,7 +368,6 @@ module.exports = {
   cnDate, cnDateTime, cnHour, wxTime, wxDate, shortTime, dayStart, BizError, fail, need,
   ROLE_LEVEL, ROLE_NAMES, newId, memberLabel, cardUsable, pickEntryCard,
   memberRow, cardTypeRow, cardRow, cardLogRow, paymentRow, scheduleRow, bookingRow,
-  venueRow, entryLogRow, pointsLogRow, bodyRow, strengthRow, activityRow, momentRow,
-  getMember, configGet, configSet,
-  addPoints, addCardLog, recordNoShow, releaseLessonPending
+  venueRow, entryLogRow, bodyRow, strengthRow, activityRow, momentRow,
+  getMember, configGet, configSet, addCardLog, recordNoShow, releaseLessonPending
 }

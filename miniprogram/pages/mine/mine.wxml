@@ -27,9 +27,6 @@
 
     <!-- 功能菜单 -->
     <view class="card menu">
-      <view wx:if="{{features.cards !== false}}" class="menu-item" bindtap="goCards">
-        <view class="mi mi-card"></view><text class="grow">我的会员卡</text><text class="chevron">›</text>
-      </view>
       <view wx:if="{{features.classes !== false || features.venues !== false}}" class="menu-item" bindtap="goBookings">
         <view class="mi mi-list"></view><text class="grow">我的预约</text><text class="chevron">›</text>
       </view>
@@ -47,28 +44,5 @@
       </view>
     </view>
 
-    <!-- 积分（可在管理页关掉） -->
-    <block wx:if="{{features.points !== false}}">
-      <view class="card points-card">
-        <view class="between">
-          <view>
-            <view class="muted">我的积分</view>
-            <view class="points-n">{{me.points || 0}}</view>
-          </view>
-          <text class="muted">每天首次到店 +10，上课签到 +5</text>
-        </view>
-      </view>
-
-      <view class="card">
-        <view wx:if="{{!logs.length}}" class="empty sm">还没有积分记录</view>
-        <view wx:for="{{logs}}" wx:key="_id" class="list-item">
-          <view class="grow">
-            <view>{{item.source}}</view>
-            <view class="muted">{{item.time}}</view>
-          </view>
-          <text class="price">{{item.change > 0 ? '+' : ''}}{{item.change}}</text>
-        </view>
-      </view>
-    </block>
   </block>
 </view>

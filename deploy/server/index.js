@@ -9,6 +9,7 @@ const { BizError, getMember } = require('./lib/common')
 const storage = require('./lib/storage')
 const manage = require('./lib/manage')
 const features = require('./lib/features')
+const backup = require('./lib/backup')
 const liftItems = require('./lib/lift-items')
 const layout = require('./lib/layout')
 
@@ -173,8 +174,6 @@ const ACTION_FEATURE = {
   competitionEntries: 'rank',
   deleteCompetitionEntry: 'rank',
   myCompetitions: 'rank',
-  // 积分
-  myPoints: 'points'
 }
 
 const app = express()
@@ -289,6 +288,25 @@ app.post('/api/admin/storage/test', requireAdmin, async (req, res) => {
     res.json({ code: 0, data: result })
   } catch (e) {
     res.json({ code: 400, msg: e.message })
+  }
+})
+
+// 数据库备份：查看最近一次 + 立即备份一次
+app.get('/api/admin/backup', requireAdmin, (req, res) => {
+  try {
+    res.json({ code: 0, data: { latest: backup.latest(), dir: backup.DIR } })
+  } catch (e) {
+    res.json({ code: 500, msg: e.message })
+  }
+})
+
+app.post('/api/admin/backup', requireAdmin, async (req, res) => {
+  try {
+    const one = await backup.dump()
+    res.json({ code: 0, data: one })
+  } catch (e) {
+    console.error('backup failed', e)
+    res.json({ code: 500, msg: '备份失败：' + e.message })
   }
 })
 

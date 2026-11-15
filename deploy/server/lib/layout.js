@@ -12,13 +12,9 @@ let cache = { at: 0, value: null }
 
 // 可用的模块类型（前端按 type 渲染固定样式）
 const BLOCK_TYPES = [
-  { type: 'hero', name: '欢迎与积分', desc: '顶部问候语、积分', scope: 'all' },
-  { type: 'entry', name: '入场码按钮', desc: '出示二维码给前台扫码', scope: 'all', feature: 'cards' },
-  { type: 'stats', name: '今日概况', desc: '入场人次/课程预约/娱乐预约/会员总数', scope: 'staff' },
+  { type: 'hero', name: '欢迎', desc: '顶部问候语', scope: 'all' },
   { type: 'quick', name: '快捷入口', desc: '约团课、娱乐预约等宫格', scope: 'all' },
   { type: 'rank', name: '排行榜预览', desc: '排行榜前 5 名 + 我的名次', scope: 'all', feature: 'rank' },
-  { type: 'cards', name: '我的会员卡', desc: '会员卡列表与剩余次数', scope: 'all', feature: 'cards' },
-  { type: 'bookings', name: '今日预约', desc: '今天要上的课与娱乐预约', scope: 'all', feature: 'classes' },
   { type: 'competitions', name: '竞赛预览', desc: '进行中的竞赛', scope: 'all', feature: 'rank' },
   { type: 'moments', name: '友圈预览', desc: '最新几条动态', scope: 'all', feature: 'moments' },
   { type: 'link', name: '自定义快捷入口', desc: '指向任意页面的一张卡片', scope: 'all' }
@@ -71,19 +67,17 @@ function block(type, extra) {
 function defaults() {
   const social = [
     block('hero'),
-    block('entry'),
     block('quick'),
     block('rank'),
-    block('cards'),
-    block('bookings')
+    block('moments')
   ]
   return {
     member: social,
-    coach: [block('hero'), block('stats'), block('quick'), block('competitions'), block('rank'), block('members-link', {
+    coach: [block('hero'), block('quick'), block('competitions'), block('rank'), block('members-link', {
       type: 'link', title: '会员资料与体测', desc: '查会员、录体测', icon: '📋',
       page: '/pages/staff/members/members', enabled: true
     })],
-    admin: [block('stats'), block('hero'), block('entry'), block('quick'), block('competitions'), block('rank'), block('cards')]
+    admin: [block('hero'), block('quick'), block('competitions'), block('rank'), block('moments')]
   }
 }
 

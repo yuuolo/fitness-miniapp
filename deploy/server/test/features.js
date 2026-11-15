@@ -1,5 +1,7 @@
 // 功能开关测试：默认全开、保存、隐藏后接口被拦、描述接口
 // 用法：DATABASE_URL=... node test/features.js
+// 生产库保护：测试会清表，绝不能在 gym 上跑
+require('./_guard')
 const assert = require('assert')
 const { query, pool, ensureSchema } = require('../lib/db')
 const features = require('../lib/features')

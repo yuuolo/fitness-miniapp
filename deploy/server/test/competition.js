@@ -1,5 +1,7 @@
 // 排行榜项目 + 周/月榜 + 竞赛 全流程测试
 // 用法：DATABASE_URL=postgres://.../gym_comp node test/competition.js
+// 生产库保护：测试会清表，绝不能在 gym 上跑
+require('./_guard')
 const assert = require('assert')
 const { query, pool, ensureSchema } = require('../lib/db')
 const { memberRow, cnDate, dayStart, DAY, HOUR } = require('../lib/common')

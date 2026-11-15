@@ -1,15 +1,12 @@
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
-const features = require('../../utils/features')
 
 const REFRESH_SECONDS = 30
 
 Page({
-  data: { image: '', error: '', cardName: '', cardInfo: '', countdown: REFRESH_SECONDS, pointsOn: true },
+  data: { image: '', error: '', cardName: '', cardInfo: '', countdown: REFRESH_SECONDS },
 
   onShow() {
-    // 积分功能关掉时，提示语里不要提积分
-    features.ensure().then(f => this.setData({ pointsOn: f.points !== false })).catch(() => {})
     this.refresh()
     this.timer = setInterval(() => this.tick(), 1000)
   },

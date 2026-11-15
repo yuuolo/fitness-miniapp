@@ -26,13 +26,10 @@ Page({
     loaded: false,
     initialized: true,
     me: null,
-    cards: [],
-    bookings: [],
     features: {},
     // 管理员在后台配好的首页模块顺序
     layout: [],
     hasBlock: {},
-    stat: null,
     rankTop: [],
     rankMe: null,
     rankTotal: 0,
@@ -73,9 +70,7 @@ Page({
         me: res.me,
         features: res.features || {},
         layout: blocks,
-        hasBlock,
-        cards: (res.cards || []).map(fmt.decorateCard),
-        bookings: (res.todayBookings || []).map(fmt.decorateBooking)
+        hasBlock
       })
 
       this.loadExtras(hasBlock, res.features || {})
@@ -90,15 +85,10 @@ Page({
     if (hasBlock.rank && feat.rank !== false) this.loadRank()
     else this.setData({ rankTop: [], rankMe: null, rankTotal: 0 })
 
-    if (hasBlock.stats && this.data.me && this.data.me.role !== 'member') this.loadStats()
-
     if (hasBlock.competitions && feat.rank !== false) this.loadCompetitions()
     if (hasBlock.moments && feat.moments !== false) this.loadMoments()
   },
 
-  loadStats() {
-    return api.call('dashboard', {}, { silent: true }).then(stat => this.setData({ stat }), () => {})
-  },
 
   // 首页展示排行榜前 5，并算出条形图比例
   loadRank() {
@@ -158,9 +148,6 @@ Page({
     this.navTo(e.currentTarget.dataset.page)
   },
 
-  openEntry() {
-    wx.navigateTo({ url: '/pages/entry/entry' })
-  },
 
   goProfile() {
     wx.navigateTo({ url: '/pages/profile/profile' })
@@ -178,9 +165,6 @@ Page({
     wx.switchTab({ url: '/pages/moments/moments' })
   },
 
-  goCards() {
-    wx.navigateTo({ url: '/pages/cards/cards' })
-  },
 
   goRank() {
     wx.navigateTo({ url: '/pages/rank/rank' })

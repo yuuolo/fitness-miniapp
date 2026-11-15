@@ -1,6 +1,8 @@
 // HTTP 层端到端测试：真正打 /api、/api/upload、/api/media，验证路由、登录换号、JSON 协议、上传与媒体。
 // 需要服务端以 DEV_LOGIN_TOKEN=xxx 启动（生产不设置该变量，通道不生效）。
 // 用法：BASE=http://gym-http-test:3000 DEV_LOGIN_TOKEN=xxx node test/http.js
+// 生产库保护：测试会清表，绝不能在 gym 上跑
+require('./_guard')
 const assert = require('assert')
 
 const BASE = (process.env.BASE || 'http://127.0.0.1:3000').replace(/\/$/, '')
@@ -161,7 +163,7 @@ async function main() {
   ok('点赞')
 
   // ---------- 错误映射 ----------
-  const noPerm = await call('dashboard', MEMBER)
+  const noPerm = await call('searchMembers', MEMBER, { keyword: 'x' })
   assert.strictEqual(noPerm.code, 400)
   assert.strictEqual(noPerm.msg, '没有权限')
   ok('业务错误映射成 code=400 + 中文提示')

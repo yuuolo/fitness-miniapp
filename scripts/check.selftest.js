@@ -80,8 +80,8 @@ const cases = [
     name: '调用了后端未实现的 action',
     expect: '小程序调用了后端未实现的 action',
     mutate(root) {
-      const f = path.join(root, 'miniprogram', 'pages', 'mine', 'mine.js')
-      fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace("api.call('myPoints'", "api.call('myPointsNotExist'"))
+      const f = path.join(root, 'miniprogram', 'pages', 'staff', 'index', 'index.js')
+      fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace("api.call('home'", "api.call('homeNotExist'"))
     }
   },
   {

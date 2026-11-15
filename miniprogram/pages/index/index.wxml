@@ -21,36 +21,15 @@
     <!-- 按管理员配置的布局顺序渲染 -->
     <block wx:for="{{layout}}" wx:key="id">
 
-      <!-- 欢迎（积分可在管理页关掉） -->
+      <!-- 欢迎 -->
       <view wx:if="{{item.type === 'hero'}}" class="hero">
         <view class="hello">你好，{{me && me.nickName ? me.nickName : '欢迎光临'}}</view>
         <view class="sub">
           <text>今天也要动起来</text>
-          <text wx:if="{{features.points !== false}}"> · 积分 {{me ? me.points : 0}}</text>
         </view>
       </view>
 
-      <!-- 入场码（关掉会员卡功能时不显示） -->
-      <view wx:elif="{{item.type === 'entry' && features.cards !== false}}" class="entry-card" bindtap="openEntry">
-        <view class="entry-btn">
-          <view class="entry-text">出示入场码</view>
-          <view class="entry-sub">管理员扫码入场</view>
-        </view>
-      </view>
 
-      <!-- 今日概况（员工） -->
-      <view wx:elif="{{item.type === 'stats' && stat}}" class="card">
-        <view class="between">
-          <text class="title">今日概况</text>
-          <text class="muted">{{me && me.role !== 'member' ? '员工视角' : ''}}</text>
-        </view>
-        <view class="stats">
-          <view class="s"><view class="n">{{stat.entries}}</view><view class="muted">入场人次</view></view>
-          <view class="s"><view class="n">{{stat.classBookings}}</view><view class="muted">课程预约</view></view>
-          <view class="s"><view class="n">{{stat.venueBookings}}</view><view class="muted">娱乐预约</view></view>
-          <view class="s"><view class="n">{{stat.members}}</view><view class="muted">会员总数</view></view>
-        </view>
-      </view>
 
       <!-- 快捷入口 -->
       <view wx:elif="{{item.type === 'quick'}}" class="quick">
@@ -110,35 +89,7 @@
         </view>
       </block>
 
-      <!-- 我的会员卡 -->
-      <block wx:elif="{{item.type === 'cards' && features.cards !== false}}">
-        <view class="section-title">我的会员卡</view>
-        <view class="card" bindtap="goCards">
-          <view wx:if="{{!cards.length}}" class="muted">还没有会员卡，请找管理员办理</view>
-          <view wx:for="{{cards}}" wx:key="_id" class="list-item">
-            <view class="grow">
-              <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>
-              <view class="muted">{{item.summary}}</view>
-            </view>
-            <text class="tag {{item.usable ? 'green' : 'red'}}">{{item.usable ? '可用' : item.statusName}}</text>
-          </view>
-        </view>
-      </block>
 
-      <!-- 今日预约 -->
-      <block wx:elif="{{item.type === 'bookings' && (features.classes !== false || features.venues !== false)}}">
-        <view class="section-title">今日预约</view>
-        <view class="card">
-          <view wx:if="{{!bookings.length}}" class="muted">今天没有预约</view>
-          <view wx:for="{{bookings}}" wx:key="_id" class="list-item">
-            <view class="grow">
-              <view class="title">{{item.title}}</view>
-              <view class="muted">{{item.timeText}}{{item.room ? ' · ' + item.room : ''}}</view>
-            </view>
-            <text class="tag orange">{{item.typeName}}</text>
-          </view>
-        </view>
-      </block>
 
       <!-- 友圈预览 -->
       <block wx:elif="{{item.type === 'moments' && features.moments !== false}}">

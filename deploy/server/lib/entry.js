@@ -1,15 +1,14 @@
-// 入场码：HMAC 签名 + 60 秒有效；前台核验时按规则扣次/加积分
+// 入场码：HMAC 签名 + 60 秒有效；核验时按规则扣次
 const crypto = require('crypto')
 const QRCode = require('qrcode')
 const { query, tx } = require('./db')
 const {
   cnDate, fail, need, pickEntryCard, memberLabel, memberRow, cardRow,
-  configGet, addPoints, addCardLog, newId
+  configGet, addCardLog, newId
 } = require('./common')
 
 const CODE_PREFIX = 'FE1'
 const CODE_TTL = 60e3
-const ENTRY_POINTS = 10
 
 let secretCache = ''
 async function getSecret() {
@@ -94,7 +93,6 @@ async function verifyEntry({ me, data }) {
         await addCardLog(client, card, -1, '入场扣次', me._id)
         message = '已扣 1 次'
       }
-      await addPoints(client, openid, ENTRY_POINTS, '到店打卡')
     } else {
       message = '今日已入场，不重复扣次'
     }

@@ -1,4 +1,4 @@
-/* 「我的」页面：个人卡片 / 功能菜单 / 积分 */
+/* 「我的」页面：个人卡片 / 功能菜单 */
 
 /* 头像：加一圈品牌色描边，视觉重心更集中 */
 .avatar {
@@ -37,7 +37,7 @@
   flex: none;
 }
 
-/* 积分卡片 */
+
 .points-card {
   background: linear-gradient(135deg, var(--brand-grad-a), var(--brand-grad-b));
   color: #fff;

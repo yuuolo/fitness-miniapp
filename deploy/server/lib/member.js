@@ -1,9 +1,9 @@
-// 会员：首页、资料、我的卡、积分
+// 会员：首页、资料、我的卡
 const https = require('https')
 const { query } = require('./db')
 const {
   DAY, cnDate, dayStart, fail, need, cardUsable,
-  cardRow, cardTypeRow, bookingRow, pointsLogRow
+  cardRow, cardTypeRow, bookingRow
 } = require('./common')
 const { isInitialized } = require('./system')
 const features = require('./features')
@@ -16,7 +16,6 @@ function publicMe(me) {
     nickName: me.nickName,
     phone: me.phone,
     role: me.role,
-    points: me.points || 0,
     blockUntil: me.blockUntil || 0,
     avatar: me.avatar || '',
     // 前端用来提示「资料还没填完」
@@ -55,7 +54,6 @@ function publicMe(me) {
     nickName: me.nickName,
     phone: me.phone,
     role: me.role,
-    points: me.points || 0,
     blockUntil: me.blockUntil || 0,
     avatar: me.avatar || '',
     // 前端用来提示「资料还没填完」
@@ -73,31 +71,16 @@ async function home({ openid, me }) {
     return {
       initialized: false,
       me: publicMe(me),
-      cards: [],
-      todayBookings: [],
       features: featureState,
       layout: blocks
     }
   }
-  const now = Date.now()
-  const cards = (await query(
-    `select * from member_cards where openid = $1 and status in ('active', 'paused')
-     order by created_at desc limit 20`, [openid]
-  )).rows.map(cardRow)
-  const from = dayStart(cnDate(now))
-  const todayBookings = (await query(
-    `select * from bookings where openid = $1 and status = 'booked'
-     and start_at >= $2 and start_at < $3 order by start_at asc`,
-    [openid, from, from + DAY]
-  )).rows
   return {
     initialized,
     me: publicMe(me),
     features: featureState,
     // 首页布局：管理员按角色配好的模块顺序
     layout: blocks,
-    cards: cards.map(c => Object.assign(c, { usable: cardUsable(c, now) })),
-    todayBookings: todayBookings.map(bookingRow)
   }
 }
 
@@ -148,13 +131,6 @@ async function myCards({ openid, me }) {
   }
 }
 
-async function myPoints({ openid, me }) {
-  need(me, 'member')
-  const logs = (await query(
-    'select * from points_logs where openid = $1 order by created_at desc limit 30', [openid]
-  )).rows.map(pointsLogRow)
-  return { points: me.points || 0, logs }
-}
 
 // 一键获取手机号：小程序端 <button open-type="getPhoneNumber"> 拿到 code，
 // 服务端用它换真实号码（需要小程序已认证，个人主体用不了，会返回错误码）。
@@ -185,4 +161,4 @@ async function bindPhone({ openid, me, data }) {
   return publicMe(Object.assign({}, me, { phone }))
 }
 
-module.exports = { home, updateProfile, bindPhone, myCards, myPoints, publicMe }
+module.exports = { home, updateProfile, bindPhone, myCards, publicMe }

@@ -4,7 +4,7 @@ const features = require('../../utils/features')
 
 Page({
   data: {
-    loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', logs: [], features: {}
+    loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', features: {}
   },
 
   // 自定义 tabBar 的高亮：真机上组件的 pageLifetimes.show 不一定触发，
@@ -14,7 +14,7 @@ Page({
     if (bar && typeof bar.refresh === 'function') bar.refresh()
   },
 
-  onShow() {
+  onShow() {
     this.syncTabBar()
     this.load()
   },
@@ -33,18 +33,7 @@ Page({
         isStaff: !!me.role && me.role !== 'member',
         blockedText: me.blockUntil > Date.now() ? '因缺席次数过多，' + fmt.fullDate(me.blockUntil) + ' 前暂停预约' : ''
       })
-      if (res.initialized) {
-        // 积分功能关掉时不再请求积分记录
-        const feat = res.features || {}
-        if (feat.points !== false) {
-          api.call('myPoints', {}, { silent: true }).then(p => {
-            this.setData({ logs: p.logs.map(l => Object.assign(l, { time: fmt.dateTime(l.createdAt) })) })
-          }, () => {})
-        } else {
-          this.setData({ logs: [] })
-        }
-      }
-    }, err => this.setData({ loaded: true, initialized: false, me: null, logs: [] }))
+    }, err => this.setData({ loaded: true, initialized: false, me: null }))
   },
 
   // 昵称/头像/手机统一在「完善资料」页里改
@@ -52,9 +41,6 @@ Page({
     wx.navigateTo({ url: '/pages/profile/profile' })
   },
 
-  goCards() {
-    wx.navigateTo({ url: '/pages/cards/cards' })
-  },
 
   goBookings() {
     wx.navigateTo({ url: '/pages/bookings/bookings' })

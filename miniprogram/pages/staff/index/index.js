@@ -4,7 +4,6 @@ const features = require('../../../utils/features')
 
 Page({
   data: {
-    stat: null,
     role: '',
     isStaff: false,
     isAdmin: false,
@@ -19,16 +18,17 @@ Page({
       this.setData({ cardsOn: f.cards !== false })
     }).catch(() => {})
 
-    api.call('dashboard').then(stat => {
+    api.call('home').then(res => {
+      const me = res.me
       // 「前台」角色已移除，站内只有管理员拥有到场核验等后台能力
-      const isStaff = stat.role === 'admin'
+      const isStaff = me.role === 'admin'
       this.setData({
-        stat,
-        role: fmt.ROLE_NAMES[stat.role],
+        me,
+        role: fmt.ROLE_NAMES[me.role],
         isStaff,
-        isAdmin: stat.role === 'admin',
+        isAdmin: me.role === 'admin',
         // 教练也能查会员、录体测数据
-        isCoach: isStaff || stat.role === 'coach'
+        isCoach: isStaff || me.role === 'coach'
       })
     }).catch(err => wx.showToast({ title: err.message || '加载失败', icon: 'none' }))
   },

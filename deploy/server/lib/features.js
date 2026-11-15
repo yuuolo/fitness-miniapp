@@ -48,12 +48,6 @@ const FEATURES = [
     desc: '首页榜单与独立排行页',
     covers: 'leaderboard'
   },
-  {
-    key: 'points',
-    name: '积分',
-    desc: '首页与「我的」的积分展示、积分记录；关掉后会员看不到任何积分信息',
-    covers: 'myPoints（入场加分、签到加分会照常记录，只是不展示）'
-  }
 ]
 
 const KEYS = FEATURES.map(f => f.key)

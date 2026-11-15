@@ -5,6 +5,7 @@ const {
   addCardLog, recordNoShow, releaseLessonPending
 } = require('./common')
 const { notify } = require('./notify')
+const backup = require('./backup')
 
 const ABSENT_AFTER_END = 30 * MIN
 const REMIND_BEFORE = 2 * HOUR
@@ -111,6 +112,13 @@ async function runCron(now) {
     absent: await markNoShows(t),
     classReminders: await remindClasses(t),
     cardReminders: await remindExpiringCards(t)
+  }
+  // 每天备份一次数据库（失败不影响业务）
+  try {
+    const one = await backup.runDaily()
+    if (one) result.backup = one.file
+  } catch (e) {
+    console.error('每日备份失败：', e.message)
   }
   return result
 }

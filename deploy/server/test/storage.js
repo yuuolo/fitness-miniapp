@@ -1,5 +1,7 @@
 // 存储层测试：密钥加解密、配置校验与脱敏、数据库驱动写入、探针测试
 // 用法：DATABASE_URL=postgres://.../gym_storage node test/storage.js
+// 生产库保护：测试会清表，绝不能在 gym 上跑
+require('./_guard')
 const assert = require('assert')
 const { query, pool, ensureSchema } = require('../lib/db')
 const secret = require('../lib/secret')

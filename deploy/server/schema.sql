@@ -12,7 +12,6 @@ create table if not exists members (
   nick_name      text not null default '',
   phone          text not null default '',
   role           text not null default 'member',
-  points         int  not null default 0,
   no_show        int  not null default 0,
   block_until    bigint not null default 0,
   avatar         text not null default '',
@@ -169,14 +168,6 @@ create table if not exists entry_logs (
 create index if not exists idx_entry_logs_openid on entry_logs (openid, created_at desc);
 create index if not exists idx_entry_logs_date on entry_logs (date, result);
 
-create table if not exists points_logs (
-  id         text primary key,
-  openid     text not null,
-  change     int  not null default 0,
-  source     text not null default '',
-  created_at bigint not null default 0
-);
-create index if not exists idx_points_openid on points_logs (openid, created_at desc);
 
 create table if not exists body_records (
   id                      text primary key,

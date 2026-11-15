@@ -1,45 +1,21 @@
 #!/usr/bin/env bash
-# 数据库备份：docker exec pg_dump → /opt/gym/backups/gym-YYYYmmdd-HHMMSS.sql.gz，保留最近 14 份
-#
-# 手动执行：
-#   ssh gym 'bash /opt/gym/scripts/backup.sh'
-#
-# 已配置为 systemd timer 每天北京时间 04:17 自动执行（服务器没装 cron）：
-#   ssh gym 'systemctl list-timers gym-backup.timer'      # 查看下次运行时间
-#   ssh gym 'sudo systemctl start gym-backup.service'      # 立即跑一次
-#   ssh gym 'journalctl -u gym-backup.service --since today'
-#
-# 恢复：
-#   ssh gym 'gunzip -c /opt/gym/backups/gym-XXXX.sql.gz | docker compose -f /opt/gym/docker-compose.yml exec -T db psql -U postgres -d gym'
-set -euo pipefail
-
+# 每天自动备份数据库，保留最近 14 天
+set -uo pipefail
 cd /opt/gym
 PW=$(sed -n 's/^POSTGRES_PASSWORD=//p' .env)
-BACKUP_DIR="${BACKUP_DIR:-/opt/gym/backups}"
-KEEP="${KEEP:-14}"
+TS=$(date +%Y%m%d-%H%M%S)
+mkdir -p backups
 
-mkdir -p "$BACKUP_DIR"
-STAMP=$(date +%Y%m%d-%H%M%S)
-FILE="$BACKUP_DIR/gym-$STAMP.sql.gz"
+docker compose exec -T -e PGPASSWORD="$PW" db pg_dump -U postgres -d gym \
+  | gzip > "backups/gym-$TS.sql.gz"
 
-docker compose exec -T -e PGPASSWORD="$PW" db \
-  pg_dump -U postgres -d gym --no-owner --clean --if-exists \
-  | gzip > "$FILE"
-
-# 校验：gzip 完整且内容非空
-if ! gzip -t "$FILE" 2>/dev/null || [ ! -s "$FILE" ]; then
-  echo "[x] 备份文件损坏或为空：$FILE" >&2
-  rm -f "$FILE"
+# 校验备份不是空的
+SIZE=$(stat -c %s "backups/gym-$TS.sql.gz")
+if [ "$SIZE" -lt 1000 ]; then
+  echo "备份文件太小（$SIZE 字节），可能失败" >&2
   exit 1
 fi
 
-SIZE=$(du -h "$FILE" | cut -f1)
-echo "[ok] $FILE ($SIZE)"
-
-# 只保留最近 KEEP 份
-ls -1t "$BACKUP_DIR"/gym-*.sql.gz 2>/dev/null | tail -n +$((KEEP + 1)) | while read -r old; do
-  rm -f "$old"
-  echo "[..] 清理旧备份 $old"
-done
-
-echo "[ok] 现有备份：$(ls -1 "$BACKUP_DIR"/gym-*.sql.gz 2>/dev/null | wc -l) 份"
+# 只保留最近 14 个
+ls -1t backups/gym-2*.sql.gz 2>/dev/null | tail -n +15 | xargs -r rm -f
+echo "备份完成：backups/gym-$TS.sql.gz（$SIZE 字节）"

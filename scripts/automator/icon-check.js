@@ -54,12 +54,12 @@ async function main() {
   if (missing.length) bad('缺少菜单: ' + missing.join(','))
   else ok('当前开启的功能菜单都在')
 
-  // 4. 头像描边与积分卡片
+  // 4. 头像描边
   log('\n[4] 版式元素')
   const avatar = await mine.$$('.avatar')
   if (avatar.length) ok('头像存在')
-  const points = await mine.$$('.points-card')
-  if (points.length) ok('积分卡片存在')
+  const points = await mine.$('.points-card')
+  if (!points.length) ok('积分卡片已删除')
   const chevrons = await mine.$$('.chevron')
   log('  箭头数量: ' + chevrons.length)
   if (chevrons.length >= items.length) ok('每行都有右侧箭头')

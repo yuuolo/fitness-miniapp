@@ -3,13 +3,12 @@ const { query, tx } = require('./db')
 const {
   MIN, DAY, cnDate, dayStart, fail, need, newId, memberLabel, cardUsable,
   memberRow, cardTypeRow, cardRow, bookingRow, paymentRow, scheduleRow,
-  venueRow, entryLogRow, addPoints, addCardLog, recordNoShow, releaseLessonPending,
+  venueRow, entryLogRow, addCardLog, recordNoShow, releaseLessonPending,
   ROLE_LEVEL
 } = require('./common')
 
 const PAY_METHODS = { cash: '现金', wechat_qr: '微信收款码', alipay_qr: '支付宝收款码', pos: 'POS 刷卡', free: '赠送' }
 const CARD_KINDS = ['period', 'times', 'lesson']
-const ATTEND_POINTS = 5
 
 // 事务外也能复用同一套写函数
 const db = { query }
@@ -37,38 +36,6 @@ async function getRow(table, id) {
   const key = PK[table] || 'id'
   const { rows } = await query(`select * from ${table} where ${key} = $1`, [id])
   return rows[0] || null
-}
-
-async function dashboard({ me }) {
-  need(me, 'coach')
-  const now = Date.now()
-  const today = cnDate(now)
-  const from = dayStart(today)
-
-  const params = [from, from + DAY]
-  let coachFilter = ''
-  if (me.role === 'coach') {
-    params.push(me._id)
-    coachFilter = ' and coach_id = $3'
-  }
-  const classBookings = (await query(
-    `select count(*)::int as n from bookings
-     where type = 'class' and start_at >= $1 and start_at < $2 and status <> 'cancelled'${coachFilter}`,
-    params
-  )).rows[0].n
-
-  const result = { role: me.role, today, classBookings }
-  if ((ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.admin) {
-    result.entries = (await query(
-      "select count(*)::int as n from entry_logs where date = $1 and result = 'ok'", [today]
-    )).rows[0].n
-    result.venueBookings = (await query(
-      "select count(*)::int as n from bookings where type = 'venue' and date = $1 and status <> 'cancelled'",
-      [today]
-    )).rows[0].n
-    result.members = (await query('select count(*)::int as n from members')).rows[0].n
-  }
-  return result
 }
 
 // ---------- 会员 ----------
@@ -451,7 +418,6 @@ async function markAttendance({ me, data }) {
         [b._id, now, me._id]
       )
     }
-    await addPoints(db, b.openid, ATTEND_POINTS, '上课签到：' + b.title)
   } else if (data.status === 'absent') {
     if (now < b.startAt) fail('开课后才能标记缺席')
     // 缺席不扣课，把预约时占的位释放掉
@@ -527,7 +493,7 @@ async function saveVenue({ me, data }) {
 }
 
 module.exports = {
-  dashboard, searchMembers, memberDetail, staffUpdateProfile,
+  searchMembers, memberDetail, staffUpdateProfile,
   openCard, adjustCard, setCardStatus, setRole,
   listCardTypes, saveCardType, listCoaches, staffSchedules, saveSchedule, cancelSchedule,
   roster, markAttendance, venueBookings, useVenueBooking, listAllVenues, saveVenue

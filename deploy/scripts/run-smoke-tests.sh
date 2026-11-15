@@ -24,9 +24,11 @@ for i in $(seq 1 40); do
   sleep 1
 done
 
+# DATABASE_URL 也要传：test/_guard.js 靠它确认不是在生产库上跑
 docker run --rm --network gym_default \
   -e BASE=http://gym-smoke-test:3000 \
   -e DEV_LOGIN_TOKEN=smoke-token \
+  -e DATABASE_URL="postgres://postgres:${PW}@db:5432/${DB}" \
   gym-server node test/smoke.js
 RC=$?
 
