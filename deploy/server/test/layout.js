@@ -103,7 +103,7 @@ async function main() {
 
   // ---------- 5. 保存与权限 ----------
   const admin = memberRow({ openid: 'layout-admin', nick_name: '测试管理员', role: 'admin' })
-  const member = memberRow({ openid: 'layout-member', nick_name: '小明', role: 'member', points: 0 })
+  const member = memberRow({ openid: 'layout-member', nick_name: '小明', role: 'member' })
 
   await expectFail(
     () => layout.save({ me: member, data: { roles: layout.defaults() } }),

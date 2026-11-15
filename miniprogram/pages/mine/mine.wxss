@@ -38,16 +38,4 @@
 }
 
 
-.points-card {
-  background: linear-gradient(135deg, var(--brand-grad-a), var(--brand-grad-b));
-  color: #fff;
-  box-shadow: 0 8rpx 24rpx rgba(233, 96, 58, 0.2);
-}
-.points-card .muted { color: rgba(255, 255, 255, 0.85); }
-.points-n {
-  font-size: 56rpx;
-  font-weight: 600;
-  line-height: 1.2;
-  margin-top: 4rpx;
-}
 
