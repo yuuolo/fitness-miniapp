@@ -45,13 +45,4 @@
       <text class="muted">›</text>
     </view>
   </view>
-
-  <view class="section-title">最近入场</view>
-  <view class="card">
-    <view wx:if="{{!entries.length}}" class="muted">没有入场记录</view>
-    <view wx:for="{{entries}}" wx:key="_id" class="list-item">
-      <text class="grow">{{item.time}}</text>
-      <text class="tag {{item.result === 'ok' ? 'green' : 'red'}}">{{item.result === 'ok' ? item.cardName : item.reason}}</text>
-    </view>
-  </view>
 </view>

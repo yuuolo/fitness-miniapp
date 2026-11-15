@@ -14,7 +14,6 @@ Page({
     isAdmin: false,
     manage: false,
     member: null,
-    entries: [],
     roles: ROLES,
     roleIndex: 0,
     editingProfile: false,
@@ -45,8 +44,7 @@ Page({
           phone: res.member.phone || '',
           gender: res.member.gender || '',
           height: res.member.height || ''
-        },
-        entries: res.entries.map(e => Object.assign(e, { time: fmt.dateTime(e.createdAt) }))
+        }
       })
     }, err => wx.showToast({ title: err.message || '加载失败', icon: 'none' }))
   },
