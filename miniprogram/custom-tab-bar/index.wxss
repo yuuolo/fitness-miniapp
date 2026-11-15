@@ -6,10 +6,15 @@
   z-index: 1000;
   display: flex;
   align-items: center;
-  background: var(--surface);
-  border-top: 1rpx solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
-  box-shadow: var(--shadow-up);
+
+  /* 自定义 tabBar 是独立组件，不一定能继承 page 上的 CSS 变量。
+     变量取不到时 background/color 会整条失效 → 背景透明、文字用默认色，
+     在深色系统下就变成「深文字压深背景」，看起来像 tab 不见了。
+     所以这里每个值都带硬编码兜底，并在下面单独处理深色模式。 */
+  background: var(--surface, #ffffff);
+  border-top: 1rpx solid var(--line, #efe8e1);
+  box-shadow: var(--shadow-up, 0 -2rpx 12rpx rgba(35, 32, 29, 0.04));
 }
 
 .tab {
@@ -23,13 +28,13 @@
 
 .tab-text {
   font-size: 26rpx;
-  color: var(--muted);
+  color: var(--muted, #9c948c);
   transition: color 0.15s;
 }
 
 /* 选中态：文字变品牌色，并在上方加一小段指示条 */
 .tab.on .tab-text {
-  color: var(--brand);
+  color: var(--brand, #e9603a);
   font-weight: 600;
 }
 .tab.on::before {
@@ -41,5 +46,23 @@
   width: 40rpx;
   height: 4rpx;
   border-radius: 0 0 4rpx 4rpx;
-  background: var(--brand);
+  background: var(--brand, #e9603a);
+}
+
+/* 深色模式：组件内自己处理，不依赖 page 上的变量覆盖 */
+@media (prefers-color-scheme: dark) {
+  .tabbar {
+    background: #1c1a18;
+    border-top-color: #302d29;
+    box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.3);
+  }
+  .tab-text {
+    color: #948c84;
+  }
+  .tab.on .tab-text {
+    color: #f0704a;
+  }
+  .tab.on::before {
+    background: #f0704a;
+  }
 }

@@ -60,6 +60,8 @@ const leftovers = []
 for (const f of wxss) {
   const rel = path.relative(MP, f)
   if (rel.endsWith('app.wxss')) continue
+  // 自定义 tabBar 是独立组件，不保证能继承 page 上的变量，必须留硬编码兜底
+  if (rel.indexOf('custom-tab-bar') >= 0) continue
   const text = fs.readFileSync(f, 'utf8')
   for (const m of text.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
     const c = m[0].toLowerCase()
