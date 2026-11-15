@@ -91,9 +91,9 @@ async function main() {
   ok('bootstrap 走 HTTP 生效')
 
   await callOk('updateProfile', MEMBER, { nickName: 'HTTP会员', phone: '13900001111' })
-  await callOk('updateProfile', STAFF, { nickName: 'HTTP前台', phone: '13900002222' })
+  await callOk('updateProfile', STAFF, { nickName: 'HTTP管理二号', phone: '13900002222' })
   await callOk('updateProfile', COACH, { nickName: 'HTTP教练', phone: '13900003333' })
-  await callOk('setRole', ADMIN, { openid: STAFF, role: 'staff' })
+  await callOk('setRole', ADMIN, { openid: STAFF, role: 'admin' })
   await callOk('setRole', ADMIN, { openid: COACH, role: 'coach' })
   ok('更新资料 + 设置角色')
 
@@ -104,7 +104,7 @@ async function main() {
     openid: MEMBER, typeId: timesType._id, amount: timesType.price, payMethod: 'cash'
   })
   assert.strictEqual(card.remainTimes, timesType.times)
-  ok('前台办卡')
+  ok('管理员办卡')
 
   const myCards = await callOk('myCards', MEMBER)
   assert.strictEqual(myCards.cards.length, 1)

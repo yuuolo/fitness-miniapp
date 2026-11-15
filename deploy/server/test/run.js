@@ -115,10 +115,11 @@ async function main() {
   ok('会员可更新资料，home 返回 profileReady')
 
   await act('updateProfile', COACH, { nickName: '教练一号', phone: '13800002222' })
-  await act('updateProfile', STAFF, { nickName: '前台小美', phone: '13800003333' })
+  await act('updateProfile', STAFF, { nickName: '管理二号', phone: '13800003333' })
   await act('setRole', ADMIN, { openid: COACH, role: 'coach' })
-  await act('setRole', ADMIN, { openid: STAFF, role: 'staff' })
-  ok('管理员设置教练 / 前台角色')
+  // 「前台」角色已移除，这个账号改成第二个管理员（用于验证后台操作）
+  await act('setRole', ADMIN, { openid: STAFF, role: 'admin' })
+  ok('管理员设置教练 / 管理员角色')
 
   await expectFail(() => act('setRole', ADMIN, { openid: ADMIN, role: 'member' }), '自己的角色', '不能改自己的角色')
   await expectFail(() => act('dashboard', MEMBER), '没有权限', '普通会员不能用员工接口')
@@ -140,7 +141,7 @@ async function main() {
   const payments = (await query('select * from offline_payments')).rows
   assert.strictEqual(payments.length, 1)
   assert.strictEqual(payments[0].amount, 49900)
-  ok('前台办 10 次卡并记录线下收款')
+  ok('管理员办 10 次卡并记录线下收款')
 
   // ---------- 入场码 ----------
   const qr = await act('entryCode', MEMBER)
@@ -326,7 +327,7 @@ async function main() {
     '没有权限', '普通会员不能录身体数据'
   )
 
-  // 教练也能查会员、录数据（前台以上不再是唯一入口）
+  // 教练也能查会员、录数据
   const coachSearch = await act('searchMembers', COACH, { keyword: '小明' })
   assert.ok(coachSearch.some(m => m._id === MEMBER), '教练应能搜索会员')
   const coachDetail = await act('memberDetail', COACH, { openid: MEMBER })
@@ -344,14 +345,14 @@ async function main() {
 
   await expectFail(
     () => act('openCard', COACH, { openid: MEMBER, typeId: timesType.id, amount: 100, payMethod: 'cash' }),
-    '没有权限', '教练不能办卡（这是前台的事）'
+    '没有权限', '教练不能办卡（只有管理员能办）'
   )
   await expectFail(
-    () => act('setRole', COACH, { openid: MEMBER, role: 'staff' }),
+    () => act('setRole', COACH, { openid: MEMBER, role: 'admin' }),
     '没有权限', '教练不能改角色'
   )
 
-  // 教练不能改别人的昵称/手机号/头像（身份标识只能本人或前台改）
+  // 教练不能改别人的昵称/手机号/头像（身份标识只能本人或管理员改）
   await expectFail(
     () => act('staffUpdateProfile', COACH, { openid: MEMBER, phone: '13800001112' }),
     '没有权限', '教练不能修改别人资料（昵称/手机号/头像）'
@@ -361,15 +362,15 @@ async function main() {
     '没有权限', '教练连管理员的资料也改不了'
   )
 
-  // 前台可以代会员补资料，但只能改级别比自己低的账号
+  // 管理员可以代会员补资料
   const updated = await act('staffUpdateProfile', STAFF, { openid: MEMBER, phone: '13800001112', height: 176 })
   assert.strictEqual(updated.phone, '13800001112')
   assert.strictEqual(Number(updated.height), 176)
-  ok('前台可以代会员修改手机号与身高')
+  ok('管理员可以代会员修改手机号与身高')
 
   await expectFail(
-    () => act('staffUpdateProfile', STAFF, { openid: ADMIN, phone: '13800009999' }),
-    '级别比自己低', '前台不能改管理员资料'
+    () => act('staffUpdateProfile', STAFF, { openid: STAFF, phone: '13800009999' }),
+    '请在「我的」里修改自己的资料', '管理员也不能通过这个接口改自己'
   )
   await expectFail(
     () => act('staffUpdateProfile', ADMIN, { openid: ADMIN, nickName: '自己' }),
@@ -377,7 +378,7 @@ async function main() {
   )
   const adminEdit = await act('staffUpdateProfile', ADMIN, { openid: STAFF, gender: 'male' })
   assert.strictEqual(adminEdit.gender, 'male')
-  ok('管理员可以改前台资料')
+  ok('管理员可以改教练资料')
 
   const body = await act('saveBodyRecord', STAFF, {
     openid: MEMBER, weight: 72.5, height: 175, bodyFat: 18, muscle: 55, visceral: 8, deviceName: 'S800'
@@ -404,7 +405,7 @@ async function main() {
   ok('运动数据同一天同来源幂等覆盖')
 
   const trend = await act('bodyTrend', MEMBER, { days: 30 })
-  // 教练录了一次、前台又录了一次，所以至少有 2 个点
+  // 教练录了一次、管理员又录了一次，所以至少有 2 个点
   assert.ok(trend.count >= 2, '趋势应包含多次体测记录，实际 ' + trend.count)
   assert.ok(trend.points.every(p => p.date), '每个点都应带日期')
   ok('身体数据趋势返回一段时间的点')

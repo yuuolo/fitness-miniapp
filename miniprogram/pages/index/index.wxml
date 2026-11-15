@@ -34,7 +34,7 @@
       <view wx:elif="{{item.type === 'entry' && features.cards !== false}}" class="entry-card" bindtap="openEntry">
         <view class="entry-btn">
           <view class="entry-text">出示入场码</view>
-          <view class="entry-sub">前台扫码入场</view>
+          <view class="entry-sub">管理员扫码入场</view>
         </view>
       </view>
 
@@ -114,7 +114,7 @@
       <block wx:elif="{{item.type === 'cards' && features.cards !== false}}">
         <view class="section-title">我的会员卡</view>
         <view class="card" bindtap="goCards">
-          <view wx:if="{{!cards.length}}" class="muted">还没有会员卡，请到前台办理</view>
+          <view wx:if="{{!cards.length}}" class="muted">还没有会员卡，请找管理员办理</view>
           <view wx:for="{{cards}}" wx:key="_id" class="list-item">
             <view class="grow">
               <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>

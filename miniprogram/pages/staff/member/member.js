@@ -1,10 +1,10 @@
 const api = require('../../../utils/api')
 const fmt = require('../../../utils/format')
 
+// 角色只有三级（原「前台」已移除）
 const ROLES = [
   { value: 'member', label: '会员' },
   { value: 'coach', label: '教练' },
-  { value: 'staff', label: '前台' },
   { value: 'admin', label: '管理员' }
 ]
 
@@ -54,7 +54,7 @@ Page({
     }, err => wx.showToast({ title: err.message || '加载失败', icon: 'none' }))
   },
 
-  // ---------- 代填资料（仅前台及以上；教练没有这个权限） ----------
+  // ---------- 代填资料（仅管理员；教练没有这个权限） ----------
 
   toggleProfile() {
     if (!this.data.manage) return
@@ -76,7 +76,7 @@ Page({
 
   saveProfile() {
     if (!this.data.manage) {
-      return wx.showToast({ title: '没有修改资料的权限', icon: 'none' })
+      return wx.showToast({ title: '只有管理员能修改资料', icon: 'none' })
     }
     const f = this.data.profileForm
     const payload = { openid: this.id, nickName: f.nickName, phone: f.phone, gender: f.gender }
@@ -100,7 +100,7 @@ Page({
     const role = ROLES[Number(e.detail.value)]
     wx.showModal({
       title: '修改角色',
-      content: '把该用户设为「' + role.label + '」？教练可看会员并录体测，前台可核验入场，管理员拥有全部权限。',
+      content: '把该用户设为「' + role.label + '」？教练可查会员、录体测、管理竞赛；管理员拥有全部权限。',
       success: r => {
         if (!r.confirm) return
         api.call('setRole', { openid: this.id, role: role.value }, { loading: '保存中' }).then(() => {

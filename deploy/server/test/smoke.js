@@ -85,7 +85,7 @@ async function main() {
   const ADMIN = 'smoke-admin'
   const MEMBER = 'smoke-member'
 
-  // 准备：初始化 + 把 MEMBER 拉成前台，尽量让权限校验通过，暴露更深层的问题
+  // 准备：初始化 + 把 MEMBER 拉成管理员，尽量让权限校验通过，暴露更深层的问题
   await post('updateProfile', ADMIN, { nickName: '管理员', phone: '13700000001' })
   await post('bootstrap', ADMIN)
   await post('updateProfile', MEMBER, { nickName: '冒烟会员', phone: '13700000002' })

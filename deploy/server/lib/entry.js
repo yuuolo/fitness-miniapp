@@ -44,7 +44,7 @@ async function entryCode({ openid, me }) {
 }
 
 async function verifyEntry({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const now = Date.now()
   const parts = String(data.code || '').split('.')
   if (parts.length !== 4 || parts[0] !== CODE_PREFIX) fail('不是本店的入场码')

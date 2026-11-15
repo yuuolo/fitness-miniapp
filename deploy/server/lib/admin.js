@@ -58,7 +58,7 @@ async function dashboard({ me }) {
   )).rows[0].n
 
   const result = { role: me.role, today, classBookings }
-  if ((ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.staff) {
+  if ((ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.admin) {
     result.entries = (await query(
       "select count(*)::int as n from entry_logs where date = $1 and result = 'ok'", [today]
     )).rows[0].n
@@ -109,7 +109,7 @@ async function memberDetail({ me, data }) {
 }
 
 async function openCard({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const member = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
   if (!member) fail('会员不存在')
   const type = cardTypeRow((await query('select * from card_types where id = $1', [data.typeId])).rows[0])
@@ -143,7 +143,7 @@ async function openCard({ me, data }) {
 }
 
 async function adjustCard({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const remark = text(data.remark, 1, 100, '调整原因')
   const delta = int(data.delta || 0, -1000, 1000, '次数调整')
   const extendDays = int(data.extendDays || 0, -3650, 3650, '延期天数')
@@ -172,7 +172,7 @@ async function adjustCard({ me, data }) {
 }
 
 async function setCardStatus({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const now = Date.now()
   const names = { paused: '停卡', active: '恢复', void: '作废' }
   if (!names[data.status]) fail('未知状态')
@@ -207,6 +207,7 @@ async function setCardStatus({ me, data }) {
 async function setRole({ me, data }) {
   need(me, 'admin')
   if (!Object.prototype.hasOwnProperty.call(ROLE_LEVEL, data.role)) fail('未知角色')
+  // 「前台」角色已移除，历史数据在启动时会被迁移成管理员
   if (data.openid === me._id) fail('不能修改自己的角色')
   const member = await getRow('members', data.openid)
   if (!member) fail('会员不存在')
@@ -223,7 +224,7 @@ async function setRole({ me, data }) {
 //      管理员可以改所有人。避免互相改资料造成权限混乱。
 //   3. 头像不走这里，只能本人在「我的」里换，杜绝代换头像。
 async function staffUpdateProfile({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const target = memberRow((await query('select * from members where openid = $1', [data.openid])).rows[0])
   if (!target) fail('会员不存在')
 
@@ -267,7 +268,7 @@ async function staffUpdateProfile({ me, data }) {
 // ---------- 卡种 ----------
 
 async function listCardTypes({ me }) {
-  need(me, 'staff')
+  need(me, 'admin')
   return (await query('select * from card_types order by created_at asc')).rows.map(cardTypeRow)
 }
 
@@ -304,9 +305,9 @@ async function saveCardType({ me, data }) {
 // ---------- 课程 ----------
 
 async function listCoaches({ me }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const list = (await query(
-    "select * from members where role in ('coach', 'staff', 'admin') limit 100"
+    "select * from members where role in ('coach', 'admin') limit 100"
   )).rows.map(memberRow)
   return list.map(m => ({ _id: m._id, name: memberLabel(m), role: m.role }))
 }
@@ -327,7 +328,7 @@ async function staffSchedules({ me, data }) {
 }
 
 async function saveSchedule({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const now = Date.now()
   const kind = data.kind === 'private' ? 'private' : 'group'
   const coach = memberRow((await query('select * from members where openid = $1', [data.coachId])).rows[0])
@@ -372,7 +373,7 @@ async function saveSchedule({ me, data }) {
 }
 
 async function cancelSchedule({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const s = scheduleRow((await query('select * from schedules where id = $1', [data.scheduleId])).rows[0])
   if (!s || s.status !== 'active') fail('课程不存在或已取消')
   const now = Date.now()
@@ -469,7 +470,7 @@ async function markAttendance({ me, data }) {
 // ---------- 娱乐项目 ----------
 
 async function venueBookings({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   dayStart(data.date)
   return (await query(
     `select * from bookings where type = 'venue' and date = $1 and status <> 'cancelled'
@@ -478,7 +479,7 @@ async function venueBookings({ me, data }) {
 }
 
 async function useVenueBooking({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const b = bookingRow((await query('select * from bookings where id = $1', [data.bookingId])).rows[0])
   if (!b || b.type !== 'venue') fail('预约不存在')
   if (b.status !== 'booked') fail('该预约已核销或已取消')
@@ -491,7 +492,7 @@ async function useVenueBooking({ me, data }) {
 }
 
 async function listAllVenues({ me }) {
-  need(me, 'staff')
+  need(me, 'admin')
   return (await query('select * from venues order by created_at asc')).rows.map(venueRow)
 }
 

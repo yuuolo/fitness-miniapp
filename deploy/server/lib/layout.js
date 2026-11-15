@@ -44,7 +44,8 @@ const PAGE_CATALOG = [
 
 const PAGE_PATHS = new Set(PAGE_CATALOG.map(p => p.path))
 const TYPES = new Set(BLOCK_TYPES.map(b => b.type))
-const ROLES = ['member', 'coach', 'staff', 'admin']
+// 角色只有会员 / 教练 / 管理员（原「前台」已移除）
+const ROLES = ['member', 'coach', 'admin']
 
 const MAX_BLOCKS = 20
 const MAX_LINKS_PER_ROLE = 8
@@ -82,7 +83,6 @@ function defaults() {
       type: 'link', title: '会员资料与体测', desc: '查会员、录体测', icon: '📋',
       page: '/pages/staff/members/members', enabled: true
     })],
-    staff: [block('stats'), block('hero'), block('entry'), block('quick'), block('bookings'), block('competitions')],
     admin: [block('stats'), block('hero'), block('entry'), block('quick'), block('competitions'), block('rank'), block('cards')]
   }
 }
@@ -189,7 +189,7 @@ function describe() {
     pages: PAGE_CATALOG,
     roles: ROLES.map(r => ({
       key: r,
-      name: { member: '会员', coach: '教练', staff: '前台', admin: '管理员' }[r]
+      name: { member: '会员', coach: '教练', admin: '管理员' }[r]
     })),
     defaults: defaults(),
     maxBlocks: MAX_BLOCKS,

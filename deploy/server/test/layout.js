@@ -22,18 +22,18 @@ async function main() {
 
   // ---------- 1. 默认值 ----------
   const def = layout.defaults()
-  assert.deepStrictEqual(Object.keys(def).sort(), ['admin', 'coach', 'member', 'staff'])
+  assert.deepStrictEqual(Object.keys(def).sort(), ['admin', 'coach', 'member'])
   assert.strictEqual(def.member.length, 6)
   assert.strictEqual(def.member[0].type, 'hero')
   assert.ok(def.member.some(b => b.type === 'entry'))
-  assert.ok(def.staff.some(b => b.type === 'stats'), '前台默认带今日概况')
+  assert.ok(def.admin.some(b => b.type === 'stats'), '管理员默认带今日概况')
   assert.ok(def.coach.some(b => b.type === 'link'), '教练默认带一个自定义入口')
-  ok('四个角色都有默认布局，且带各自特色的模块')
+  ok('三个角色都有默认布局，且带各自特色的模块')
 
   const meta = layout.describe()
   assert.ok(meta.blocks.length >= 9)
   assert.ok(meta.pages.length >= 12, '可选页面至少 12 个，实际 ' + meta.pages.length)
-  assert.strictEqual(meta.roles.length, 4)
+  assert.strictEqual(meta.roles.length, 3, '角色只有会员/教练/管理员')
   assert.ok(meta.defaults.member)
   ok('describe() 返回模块清单、页面清单、角色与默认值')
 
@@ -68,7 +68,7 @@ async function main() {
   assert.deepStrictEqual(clean.roles.member.map(b => b.type), ['hero', 'rank'])
   assert.strictEqual(clean.roles.member[1].enabled, false)
   assert.ok(Array.isArray(clean.roles.coach) && clean.roles.coach.length > 0, '非法角色回退到默认')
-  assert.strictEqual(clean.roles.staff.length, layout.defaults().staff.length, '缺失角色用默认补')
+  assert.strictEqual(clean.roles.admin.length, layout.defaults().admin.length, '缺失角色用默认补')
   ok('归一化会丢掉非法模块与非法快捷入口，缺失角色用默认补齐')
 
   // ---------- 3. 读默认 ----------

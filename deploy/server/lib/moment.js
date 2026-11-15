@@ -21,7 +21,7 @@ function makeShort() {
 }
 
 function isStaff(me) {
-  return (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.staff
+  return (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.admin
 }
 
 // 教练或以上都可以帮会员发（代拍）
@@ -239,7 +239,7 @@ async function momentPoster({ me, data }) {
 
 // 管理员上传一张静态小程序码，作为未认证主体的兜底入口
 async function setPosterQr({ me, data }) {
-  need(me, 'staff')
+  need(me, 'admin')
   const fileID = String(data.fileID || '')
   if (!/^(cloud:\/\/|https:\/\/)/.test(fileID)) fail('请先上传一张小程序码图片')
   await configSet('posterQr', { fileID, updatedAt: Date.now(), operator: me._id })

@@ -49,7 +49,8 @@ function nextDays(n) {
 const CARD_KINDS = { period: '期限卡', times: '次卡', lesson: '私教课包' }
 const CARD_STATUS = { active: '正常', paused: '停卡中', void: '已作废' }
 const BOOKING_STATUS = { booked: '已预约', attended: '已签到', absent: '缺席', cancelled: '已取消', used: '已核销' }
-const ROLE_NAMES = { member: '会员', coach: '教练', staff: '前台', admin: '管理员' }
+// 角色只有三级：会员 / 教练 / 管理员（原「前台」已移除）
+const ROLE_NAMES = { member: '会员', coach: '教练', admin: '管理员' }
 
 function cardSummary(card) {
   if (card.kind === 'period') return '有效期至 ' + fullDate(card.expireAt)

@@ -46,11 +46,16 @@ function fail(msg) {
   throw new BizError(msg)
 }
 
-const ROLE_LEVEL = { member: 0, coach: 1, staff: 2, admin: 3 }
-const ROLE_NAMES = { member: '会员', coach: '教练', staff: '前台', admin: '管理员' }
+// 角色只有三级：会员 < 教练 < 管理员（原「前台」角色已移除）
+const ROLE_LEVEL = { member: 0, coach: 1, admin: 2 }
+const ROLE_NAMES = { member: '会员', coach: '教练', admin: '管理员' }
 
 function need(me, role) {
   if (!me) fail('请先登录')
+  // 防御：要求的角色若不存在，比较会变成 level < undefined（恒为 false）从而放行所有人
+  if (!Object.prototype.hasOwnProperty.call(ROLE_LEVEL, role)) {
+    throw new Error('内部错误：未知角色 ' + role)
+  }
   if ((ROLE_LEVEL[me.role] || 0) < ROLE_LEVEL[role]) fail('没有权限')
 }
 

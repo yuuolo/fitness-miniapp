@@ -261,7 +261,7 @@ async function saveBodyRecord({ me, data }) {
 // 一段时间内的身体数据变化，供趋势图/变化对比用
 async function bodyTrend({ me, data }) {
   need(me, 'member')
-  const asStaff = (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.staff
+  const asStaff = (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.admin
   const openid = data.openid && asStaff ? data.openid : me._id
   const days = Math.min(Math.max(Number(data.days) || 30, 7), 365)
   const from = dayStart(cnDate(Date.now() - (days - 1) * DAY))
@@ -539,7 +539,7 @@ async function leaderboard({ me, data }) {
 
 async function listLiftItems({ me, data }) {
   need(me, 'member')
-  const staff = (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.staff
+  const staff = (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.admin
   const items = await liftItems.list({ includeDisabled: staff && !!data.includeDisabled })
   return {
     items,

@@ -14,7 +14,7 @@
 
   <view class="section-title">可办理的卡</view>
   <view class="card">
-    <view class="muted">暂不支持线上购买，请到前台付款办理，办好后会自动出现在上方。</view>
+    <view class="muted">暂不支持线上购买，请到管理员处付款办理，办好后会自动出现在上方。</view>
     <view wx:for="{{types}}" wx:key="_id" class="list-item">
       <view class="grow">
         <view><text class="title">{{item.name}}</text> <text class="tag">{{item.kindName}}</text></view>

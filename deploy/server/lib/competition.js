@@ -22,7 +22,7 @@ function text(value, max, label, required) {
 }
 
 function isStaff(me) {
-  return (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.staff
+  return (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.admin
 }
 
 function isCoach(me) {

@@ -20,7 +20,8 @@ Page({
     }).catch(() => {})
 
     api.call('dashboard').then(stat => {
-      const isStaff = stat.role === 'staff' || stat.role === 'admin'
+      // 「前台」角色已移除，站内只有管理员拥有到场核验等后台能力
+      const isStaff = stat.role === 'admin'
       this.setData({
         stat,
         role: fmt.ROLE_NAMES[stat.role],

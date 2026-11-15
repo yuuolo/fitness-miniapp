@@ -341,3 +341,6 @@ alter table members add column if not exists is_body_public boolean not null def
 alter table members add column if not exists best_lift      jsonb not null default '{}'::jsonb;
 alter table members add column if not exists sbd_total      numeric(7,1) not null default 0;
 alter table members add column if not exists latest_body    jsonb;
+
+-- 「前台」角色已移除：历史 staff 账号一次性迁移成管理员（幂等）
+update members set role = 'admin' where role = 'staff';

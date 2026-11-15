@@ -10,7 +10,7 @@
       </picker>
     </view>
     <button wx:if="{{manage}}" class="btn ghost mt" bindtap="toggleProfile">{{editingProfile ? '收起' : '代填/修改资料'}}</button>
-    <view wx:else class="muted mt">修改会员资料请找前台</view>
+    <view wx:else class="muted mt">修改会员资料请找管理员</view>
   </view>
 
   <view wx:if="{{manage && editingProfile}}" class="card">
