@@ -35,18 +35,20 @@
       <view wx:elif="{{item.type === 'quick'}}" class="quick">
         <!-- 排行榜：六边形能力图 -->
         <view wx:if="{{features.rank !== false}}" class="q q-rank" bindtap="goRank">
+          <view class="q-t">排行榜</view>
+          <view class="muted">{{radarScore !== null ? '综合能力 ' + radarScore : '录一次体测就能看到'}}</view>
           <view class="radar-wrap">
             <view wx:if="{{radarSvg}}" class="radar" style="background-image:url('{{radarSvg}}')"></view>
             <view wx:else class="radar radar-empty">
               <text class="radar-hint">还没有数据</text>
             </view>
           </view>
-          <view class="q-t">排行榜</view>
-          <view class="muted">{{radarScore !== null ? '综合能力 ' + radarScore : '录一次体测就能看到'}}</view>
         </view>
 
         <!-- 健身友圈：最近两条缩略图 -->
         <view wx:if="{{features.moments !== false}}" class="q q-moments" bindtap="goMoments">
+          <view class="q-t">健身友圈</view>
+          <view class="muted">晒训练日常</view>
           <view class="thumbs">
             <view wx:for="{{momentThumbs}}" wx:key="index" class="thumb-wrap">
               <image class="thumb" src="{{item.src}}" mode="aspectFill" />
@@ -56,8 +58,6 @@
               <text class="thumb-empty-t">暂无</text>
             </view>
           </view>
-          <view class="q-t">健身友圈</view>
-          <view class="muted">晒训练日常</view>
         </view>
       </view>
 
