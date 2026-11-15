@@ -1,3 +1,4 @@
+const theme = require('../../utils/theme')
 const api = require('../../utils/api')
 const features = require('../../utils/features')
 
@@ -11,9 +12,11 @@ function resolveVideoUrls(list) {
 }
 
 Page({
-  data: { list: [], loaded: false, hasMore: true, loading: false, disabled: false },
+  data: {
+    themeClass: 'theme-auto', list: [], loaded: false, hasMore: true, loading: false, disabled: false },
 
   onShow() {
+    theme.sync(this)
     this.syncTabBar()
     features.ensure().then(f => {
       if (f.moments === false) {

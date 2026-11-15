@@ -1,9 +1,30 @@
+const theme = require('../../utils/theme')
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
 
 Page({
-  data: { loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', logs: [], features: {} },
+  data: {
+    themeClass: 'theme-auto',
+    // 外观：跟随系统 / 浅色 / 深色
+    themeMode: 'auto',
+    themeOptions: [
+      { value: 'auto', name: '跟随系统' },
+      { value: 'light', name: '浅色' },
+      { value: 'dark', name: '深色' }
+    ],
+    loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', logs: [], features: {}
+  },
+
+  // 切换外观：主题类立刻生效，自定义 tabBar 通过订阅同步
+  onTheme(e) {
+    const mode = e.currentTarget.dataset.mode
+    if (!mode || mode === this.data.themeMode) return
+    theme.set(mode)
+    theme.sync(this)
+    this.setData({ themeMode: mode })
+    wx.showToast({ title: '已切换为' + theme.nameOf(mode), icon: 'none', duration: 1200 })
+  },
 
   // 自定义 tabBar 的高亮：真机上组件的 pageLifetimes.show 不一定触发，
   // 这里在每个 tab 页 onShow 主动同步一次，保证底部文字颜色跟得上
@@ -13,6 +34,8 @@ Page({
   },
 
   onShow() {
+    theme.sync(this)
+    this.setData({ themeMode: theme.get() })
     this.syncTabBar()
     this.load()
   },

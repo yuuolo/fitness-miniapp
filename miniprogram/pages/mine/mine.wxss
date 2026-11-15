@@ -51,6 +51,33 @@
   margin-top: 4rpx;
 }
 
+/* 外观切换：三段式选择器 */
+.title-sm {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+.seg {
+  display: flex;
+  background: var(--fill);
+  border-radius: var(--r-pill);
+  padding: 4rpx;
+  flex: none;
+}
+.seg-item {
+  padding: 8rpx 18rpx;
+  border-radius: var(--r-pill);
+  font-size: 24rpx;
+  color: var(--sub);
+  white-space: nowrap;
+}
+.seg-item.on {
+  background: var(--surface);
+  color: var(--brand);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
 /* 图标：内联 SVG（不用 emoji，避免各系统字形/颜色不一致） */
 .mi {
   width: 44rpx;

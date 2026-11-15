@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page {{themeClass}}">
   <view wx:if="{{loaded && !initialized}}" class="card">
     <view class="title">系统尚未初始化</view>
     <view class="muted mt">请管理员到「我的」页面完成初始化。</view>

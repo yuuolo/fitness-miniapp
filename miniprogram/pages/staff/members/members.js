@@ -1,8 +1,14 @@
 const api = require('../../../utils/api')
+const theme = require('../../../utils/theme')
 const fmt = require('../../../utils/format')
 
 Page({
-  data: { keyword: '', list: [], loaded: false, manage: '0', admin: '0' },
+
+  onShow() {
+    theme.sync(this)
+  },
+  data: {
+    themeClass: 'theme-auto', keyword: '', list: [], loaded: false, manage: '0', admin: '0' },
 
   onLoad(query) {
     const q = query || {}

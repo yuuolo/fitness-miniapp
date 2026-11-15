@@ -1,4 +1,4 @@
-<view class="page" wx:if="{{member}}">
+<view class="page {{themeClass}}" wx:if="{{member}}">
   <view class="card">
     <view class="title">{{member.nickName || '未设置昵称'}}</view>
     <view class="muted">{{member.phone || '未填手机号'}} · {{member.since}} 加入</view>

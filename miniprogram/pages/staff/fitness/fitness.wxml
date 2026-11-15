@@ -1,4 +1,4 @@
-<view class="page" wx:if="{{f}}">
+<view class="page {{themeClass}}" wx:if="{{f}}">
   <view class="card">
     <view class="between">
       <text class="title">{{f.memberName}}</text>

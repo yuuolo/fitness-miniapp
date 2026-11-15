@@ -1,3 +1,4 @@
+const theme = require('../../utils/theme')
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
@@ -5,9 +6,11 @@ const features = require('../../utils/features')
 const REFRESH_SECONDS = 30
 
 Page({
-  data: { image: '', error: '', cardName: '', cardInfo: '', countdown: REFRESH_SECONDS, pointsOn: true },
+  data: {
+    themeClass: 'theme-auto', image: '', error: '', cardName: '', cardInfo: '', countdown: REFRESH_SECONDS, pointsOn: true },
 
   onShow() {
+    theme.sync(this)
     // 积分功能关掉时，提示语里不要提积分
     features.ensure().then(f => this.setData({ pointsOn: f.points !== false })).catch(() => {})
     this.refresh()

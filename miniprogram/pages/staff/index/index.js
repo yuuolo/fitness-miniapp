@@ -1,9 +1,11 @@
 const api = require('../../../utils/api')
+const theme = require('../../../utils/theme')
 const fmt = require('../../../utils/format')
 const features = require('../../../utils/features')
 
 Page({
   data: {
+    themeClass: 'theme-auto',
     stat: null,
     role: '',
     isStaff: false,
@@ -15,6 +17,7 @@ Page({
   },
 
   onShow() {
+    theme.sync(this)
     features.ensure().then(f => {
       this.setData({ cardsOn: f.cards !== false })
     }).catch(() => {})

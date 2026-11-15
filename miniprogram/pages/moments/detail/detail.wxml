@@ -1,4 +1,4 @@
-<view class="page" wx:if="{{m}}">
+<view class="page {{themeClass}}" wx:if="{{m}}">
   <view class="card">
     <view class="between">
       <view>
@@ -43,7 +43,7 @@
   <canvas type="2d" id="poster" class="poster-canvas"></canvas>
 </view>
 
-<view class="page" wx:elif="{{loaded}}">
+<view class="page {{themeClass}}" wx:elif="{{loaded}}">
   <view class="card">
     <view class="title">打不开这条动态</view>
     <view class="muted mt">{{error || '可能已被删除'}}</view>

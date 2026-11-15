@@ -1,10 +1,12 @@
+const theme = require('../../utils/theme')
 const api = require('../../utils/api')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
 const { subscribe } = require('../../utils/subscribe')
 
 Page({
-  data: { days: [], date: '', list: [], loading: false, busyId: '', disabled: false },
+  data: {
+    themeClass: 'theme-auto', days: [], date: '', list: [], loading: false, busyId: '', disabled: false },
 
   onLoad() {
     const days = fmt.nextDays(7)
@@ -12,6 +14,7 @@ Page({
   },
 
   onShow() {
+    theme.sync(this)
     this.syncTabBar()
     // 功能关闭时直接显示占位，不发请求
     features.ensure().then(f => {
