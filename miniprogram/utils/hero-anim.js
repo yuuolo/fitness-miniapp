@@ -28,7 +28,7 @@ const POSES = [
   {
     key: 'lift',
     name: '举重',
-    // 正面宽距过顶推举：两手在头部两侧外，横杆是一整根（画在身体上层）
+    // 正面宽距过顶推举：上臂外展（肘朝身体两侧外），横杆一整根
     custom(be, gender, phase) {
       const k = upDown(phase)                 // 0 = 胸前，1 = 头顶锁定
       const dip = 1 - k
@@ -39,15 +39,22 @@ const POSES = [
       const hipY = 65 + 2 * dip
       const narrow = gender === 'female' ? 1.5 : 0
 
-      // 宽距：手比肩宽，落在头部两侧之外
-      const handX1 = 42 - 1 * k
-      const handX2 = 78 + 1 * k
+      // 手（握杠）位置：宽于肩，始终在头部两侧之外
+      const handX1 = 41 - 1 * k
+      const handX2 = 79 + 1 * k
       const handY = 46 - 32 * k
+
+      // 肘部：底部在肩下方偏外（上臂外展），顶部收拢到接近竖直上推
+      const elbowX1 = 36 + 8 * k
+      const elbowX2 = 84 - 8 * k
+      const elbowY = 54 - 26 * k
 
       const sl = [headX - 7 + narrow, shoulderY]
       const sr = [headX + 7 - narrow, shoulderY]
       const left = [handX1, handY]
       const right = [handX2, handY]
+      const el = [elbowX1, elbowY]
+      const er = [elbowX2, elbowY]
 
       // ---- 先画身体 ----
       be.circle(headX, headY, 8)
@@ -59,18 +66,16 @@ const POSES = [
       be.line(headX - 13, 104, headX - 6, 104, 0.9)
       be.line(headX + 6, 104, headX + 13, 104, 0.9)
 
-      // 手臂：宽距，肘朝外下方
-      const el = ik2(sl[0], sl[1], left[0], left[1], 15, 15, true)
-      const er = ik2(sr[0], sr[1], right[0], right[1], 15, 15, false)
+      // 手臂：肩 → 肘（外展）→ 手
       be.poly([sl, el, left])
       be.poly([sr, er, right])
 
-      // ---- 再画杠铃：一整根，压在手臂与身体之上 ----
+      // ---- 杠铃：一整根，压在身体上层 ----
       be.line(26, handY, 94, handY, 1.15)
       be.rect(26, handY - 10, 7, 20)
       be.rect(87, handY - 10, 7, 20)
 
-      // 女性：头发（画在杠铃之后，避免被杆压住脸）
+      // 女性：头发
       if (gender === 'female') {
         const cy = headY
         be.path(`M${headX - 7.6} ${cy + 0.5} A 7.8 7.8 0 0 1 ${headX + 7.6} ${cy + 0.5}`)
@@ -200,48 +205,58 @@ const POSES = [
   {
     key: 'deadlift',
     name: '硬拉',
-    // 侧视图传统硬拉：从地面拉起，到髋部锁死；杠铃行程最大
+    // 正对面视角传统硬拉：杠铃在地面 → 站直锁死在大腿位置
     custom(be, gender, phase) {
-      const k = upDown(phase)          // 0 = 杠铃在地面，1 = 站直锁死
-      const narrow = gender === 'female' ? 1 : 0
+      const k = upDown(phase)          // 0 = 杠贴地，1 = 站直
+      const narrow = gender === 'female' ? 1.5 : 0
       const lerp = (a, b) => a + (b - a) * k
 
-      // 关键点：底部弓身、髋后移；顶部站直
-      // 底部：杠铃贴地（y=100），躯干接近水平；顶部：站直，杠到大腿/髋（y=64）
-      const ankle = [52, 102]
-      const knee = [lerp(58, 56), lerp(82, 80)]
-      const hip = [lerp(36, 48), lerp(78, 62)]
-      const shoulder = [lerp(66, 58), lerp(70, 36)]
-      const head = [lerp(80, 64), lerp(62, 30)]
-      const hand = [lerp(70, 61), lerp(100, 64)]
+      // 身体整体上抬：髋、肩、头、手同步
+      const headY = lerp(54, 26)
+      const headX = 60
+      const shoulderY = lerp(68, 42)
+      const hipY = lerp(82, 64)
 
-      // 杠铃（侧视：一根横杆 + 一片配重）
-      be.line(hand[0] - 12, hand[1], hand[0] + 8, hand[1], 1.1)
-      be.circle(hand[0] + 9, hand[1], 7.5)
-      be.circle(hand[0] + 9, hand[1], 2.2)
+      // 握距：比肩宽，手在腿外侧
+      const handX1 = lerp(44, 41)
+      const handX2 = lerp(76, 79)
+      const handY = lerp(100, 66)
+      const barY = handY
 
-      // 腿（远侧腿细一点）
-      be.poly([[hip[0] + 1, hip[1]], [knee[0] - 2, knee[1] + 2], [ankle[0] - 2, ankle[1]]], 0.8)
-      be.line(ankle[0] - 4, ankle[1] + 1, ankle[0] + 6, ankle[1] + 1, 0.7)
+      // 膝盖：底部略屈外张，顶部站直
+      const kneeX1 = lerp(38, 50)
+      const kneeX2 = lerp(82, 70)
+      const kneeY = lerp(86, 84)
+      const ankleX1 = lerp(46, 48)
+      const ankleX2 = lerp(74, 72)
+      const ankleY = 102
 
-      // 身体
-      be.circle(head[0], head[1], 8)
-      be.poly([[head[0] - 1, head[1] + 8], [shoulder[0], shoulder[1]]])
-      be.poly([shoulder, [hip[0] + narrow, hip[1]]])
+      // 杠铃 + 配重片（先画，身体压在后面）
+      be.line(20, barY, 100, barY, 1.1)
+      be.rect(20, barY - 11, 8, 22)
+      be.rect(92, barY - 11, 8, 22)
 
-      // 近侧腿
-      be.poly([[hip[0], hip[1]], knee, ankle], 1)
-      be.line(ankle[0] - 5, ankle[1] + 2, ankle[0] + 6, ankle[1] + 2, 0.9)
+      // 腿
+      be.poly([[headX, hipY], [kneeX1, kneeY], [ankleX1, ankleY]])
+      be.poly([[headX, hipY], [kneeX2, kneeY], [ankleX2, ankleY]])
+      be.line(ankleX1 - 6, ankleY + 2, ankleX1 + 3, ankleY + 2, 0.9)
+      be.line(ankleX2 - 3, ankleY + 2, ankleX2 + 6, ankleY + 2, 0.9)
 
-      // 手臂：从肩垂直往下抓杠（硬拉手臂始终伸直）
-      const sx = shoulder[0] + narrow
-      be.poly([[sx, shoulder[1]], [lerp(sx, hand[0], 0.5), lerp(shoulder[1], hand[1], 0.5)], hand], 1)
+      // 躯干（底部前倾 → 躯干看起来更短）
+      be.poly([[headX, headY + 8], [headX, shoulderY]])
+      be.poly([[headX - 7, shoulderY], [headX + 7, shoulderY]])
+      be.poly([[headX, shoulderY], [headX, hipY]])
+      be.circle(headX, headY, 8)
+
+      // 手臂：从肩斜向外下方抓杠（握距比肩宽）
+      be.poly([[headX - 7 + narrow, shoulderY], [lerp(headX - 7 + narrow, handX1, 0.55), lerp(shoulderY, handY, 0.55)], [handX1, handY]])
+      be.poly([[headX + 7 - narrow, shoulderY], [lerp(headX + 7 - narrow, handX2, 0.55), lerp(shoulderY, handY, 0.55)], [handX2, handY]])
 
       // 女性：头发
       if (gender === 'female') {
-        const [cx, cy] = head
-        be.path(`M${cx - 7.6} ${cy + 0.5} A 7.8 7.8 0 0 1 ${cx + 7.6} ${cy + 0.5}`)
-        be.path(`M${cx + 7} ${cy + 1} q7 4 3.5 11`)
+        const cy = headY
+        be.path(`M${headX - 7.6} ${cy + 0.5} A 7.8 7.8 0 0 1 ${headX + 7.6} ${cy + 0.5}`)
+        be.path(`M${headX + 7} ${cy + 1} q7 4 3.5 11`)
       }
     }
   },
