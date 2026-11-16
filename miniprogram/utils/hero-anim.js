@@ -159,16 +159,15 @@ const POSES = [
       // 右腿相位 phi，左腿反相。
       // 大腿整体相位后移 0.45，让「腿在身后 + 小腿高抬」同时发生，像真正的后踢腿
       const PH = 0.45
-      const thighR = 0.9 * Math.sin(phi - PH)
+      // 前摆抬得更高（1.2rad ≈ 69°），后摆略收，看起来更有「抬腿」感
+      const swingA = s => (s > 0 ? 1.2 * s : 0.78 * s)
+      const thighR = swingA(Math.sin(phi - PH))
       const flexR = 0.12 + 1.8 * clamp01(Math.cos(phi - 5.16))
-      const thighL = 0.9 * Math.sin(phi + Math.PI - PH)
+      const thighL = swingA(Math.sin(phi + Math.PI - PH))
       const flexL = 0.12 + 1.8 * clamp01(Math.cos(phi + Math.PI - 5.16))
 
       const r = leg(thighR, flexR)
       const l = leg(thighL, flexL)
-
-      // 地面
-      be.line(20, 104, 104, 104, 0.5)
 
       // 远侧腿（细一些，拉开前后层次）
       be.poly([hip, l.knee, l.ankle], 0.8)
