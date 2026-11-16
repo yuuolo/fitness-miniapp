@@ -25,9 +25,11 @@ async function main() {
   // ---------- 1. 默认值 ----------
   const def = layout.defaults()
   assert.deepStrictEqual(Object.keys(def).sort(), ['admin', 'coach', 'member'])
-  assert.strictEqual(def.member.length, 4)
+  assert.strictEqual(def.member.length, 5)
   assert.strictEqual(def.member[0].type, 'hero')
   assert.ok(def.member.some(b => b.type === 'hero'))
+  assert.ok(def.member.some(b => b.type === 'competitions'), '默认会员布局应包含竞赛预览')
+  assert.ok(def.member.every(b => b.enabled), '默认布局的模块都应默认显示')
   assert.ok(def.admin.some(b => b.type === 'hero'), '管理员默认带欢迎模块')
   // 这 4 个模块已彻底删除，不应再出现
   // 注意：上一行没有分号，这里的数组字面量必须以 ; 开头，否则会被当成下标访问
@@ -81,10 +83,10 @@ async function main() {
 
   // ---------- 3. 读默认 ----------
   const fresh = await layout.get(true)
-  assert.strictEqual(fresh.roles.member.length, 4)
+  assert.strictEqual(fresh.roles.member.length, 5)
   assert.strictEqual(fresh.updatedAt, 0)
   const memberBlocks = await layout.forRole('member')
-  assert.strictEqual(memberBlocks.length, 4)
+  assert.strictEqual(memberBlocks.length, 5)
   ok('没配置过时读出来就是默认布局')
 
   // ---------- 4. 自定义快捷入口 ----------

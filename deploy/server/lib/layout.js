@@ -60,9 +60,11 @@ function block(type, extra) {
 
 // 各角色的默认布局
 function defaults() {
+  // 会员首页：欢迎 → 快捷入口 → 竞赛预览 → 排行榜预览 → 友圈预览
   const social = [
     block('hero'),
     block('quick'),
+    block('competitions'),
     block('rank'),
     block('moments')
   ]

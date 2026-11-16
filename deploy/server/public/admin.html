@@ -126,6 +126,13 @@
   .mini:disabled { opacity: .3; cursor: not-allowed; }
   .mini.danger:hover { border-color: var(--danger); color: #ff9b95; }
   .layout-empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
+  /* 预览模块 × 角色 开关矩阵 */
+  .mx-wrap { margin: 10px 0 4px; }
+  .mx { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .mx th, .mx td { padding: 8px 6px; text-align: center; border-bottom: 1px dashed var(--line); }
+  .mx th:first-child, .mx td:first-child { text-align: left; color: var(--muted); font-weight: 400; }
+  .mx th { color: var(--muted); font-weight: 500; }
+  .mx .mini.on { border-color: var(--accent); color: #ffb59b; background: rgba(233,96,58,.14); }
 </style>
 </head>
 <body>
@@ -291,6 +298,22 @@
       </div>
       <div class="roleTabs" id="roleTabs"></div>
       <div id="layoutList"></div>
+
+      <div class="hint" style="margin-top:16px">
+        预览模块单独开关（每个角色独立，改完点「保存布局」生效）
+      </div>
+      <div id="previewMatrix" class="mx-wrap"></div>
+
+      <div class="row" style="margin-top:14px">
+        <div class="field">
+          <label>添加模块</label>
+          <select id="blockAddSelect"></select>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="blockAddBtn">添加到当前角色</button>
+        </div>
+      </div>
 
       <div class="row" style="margin-top:16px">
         <div class="field">
@@ -692,6 +715,9 @@
       return '<option value="' + esc(p.path) + '">' + esc(p.name) + (p.tab ? '（tab页）' : '') + '</option>'
     }).join('')
 
+    renderPreviewMatrix()
+    renderBlockAdd()
+
     Array.prototype.forEach.call($('layoutList').querySelectorAll('[data-act]'), function (btn) {
       btn.addEventListener('click', function () {
         var act = this.getAttribute('data-act')
@@ -713,6 +739,66 @@
     })
   }
 
+  // ---------- 预览模块 × 角色 开关矩阵 ----------
+  var PREVIEW_TYPES = ['rank', 'competitions', 'moments']
+
+  function ensureBlock(role, type) {
+    var arr = blocksOf(role)
+    var idx = -1
+    for (var i = 0; i < arr.length; i++) if (arr[i].type === type) { idx = i; break }
+    if (idx >= 0) return arr[idx]
+    var tm = typeMeta(type) || {}
+    var b = { id: type, type: type, title: tm.name || type, desc: tm.desc || '', enabled: true }
+    arr.push(b)
+    return b
+  }
+
+  function renderPreviewMatrix() {
+    var meta = needMeta()
+    var roles = meta.roles || []
+    var head = '<tr><th>模块</th>' + roles.map(function (r) { return '<th>' + esc(r.name) + '</th>' }).join('') + '</tr>'
+    var body = PREVIEW_TYPES.map(function (type) {
+      var tm = typeMeta(type) || {}
+      var cells = roles.map(function (r) {
+        var arr = blocksOf(r.key) || []
+        var b = null
+        for (var i = 0; i < arr.length; i++) if (arr[i].type === type) { b = arr[i]; break }
+        var label = b ? (b.enabled ? '显示' : '已隐藏') : '未添加'
+        var cls = 'mini' + (b && b.enabled ? ' on' : '')
+        return '<td><button class="' + cls + '" data-pv-role="' + r.key + '" data-pv-type="' + type + '">' + label + '</button></td>'
+      }).join('')
+      return '<tr><td>' + esc(tm.name || type) + '</td>' + cells + '</tr>'
+    }).join('')
+
+    $('previewMatrix').innerHTML = '<table class="mx"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>'
+
+    Array.prototype.forEach.call($('previewMatrix').querySelectorAll('[data-pv-role]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var role = this.getAttribute('data-pv-role')
+        var type = this.getAttribute('data-pv-type')
+        var b = ensureBlock(role, type)
+        b.enabled = !b.enabled
+        layoutData.roles[role] = blocksOf(role)
+        renderPreviewMatrix()
+        renderLayoutList()
+        markDirty(true)
+        showMsg($('layoutMsg'),
+          '「' + (typeMeta(type) || {}).name + '」在「' + roleName(role) + '」里已' + (b.enabled ? '显示' : '隐藏') + '，记得点「保存布局」',
+          'info')
+      })
+    })
+  }
+
+  function renderBlockAdd() {
+    var meta = needMeta()
+    var cur = blocksOf(currentRole) || []
+    var used = cur.map(function (b) { return b.type })
+    var opts = (meta.blocks || []).filter(function (b) { return used.indexOf(b.type) < 0 })
+    $('blockAddSelect').innerHTML = opts.length
+      ? opts.map(function (b) { return '<option value="' + esc(b.type) + '">' + esc(b.name) + ' — ' + esc(b.desc) + '</option>' }).join('')
+      : '<option value="">（该角色已包含全部模块）</option>'
+  }
+
   function renderLayout(data) {
     layoutData = { roles: data.roles || {}, meta: data.meta || null }
     renderRoles()
@@ -729,6 +815,18 @@
       throw e
     })
   }
+
+  $('blockAddBtn').addEventListener('click', function () {
+    var type = $('blockAddSelect').value
+    if (!type) return showMsg($('layoutMsg'), '当前角色已经包含全部模块了', 'info')
+    var arr = blocksOf(currentRole)
+    var tm = typeMeta(type) || {}
+    arr.push({ id: type, type: type, title: tm.name || type, desc: tm.desc || '', enabled: true })
+    layoutData.roles[currentRole] = arr
+    renderLayoutList()
+    markDirty(true)
+    showMsg($('layoutMsg'), '已把「' + (tm.name || type) + '」添加到「' + roleName(currentRole) + '」，记得点「保存布局」', 'info')
+  })
 
   $('layoutSaveBtn').addEventListener('click', function () {
     var btn = this
