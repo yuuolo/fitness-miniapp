@@ -1,21 +1,86 @@
 // 首页欢迎栏的运动小人：Canvas 逐帧动画
 // 每种运动都有「起始帧 A」和「终点帧 B」，按相位在两者之间来回插值，
 // 看起来像在做动作；姿势每天固定一个（按日期 + openid 取模），不会乱跳。
+// 两段骨骼 IK：给肩点和手点，算出肘的位置（bendDown=true 时肘朝下/后）
+function ik2(sx, sy, tx, ty, len1, len2, bendDown) {
+  let dx = tx - sx
+  let dy = ty - sy
+  let d = Math.sqrt(dx * dx + dy * dy) || 0.001
+  const maxD = len1 + len2 - 0.5
+  const minD = Math.abs(len1 - len2) + 0.5
+  if (d > maxD) { dx *= maxD / d; dy *= maxD / d; d = maxD }
+  if (d < minD) { dx *= minD / d; dy *= minD / d; d = minD }
+  const base = Math.atan2(dy, dx)
+  const cosA = (len1 * len1 + d * d - len2 * len2) / (2 * len1 * d)
+  const a = Math.acos(Math.max(-1, Math.min(1, cosA)))
+  const ang = base + (bendDown ? a : -a)
+  return [sx + Math.cos(ang) * len1, sy + Math.sin(ang) * len1]
+}
+
+const clamp01 = x => Math.max(0, Math.min(1, x))
+
+// 0 → 1 → 0 的平滑往返（举重一次上推再放下）
+function upDown(phase) {
+  return 0.5 - 0.5 * Math.cos(phase * Math.PI * 2)
+}
+
 const POSES = [
   {
     key: 'lift',
     name: '举重',
-    // 杠铃从肩前推到头顶
-    frames: [
-      { head: [60, 33], torso: [[60, 41], [60, 66]],
-        arms: [[[53, 44], [45, 58], [50, 52]], [[67, 44], [75, 58], [70, 52]]],
-        legs: [[[56, 66], [50, 84], [48, 100]], [[64, 66], [70, 84], [72, 100]]],
-        hands: [[50, 52], [70, 52]] },
-      { head: [60, 33], torso: [[60, 41], [60, 66]],
-        arms: [[[53, 44], [50, 30], [50, 16]], [[67, 44], [70, 30], [70, 16]]],
-        legs: [[[56, 66], [50, 84], [48, 100]], [[64, 66], [70, 84], [72, 100]]],
-        hands: [[50, 16], [70, 16]] }
-    ]
+    // 正面视角过顶推举：杠铃从肩前推到头顶，横杆在头部处断开（看起来从脑后经过）
+    custom(be, gender, phase) {
+      const k = upDown(phase)                 // 0 = 肩前，1 = 头顶锁定
+      const dip = 1 - k                       // 起始阶段略微下蹲
+      const narrow = gender === 'female' ? 1.5 : 0
+
+      const headY = 30 + 1.5 * dip
+      const headX = 60
+      const shoulderY = 44 + 1.5 * dip
+      const hipY = 64 + 2.2 * dip
+
+      // 手（握杠）位置：肩前 → 头顶上方
+      const handY = 47 - 33 * k
+      const handX1 = 50 - 1.5 * k
+      const handX2 = 70 + 1.5 * k
+
+      const left = [handX1, handY]
+      const right = [handX2, handY]
+
+      // 横杆：分两段，给头部留出空隙
+      const gap = 11
+      const barY = handY
+      be.line(24, barY, headX - gap, barY, 1.1)
+      be.line(headX + gap, barY, 96, barY, 1.1)
+      // 杠铃片
+      be.rect(24, barY - 10, 7, 20)
+      be.rect(89, barY - 10, 7, 20)
+
+      // 身体
+      be.circle(headX, headY, 8)
+      be.poly([[headX, headY + 8], [headX, shoulderY]])
+      be.poly([[headX - 7, shoulderY], [headX + 7, shoulderY]])
+      be.poly([[headX, shoulderY], [headX, hipY]])
+      be.poly([[headX - narrow, hipY], [headX - 9, 84], [headX - 11, 102]])
+      be.poly([[headX + narrow, hipY], [headX + 9, 84], [headX + 11, 102]])
+      be.line(headX - 13, 104, headX - 6, 104, 0.9)
+      be.line(headX + 6, 104, headX + 13, 104, 0.9)
+
+      // 手臂：肩 → 肘（IK）→ 手，肘朝外下方
+      const sl = [headX - 7 + narrow, shoulderY]
+      const sr = [headX + 7 - narrow, shoulderY]
+      const el = ik2(sl[0], sl[1], left[0], left[1], 14, 14, true)
+      const er = ik2(sr[0], sr[1], right[0], right[1], 14, 14, false)
+      be.poly([sl, el, left])
+      be.poly([sr, er, right])
+
+      // 女性：头发
+      if (gender === 'female') {
+        const cy = headY
+        be.path(`M${headX - 7.6} ${cy + 0.5} A 7.8 7.8 0 0 1 ${headX + 7.6} ${cy + 0.5}`)
+        be.path(`M${headX + 7} ${cy + 1} q7 4 3.5 11`)
+      }
+    }
   },
   {
     key: 'squat',
@@ -65,17 +130,70 @@ const POSES = [
   {
     key: 'run',
     name: '跑步',
-    // 两步交替
-    frames: [
-      { head: [65, 27], torso: [[63, 35], [54, 60]],
-        arms: [[[59, 40], [46, 48], [40, 42]], [[62, 42], [76, 44], [84, 38]]],
-        legs: [[[56, 60], [72, 70], [70, 92]], [[52, 60], [40, 74], [33, 94]]],
-        hands: [[40, 42], [84, 38]] },
-      { head: [65, 29], torso: [[63, 37], [54, 62]],
-        arms: [[[59, 42], [46, 40], [40, 32]], [[62, 44], [76, 52], [84, 58]]],
-        legs: [[[56, 62], [68, 76], [74, 96]], [[52, 62], [40, 70], [34, 90]]],
-        hands: [[40, 32], [84, 58]] }
-    ]
+    // 侧视图跑步：大步幅 + 高抬腿 + 前倾 + 起伏 + 对侧摆臂
+    custom(be, gender, phase) {
+      const phi = phase * Math.PI * 2
+      // 双脚离地的腾空期身体最高，支撑中期最低
+      const bob = 4.2 * Math.abs(Math.cos(phi))
+      const hip = [52, 53 + bob]
+      const shoulder = [61, 36 + bob]
+      const head = [66, 24 + bob]
+
+      const THIGH = 21
+      const SHIN = 20
+
+      const leg = (thighA, flex) => {
+        const knee = [hip[0] + Math.sin(thighA) * THIGH, hip[1] + Math.cos(thighA) * THIGH]
+        const shinA = thighA - flex
+        const ankle = [knee[0] + Math.sin(shinA) * SHIN, knee[1] + Math.cos(shinA) * SHIN]
+        // 脚掌：朝脚尖方向，摆动腿脚尖略微下垂
+        const toe = [ankle[0] + 7 * Math.cos(shinA * 0.4 + 0.5), ankle[1] + 3]
+        return { knee, ankle, toe }
+      }
+
+      // 右腿相位 phi，左腿反相
+      const thighR = 0.85 * Math.sin(phi)
+      const flexR = 0.08 + 1.35 * clamp01(Math.cos(phi - 1.25))
+      const thighL = 0.85 * Math.sin(phi + Math.PI)
+      const flexL = 0.08 + 1.35 * clamp01(Math.cos(phi + Math.PI - 1.25))
+
+      const r = leg(thighR, flexR)
+      const l = leg(thighL, flexL)
+
+      // 地面
+      be.line(20, 104, 104, 104, 0.5)
+
+      // 远侧腿（细一些，拉开前后层次）
+      be.poly([hip, l.knee, l.ankle], 0.8)
+      be.line(l.ankle[0], l.ankle[1], l.toe[0], l.toe[1], 0.65)
+
+      // 身体（前倾）
+      be.circle(head[0], head[1], 8)
+      be.poly([[head[0] - 1, head[1] + 8], [shoulder[0], shoulder[1]]])
+      be.poly([shoulder, hip])
+
+      // 近侧腿
+      be.poly([hip, r.knee, r.ankle], 1)
+      be.line(r.ankle[0], r.ankle[1], r.toe[0], r.toe[1], 0.9)
+
+      // 手臂：与同侧腿反相，肘弯约 90°，前后摆
+      const arm = (side, width) => {
+        const swing = -0.8 * Math.sin(phi + (side > 0 ? 0 : Math.PI)) + 0.05
+        const elbow = [shoulder[0] + Math.sin(swing) * 11, shoulder[1] + Math.cos(swing) * 11 + 1]
+        const handA = swing + 1.7
+        const hand = [elbow[0] + Math.sin(handA) * 11, elbow[1] + Math.cos(handA) * 11 - 1]
+        be.poly([shoulder, elbow, hand], width)
+      }
+      arm(-1, 0.8)
+      arm(1, 1)
+
+      // 女性：头发
+      if (gender === 'female') {
+        const [cx, cy] = head
+        be.path(`M${cx - 7.6} ${cy + 0.5} A 7.8 7.8 0 0 1 ${cx + 7.6} ${cy + 0.5}`)
+        be.path(`M${cx + 7} ${cy + 1} q7 4 3.5 11`)
+      }
+    }
   },
   {
     key: 'pullup',
@@ -137,17 +255,17 @@ function joints(pose, phase, gender) {
 // ---------- 画到一个抽象 backend 上（Canvas 和 SVG 共用） ----------
 function paint(be, poseKey, gender, phase) {
   const pose = BY_KEY[poseKey] || POSES[0]
+  // 这两个姿势是程序化绘制的，不走关键帧插值
+  if (pose.custom) {
+    pose.custom(be, gender, phase)
+    return
+  }
   const g = joints(pose, phase, gender)
   const r = be.scale || 1
 
   // 器械
   const gear = (x1, y1, x2, y2) => be.line(x1, y1, x2, y2, 1)
-  if (pose.key === 'lift') {
-    const y = g.barY !== undefined ? g.barY : 16
-    gear(26, y, 94, y)
-    be.rect(26, y - 10, 8, 20)
-    be.rect(86, y - 10, 8, 20)
-  } else if (pose.key === 'squat') {
+  if (pose.key === 'squat') {
     const y = g.barY
     gear(34, y, 86, y)
     be.rect(34, y - 10, 7, 18)
@@ -163,8 +281,6 @@ function paint(be, poseKey, gender, phase) {
     gear(26, 13, 94, 13)
     be.circle(45, 13, 2.6)
     be.circle(75, 13, 2.6)
-  } else if (pose.key === 'run') {
-    be.line(24, 100, 96, 100, 0.6)
   }
 
   // 身体
