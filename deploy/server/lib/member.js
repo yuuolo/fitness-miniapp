@@ -15,6 +15,7 @@ function publicMe(me) {
     role: me.role,
     blockUntil: me.blockUntil || 0,
     avatar: me.avatar || '',
+    gender: me.gender || '',
     // 前端用来提示「资料还没填完」
     profileReady: !!(me.nickName && me.phone)
   }

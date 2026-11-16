@@ -27,6 +27,8 @@
         <view class="sub">
           <text>今天也要动起来</text>
         </view>
+        <!-- 右边的小人：Canvas 逐帧动画，动作每天固定一个 -->
+        <canvas wx:if="{{heroPoseKey}}" type="2d" id="heroFig" class="hero-canvas"></canvas>
       </view>
 
 

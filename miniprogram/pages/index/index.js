@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const heroAnim = require('../../utils/hero-anim')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
 
@@ -139,10 +140,15 @@ Page({
     radarScore: null,
     radarEmpty: true,
     // 快捷入口：最近两条动态的缩略图（友圈格子）
-    momentThumbs: []
+    momentThumbs: [],
+    // 欢迎栏里的运动小人（Canvas 动画，姿势每天一个）
+    heroPoseKey: '',
+    heroPoseName: '',
+    heroFigSize: 78
   },
 
   onShow() {
+    if (this.data.heroPoseKey && !this.heroAnimOn) this.startHeroAnim()
     this.syncTabBar()
     this.load()
   },
@@ -152,6 +158,74 @@ Page({
   syncTabBar() {
     const bar = typeof this.getTabBar === 'function' ? this.getTabBar() : null
     if (bar && typeof bar.refresh === 'function') bar.refresh()
+  },
+
+  // 今天的日期（北京时间），用来给「每天一个动作」做种子
+  todayStr() {
+    const d = new Date(Date.now() + 8 * 3600e3)
+    const p = n => (n < 10 ? '0' + n : '' + n)
+    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate())
+  },
+
+  // 欢迎栏小人：Canvas 逐帧动画，动作每天固定一个
+  startHeroAnim() {
+    this.stopHeroAnim()
+    if (!this.data.heroPoseKey) return
+    const query = this.createSelectorQuery
+      ? this.createSelectorQuery()
+      : wx.createSelectorQuery()
+    query.select('#heroFig').fields({ node: true, size: true }).exec(res => {
+      const hit = res && res[0]
+      if (!hit || !hit.node) return
+      const canvas = hit.node
+      const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+      const dpr = info.pixelRatio || 2
+      const size = hit.width || this.data.heroFigSize
+      canvas.width = Math.round(size * dpr)
+      canvas.height = Math.round(size * dpr)
+      const ctx = canvas.getContext('2d')
+      const poseKey = this.data.heroPoseKey
+      const gender = (this.data.me && this.data.me.gender) || 'male'
+      const PERIOD = 2200
+      this.heroAnimOn = true
+      let start = 0
+      this.heroFrames = 0
+      const step = ts => {
+        if (!this.heroAnimOn) return
+        if (!start) start = ts
+        const phase = ((ts - start) % PERIOD) / PERIOD
+        this.heroFrames++
+        heroAnim.drawCanvas(ctx, poseKey, gender, phase, size, dpr)
+        if (canvas.requestAnimationFrame) canvas.requestAnimationFrame(step)
+      }
+      if (canvas.requestAnimationFrame) {
+        canvas.requestAnimationFrame(step)
+      } else {
+        // 兜底：老版本没有 requestAnimationFrame 时用定时器
+        this.heroTimer = setInterval(() => {
+          if (!this.heroAnimOn) return
+          const ts = Date.now()
+          if (!start) start = ts
+          heroAnim.drawCanvas(ctx, poseKey, gender, ((ts - start) % PERIOD) / PERIOD, size, dpr)
+        }, 40)
+      }
+    })
+  },
+
+  stopHeroAnim() {
+    this.heroAnimOn = false
+    if (this.heroTimer) {
+      clearInterval(this.heroTimer)
+      this.heroTimer = null
+    }
+  },
+
+  onHide() {
+    this.stopHeroAnim()
+  },
+
+  onUnload() {
+    this.stopHeroAnim()
   },
 
   onPullDownRefresh() {
@@ -168,14 +242,20 @@ Page({
       const hasBlock = {}
       blocks.forEach(b => { hasBlock[b.type] = true })
 
+      // 欢迎栏的小人：姿势按「日期」定，一天只换一次
+      const fig = heroAnim.poseOfDay('', this.todayStr())
+
       this.setData({
         loaded: true,
         initialized: res.initialized,
         me: res.me,
         features: res.features || {},
         layout: blocks,
-        hasBlock
+        hasBlock,
+        heroPoseKey: fig.key,
+        heroPoseName: fig.name
       })
+      this.startHeroAnim()
 
       this.loadExtras(hasBlock, res.features || {})
 
