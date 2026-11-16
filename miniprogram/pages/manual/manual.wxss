@@ -1,0 +1,96 @@
+.intro .title { font-size: 34rpx; }
+
+.head {
+  padding: 4rpx 0;
+}
+
+.para {
+  font-size: 26rpx;
+  color: var(--sub);
+  margin-top: 14rpx;
+  line-height: 1.6;
+}
+
+.tbl {
+  margin-top: 16rpx;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.tr {
+  display: flex;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--line-soft);
+}
+
+.tr:last-child {
+  border-bottom: none;
+}
+
+.td-k {
+  width: 200rpx;
+  flex: none;
+  font-size: 26rpx;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.td-v {
+  flex: 1;
+  font-size: 25rpx;
+  color: var(--sub);
+  line-height: 1.6;
+}
+
+.formulas {
+  margin-top: 16rpx;
+  padding: 16rpx;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+}
+
+.formula {
+  font-size: 24rpx;
+  color: var(--ink);
+  padding: 6rpx 0;
+  word-break: break-all;
+}
+
+.notes {
+  margin-top: 16rpx;
+}
+
+.note {
+  font-size: 23rpx;
+  color: var(--muted);
+  line-height: 1.6;
+  padding-left: 20rpx;
+  position: relative;
+}
+
+.note::before {
+  content: '·';
+  position: absolute;
+  left: 6rpx;
+}
+
+.mini-btn {
+  padding: 0 20rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  font-size: 24rpx;
+  border-radius: var(--r-pill);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.mini-btn.gray {
+  background: var(--fill);
+  color: var(--sub);
+}
+
+.foot {
+  text-align: center;
+  font-size: 22rpx;
+  padding: 24rpx 0 8rpx;
+}

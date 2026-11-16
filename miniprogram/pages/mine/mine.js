@@ -55,6 +55,11 @@ Page({
     wx.navigateTo({ url: '/pages/competitions/competitions' })
   },
 
+  // 算法说明书：评分、排行榜项目、能力图
+  goManual() {
+    wx.navigateTo({ url: '/pages/manual/manual' })
+  },
+
   goStaff() {
     wx.navigateTo({ url: '/pages/staff/index/index' })
   },

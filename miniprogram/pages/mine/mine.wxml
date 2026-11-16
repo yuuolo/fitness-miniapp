@@ -36,6 +36,9 @@
       <view wx:if="{{features.rank !== false}}" class="menu-item" bindtap="goCompetitions">
         <view class="mi mi-flame"></view><text class="grow">竞赛</text><text class="chevron">›</text>
       </view>
+      <view class="menu-item" bindtap="goManual">
+        <view class="mi mi-book"></view><text class="grow">算法说明</text><text class="chevron">›</text>
+      </view>
       <view wx:if="{{isStaff}}" class="menu-item" bindtap="goStaff">
         <view class="mi mi-tool"></view><text class="grow">员工工作台</text><text class="chevron">›</text>
       </view>

@@ -17,7 +17,8 @@
     "pages/staff/fitness/fitness",
     "pages/staff/competitions/competitions",
     "pages/staff/competition-edit/competition-edit",
-    "pages/staff/competition-entry/competition-entry"
+    "pages/staff/competition-entry/competition-entry",
+    "pages/manual/manual"
   ],
   "window": {
     "navigationBarBackgroundColor": "@navBgColor",
