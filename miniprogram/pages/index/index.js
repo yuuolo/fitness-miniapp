@@ -219,6 +219,8 @@ Page({
     this.figureBusy = true
     this.clearFigureTimers()
 
+    // 记住点之前的动作，换动作时避开它（否则可能换回同一个）
+    this.prevFigureKey = this.data.heroPoseKey
     // 1) 变成跑步姿势，同时容器往右滑出（0.9s）
     sfx.playRunAway()
     this.setData({ heroPoseKey: 'run', heroPoseName: '跑步', figureState: 'run' })
@@ -243,7 +245,8 @@ Page({
   // 换一个和当前不同的动作
   pickOtherPose() {
     const cur = this.data.heroPoseKey
-    const list = heroAnim.POSES.filter(p => p.key !== cur)
+    const prev = this.prevFigureKey
+    const list = heroAnim.POSES.filter(p => p.key !== cur && p.key !== prev)
     const pool = list.length ? list : heroAnim.POSES
     return pool[Math.floor(Math.random() * pool.length)]
   },
