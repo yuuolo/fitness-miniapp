@@ -1,4 +1,22 @@
 <view class="page" wx:if="{{f}}">
+<view class="card">
+    <view class="between">
+      <text class="title">{{f.memberName}}</text>
+      <text wx:if="{{f.latestBody && f.latestBody.score != null}}" class="tag orange">评分 {{f.latestBody.score}}</text>
+    </view>
+    <view class="muted mt">{{f.gender === 'female' ? '女' : (f.gender === 'male' ? '男' : '性别未填')}} · 身高 {{f.height || '-'}} cm · 深蹲卧推硬拉合计 {{f.sbdTotal || 0}} kg</view>
+    <view class="muted mt">{{f.isBodyPublic ? '该会员已公开身体数据' : '该会员未公开，其他会员看不到其体重体脂'}}</view>
+  </view>
+
+  <!-- 三类录入拆开：各管各的，不再堆在一页里 -->
+  <view class="seg-tabs">
+    <view class="seg-tab {{tab === 'body' ? 'on' : ''}}" data-tab="body" bindtap="pickTab">身体数据</view>
+    <view class="seg-tab {{tab === 'strength' ? 'on' : ''}}" data-tab="strength" bindtap="pickTab">力量成绩</view>
+    <view class="seg-tab {{tab === 'activity' ? 'on' : ''}}" data-tab="activity" bindtap="pickTab">运动记录</view>
+  </view>
+
+  <!-- ============ 身体数据 ============ -->
+  <block wx:if="{{tab === 'body'}}">
     <!-- 从体测报告识别 -->
   <view class="card">
     <view class="between" bindtap="toggleRecognize">
@@ -22,15 +40,6 @@
 
       <view wx:if="{{recognizeMsg}}" class="note-center">{{recognizeMsg}}</view>
     </block>
-  </view>
-
-<view class="card">
-    <view class="between">
-      <text class="title">{{f.memberName}}</text>
-      <text wx:if="{{f.latestBody && f.latestBody.score != null}}" class="tag orange">评分 {{f.latestBody.score}}</text>
-    </view>
-    <view class="muted mt">{{f.gender === 'female' ? '女' : (f.gender === 'male' ? '男' : '性别未填')}} · 身高 {{f.height || '-'}} cm · 深蹲卧推硬拉合计 {{f.sbdTotal || 0}} kg</view>
-    <view class="muted mt">{{f.isBodyPublic ? '该会员已公开身体数据' : '该会员未公开，其他会员看不到其体重体脂'}}</view>
   </view>
 
   <view class="section-title">录入身体数据</view>
@@ -106,6 +115,22 @@
     <button class="btn block mt" bindtap="submitBody">保存身体数据</button>
   </view>
 
+  <view class="section-title">身体数据历史</view>
+  <view class="card">
+    <view wx:if="{{!f.bodyHistory.length}}" class="muted">暂无记录</view>
+    <view wx:for="{{f.bodyHistory}}" wx:key="_id" class="list-item">
+      <view class="grow">
+        <view>{{item.date}} <text class="tag">{{item.bmi}} BMI</text></view>
+        <view class="muted">评分 {{item.score == null ? '-' : item.score}}{{item.deviceScore ? ' · 设备 ' + item.deviceScore + ' 分' : ''}}</view>
+      </view>
+      <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
+      <button class="btn gray sm ml" data-id="{{item._id}}" data-date="{{item.date}}" catchtap="deleteBody">删除</button>
+    </view>
+  </view>
+  </block>
+
+  <!-- ============ 力量成绩 ============ -->
+  <block wx:if="{{tab === 'strength'}}">
   <view class="section-title">录入力量成绩</view>
   <view class="card">
     <view class="form-row">
@@ -120,6 +145,24 @@
     <view class="muted mt">用 Epley 公式换算 1RM：重量 × (1 + 次数 ÷ 30)</view>
   </view>
 
+    <view class="section-title between">
+      <text>力量成绩历史</text>
+      <text class="muted">最近 {{strengthList.length}} 条</text>
+    </view>
+    <view class="card">
+      <view wx:if="{{!strengthList.length}}" class="muted">暂无记录</view>
+      <view wx:for="{{strengthList}}" wx:key="id" class="list-item">
+        <view class="grow">
+          <view>{{item.liftName}} <text class="muted">{{item.date}}</text></view>
+          <view class="muted">{{item.weight}} kg × {{item.reps}} 次 → 约 {{item.oneRM}} kg</view>
+        </view>
+        <text wx:if="{{item.isBest}}" class="tag orange">最好</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- ============ 运动记录 ============ -->
+  <block wx:if="{{tab === 'activity'}}">
   <view class="section-title between">
     <text>记录运动</text>
     <text class="muted" wx:if="{{actDate}}">{{actDate}}</text>
@@ -147,16 +190,19 @@
     <view class="muted mt">{{hintText}}</view>
   </view>
 
-  <view class="section-title">身体数据历史</view>
-  <view class="card">
-    <view wx:if="{{!f.bodyHistory.length}}" class="muted">暂无记录</view>
-    <view wx:for="{{f.bodyHistory}}" wx:key="_id" class="list-item">
-      <view class="grow">
-        <view>{{item.date}} <text class="tag">{{item.bmi}} BMI</text></view>
-        <view class="muted">评分 {{item.score == null ? '-' : item.score}}{{item.deviceScore ? ' · 设备 ' + item.deviceScore + ' 分' : ''}}</view>
-      </view>
-      <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
-      <button class="btn gray sm ml" data-id="{{item._id}}" data-date="{{item.date}}" catchtap="deleteBody">删除</button>
+    <view class="section-title between">
+      <text>最近运动</text>
+      <text class="muted" wx:if="{{activityList.length}}">最近 {{activityList.length}} 次</text>
     </view>
-  </view>
+    <view class="card">
+      <view wx:if="{{!activityList.length}}" class="muted">暂无记录</view>
+      <view wx:for="{{activityList}}" wx:key="id" class="list-item">
+        <view class="grow">
+          <view>{{item.typeName}} <text class="muted">{{item.date}}</text></view>
+          <view class="muted">{{item.detail || '已记录'}}</view>
+        </view>
+        <text wx:if="{{item.avgHr}}" class="tag">{{item.avgHr}} 次/分</text>
+      </view>
+    </view>
+  </block>
 </view>

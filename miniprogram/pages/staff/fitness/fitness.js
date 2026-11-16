@@ -54,10 +54,53 @@ function hintOf(type) {
   return '至少填一项：' + reqs.join(' / ') + '；其他选填'
 }
 
+// 力量成绩历史：把项目 key 换成名称，并标出当前最好成绩
+function buildStrengthList(f) {
+  const nameOf = {}
+  ;(f.lifts || []).forEach(l => { nameOf[l.key] = l.name })
+  const bestOf = {}
+  Object.keys(f.bestLift || {}).forEach(k => {
+    const b = f.bestLift[k]
+    if (b && b.oneRM) bestOf[k] = b.oneRM
+  })
+  return (f.strengthHistory || []).map(s => ({
+    id: s._id,
+    liftName: nameOf[s.lift] || s.lift,
+    date: s.date,
+    weight: s.weight,
+    reps: s.reps,
+    oneRM: s.oneRM,
+    isBest: bestOf[s.lift] != null && Number(bestOf[s.lift]) === Number(s.oneRM)
+  }))
+}
+
+// 运动记录：把类型换成中文、拼出明细
+function buildActivityList(f) {
+  const nameOf = {}
+  ;(f.actionTypes || []).forEach(t => { nameOf[t.key] = t.name })
+  const fallback = { walk: '步行', run: '跑步', cycling: '骑行', swim: '游泳', strength: '力量训练', class: '团课', other: '其他' }
+  return (f.activity || []).map(a => {
+    const parts = []
+    if (a.distance > 0) parts.push(a.distance + ' 公里')
+    if (a.duration > 0) parts.push(a.duration + ' 分钟')
+    if (a.steps > 0) parts.push(a.steps + ' 步')
+    if (a.calories > 0) parts.push(a.calories + ' 千卡')
+    return {
+      id: a._id,
+      typeName: nameOf[a.type] || fallback[a.type] || '运动',
+      date: a.date,
+      detail: parts.join(' · '),
+      avgHr: a.avgHr || 0
+    }
+  })
+}
+
 Page({
 
   data: {
     id: '', f: null, loaded: false,
+    // 三类录入拆成 tab：body / strength / activity
+    tab: 'body', strengthList: [], activityList: [],
     genders: GENDERS, genderIndex: 2,
     lifts: [], liftIndex: 0, actionTypes: [], typeIndex: 0,
     segKeys: SEG_KEYS,
@@ -73,8 +116,17 @@ Page({
   },
 
   onLoad(query) {
-    this.setData({ id: query.id || '' })
+    // 支持从会员详情分别进入三个录入 tab：?tab=body|strength|activity
+    const tab = ['body', 'strength', 'activity'].includes(query.tab) ? query.tab : 'body'
+    this.setData({ id: query.id || '', tab })
     this.load()
+  },
+
+  // 三个录入 tab 之间切换：身体数据 / 力量成绩 / 运动记录
+  pickTab(e) {
+    const tab = e.currentTarget.dataset.tab
+    if (!tab || tab === this.data.tab) return
+    this.setData({ tab })
   },
 
   load() {
@@ -96,6 +148,8 @@ Page({
         currentType: cur,
         currentFields: cur.fields || [],
         hintText: hintOf(cur),
+        strengthList: buildStrengthList(f),
+        activityList: buildActivityList(f),
         activity: act,
         genderIndex: gi < 0 ? 2 : gi
       })

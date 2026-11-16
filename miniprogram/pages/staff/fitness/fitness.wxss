@@ -20,3 +20,27 @@
   border-radius: var(--r-pill);
   margin-left: 16rpx;
 }
+
+/* 三类录入的分段切换 */
+.seg-tabs {
+  display: flex;
+  gap: 10rpx;
+  margin: 8rpx 0 18rpx;
+  background: var(--fill);
+  border-radius: var(--r-pill);
+  padding: 6rpx;
+}
+.seg-tab {
+  flex: 1;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--sub);
+  padding: 12rpx 0;
+  border-radius: var(--r-pill);
+}
+.seg-tab.on {
+  background: var(--surface);
+  color: var(--brand-strong);
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(35, 32, 29, 0.08);
+}

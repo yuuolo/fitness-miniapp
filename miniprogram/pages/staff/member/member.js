@@ -112,8 +112,17 @@ Page({
     wx.navigateTo({ url: '/pages/member/member?openid=' + this.id })
   },
 
-  goFitness() {
-    wx.navigateTo({ url: '/pages/staff/fitness/fitness?id=' + this.id })
+  // 三类录入分开进入
+  goBody() {
+    wx.navigateTo({ url: '/pages/staff/fitness/fitness?id=' + this.id + '&tab=body' })
+  },
+
+  goStrength() {
+    wx.navigateTo({ url: '/pages/staff/fitness/fitness?id=' + this.id + '&tab=strength' })
+  },
+
+  goActivity() {
+    wx.navigateTo({ url: '/pages/staff/fitness/fitness?id=' + this.id + '&tab=activity' })
   },
 
   // ---------- 角色（仅管理员） ----------

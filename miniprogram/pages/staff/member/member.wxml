@@ -37,10 +37,24 @@
   </view>
 
   <view class="card">
-    <view class="list-item" bindtap="goFitness">
+    <view class="list-item" bindtap="goBody">
       <view class="grow">
-        <view>身体数据与力量成绩</view>
-        <view class="muted">{{member.latestBody && member.latestBody.score != null ? '身体评分 ' + member.latestBody.score : '尚未录入'}}</view>
+        <view>身体数据</view>
+        <view class="muted">{{member.latestBody && member.latestBody.score != null ? '身体评分 ' + member.latestBody.score : '还未录入体测'}}</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+    <view class="list-item" bindtap="goStrength">
+      <view class="grow">
+        <view>力量成绩</view>
+        <view class="muted">{{member.sbdTotal ? '三项合计 ' + member.sbdTotal + ' kg' : '还未录成绩'}}</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+    <view class="list-item" bindtap="goActivity">
+      <view class="grow">
+        <view>运动记录</view>
+        <view class="muted">步行、跑步、骑行、力量训练等</view>
       </view>
       <text class="muted">›</text>
     </view>
