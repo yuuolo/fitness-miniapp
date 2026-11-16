@@ -168,12 +168,18 @@ Page({
         this.setData({ recognizing: true })
         wx.showLoading({ title: '上传中', mask: true })
         api.upload(file.tempFilePath, 'jpg').then(fileID => {
+          // 识别用的这张图，直接存成「体测报告照片」，不用再单独传一次
+          this.setData({ 'body.reportImage': fileID })
           wx.showLoading({ title: '识别中', mask: true })
           return api.call('ocrBodyReport', { fileID }, { silent: true })
         }).then(r => {
           wx.hideLoading()
           this.setData({ recognizing: false })
           this.applyParsed(r.fields, r.meta || {}, r.warnings || [])
+          const tip = '已识别，报告照片已保存'
+          this.setData({
+            recognizeMsg: this.data.recognizeMsg ? this.data.recognizeMsg + '；' + tip : tip
+          })
         }).catch(err => {
           wx.hideLoading()
           this.setData({ recognizing: false, recognizeMsg: err.message || '识别失败' })
@@ -308,6 +314,27 @@ Page({
       wx.showToast({ title: '1RM 约 ' + r.oneRM + ' kg' })
       this.setData({ strength: EMPTY_STRENGTH })
       this.load()
+    })
+  },
+
+  // 删除一条历史体测（误传时用）
+  deleteBody(e) {
+    const id = e.currentTarget.dataset.id
+    const date = e.currentTarget.dataset.date || ''
+    if (!id) return
+    wx.showModal({
+      title: '删除这条体测记录？',
+      content: (date ? date + ' 的记录' : '这条记录') +
+        '删除后不能恢复；会员档案里的「最新身体数据」会自动换成剩下最新的一条。',
+      confirmText: '删除',
+      confirmColor: '#e9603a',
+      success: r => {
+        if (!r.confirm) return
+        api.call('deleteBodyRecord', { id }, { loading: '删除中' }).then(() => {
+          wx.showToast({ title: '已删除' })
+          this.load()
+        }, () => {})
+      }
     })
   },
 

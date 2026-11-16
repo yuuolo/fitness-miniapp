@@ -289,6 +289,60 @@ async function saveBodyRecord({ me, data }) {
   })
 }
 
+// 删除一条历史体测记录（教练/管理员，用于处理误传的资料）
+// 删完要把会员档案上的「最新身体数据」重新算成剩下最新的一条
+async function deleteBodyRecord({ me, data }) {
+  need(me, 'coach')
+  const id = String(data.id || '')
+  if (!id) fail('缺少记录 id')
+
+  const row = await one('select * from body_records where id = $1', [id])
+  if (!row) fail('记录不存在')
+
+  await query('delete from body_records where id = $1', [id])
+
+  // 重新取这个会员剩下最新的一条
+  const left = (await query(
+    `select * from body_records where openid = $1
+      order by date desc, created_at desc limit 1`,
+    [row.openid]
+  )).rows
+  const remainRow = left[0] || null
+  const member = memberRow((await query('select * from members where openid = $1', [row.openid])).rows[0])
+
+  let latestBody = null
+  if (remainRow && member) {
+    latestBody = bodyRow(remainRow)
+    const scored = scoreBody({
+      gender: member.gender || latestBody.gender,
+      weight: latestBody.weight,
+      height: member.height || latestBody.height,
+      bodyFat: latestBody.bodyFat,
+      sbdTotal: sbdOf(member.bestLift)
+    })
+    latestBody.score = scored.score
+    latestBody.detail = scored.detail
+  }
+
+  await query('update members set latest_body = $2 where openid = $1', [
+    row.openid,
+    latestBody ? JSON.stringify(latestBody) : null
+  ])
+
+  const rest = (await query(
+    'select count(*)::int as n from body_records where openid = $1', [row.openid]
+  )).rows[0].n
+
+  return {
+    deleted: true,
+    openid: row.openid,
+    date: row.date,
+    remaining: rest,
+    latestBody,
+    memberName: member ? memberLabel(member) : ''
+  }
+}
+
 // 一段时间内的身体数据变化，供趋势图/变化对比用
 async function bodyTrend({ me, data }) {
   need(me, 'member')
@@ -767,7 +821,7 @@ async function setBodyPublic({ me, data }) {
 }
 
 module.exports = {
-  saveBodyRecord, saveStrength, saveActivity,
+  saveBodyRecord, deleteBodyRecord, saveStrength, saveActivity,
   myFitness, memberFitness, memberProfile, leaderboard, setBodyPublic, bodyTrend,
   listLiftItems, saveLiftItem, setLiftItemEnabled, deleteLiftItem,
   parseBodyReport, ocrBodyReport,

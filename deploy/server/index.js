@@ -130,6 +130,7 @@ const ACTION_FEATURE = {
   setPosterQr: 'moments',
   // 健身数据
   saveBodyRecord: 'fitness',
+  deleteBodyRecord: 'fitness',
   saveStrength: 'fitness',
   saveActivity: 'fitness',
   myFitness: 'fitness',

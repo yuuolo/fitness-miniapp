@@ -156,6 +156,7 @@
         <view class="muted">评分 {{item.score == null ? '-' : item.score}}{{item.deviceScore ? ' · 设备 ' + item.deviceScore + ' 分' : ''}}</view>
       </view>
       <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
+      <button class="btn gray sm ml" data-id="{{item._id}}" data-date="{{item.date}}" catchtap="deleteBody">删除</button>
     </view>
   </view>
 </view>
