@@ -122,6 +122,16 @@
       </view>
     </block>
 
+    <!-- 体测报告图 -->
+    <block wx:if="{{f && f.latestBody && f.latestBody.reportImage}}">
+      <view class="section-title">体测报告</view>
+      <view class="card">
+        <image class="report" src="{{f.latestBody.reportImage}}" mode="widthFix"
+          data-src="{{f.latestBody.reportImage}}" bindtap="previewReport" />
+        <view class="muted mt-sm">点图片可以放大查看</view>
+      </view>
+    </block>
+
     <!-- 最近运动 -->
     <block wx:if="{{actList.length}}">
       <view class="section-title">最近运动</view>

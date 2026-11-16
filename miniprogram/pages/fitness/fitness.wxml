@@ -32,7 +32,9 @@
       <view wx:if="{{f.latestBody.bodyShape || f.latestBody.bodyType}}" class="muted mt">
         体态：{{f.latestBody.bodyShape || '-'}} · {{f.latestBody.bodyType || '-'}}
       </view>
-      <image wx:if="{{f.latestBody.reportImage}}" class="report" src="{{f.latestBody.reportImage}}" mode="aspectFill" />
+      <image wx:if="{{f.latestBody.reportImage}}" class="report" src="{{f.latestBody.reportImage}}"
+        mode="widthFix" data-src="{{f.latestBody.reportImage}}" bindtap="previewReport" />
+      <view wx:if="{{f.latestBody.reportImage}}" class="muted mt-sm">点图片可以放大查看</view>
     </view>
 
     <view wx:if="{{seg}}" class="section-title">节段分析</view>
@@ -124,6 +126,12 @@
     </view>
 
   </block>
+
+  <view wx:if="{{openid}}" class="card">
+    <view class="muted">把这份身体数据发给朋友：点右上角「···」→ 转发，或点下面的按钮。</view>
+    <button class="btn ghost block mt" open-type="share">转发给朋友</button>
+    <view class="muted mt-sm">对方打开后能看到身体评分、指标和历史记录（不含手机号）。</view>
+  </view>
 
   <block wx:if="{{actList.length}}">
     <view class="between section-title">

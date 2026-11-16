@@ -26,6 +26,8 @@ Page({
     const q = query || {}
     this.id = q.id
     this.setData({ isAdmin: q.admin === '1', manage: q.manage === '1' })
+    // 允许右上角「···」转发这个会员的资料
+    wx.showShareMenu({ menus: ['shareAppMessage'] })
     this.load()
   },
 
@@ -84,6 +86,23 @@ Page({
   },
 
   // ---------- 身体数据 ----------
+
+  // 转发这个会员的资料给朋友（对方打开是公开资料页，看不到手机号）
+  onShareAppMessage() {
+    const m = this.data.member || {}
+    const latest = m.latestBody || {}
+    return {
+      title: (m.nickName || '会员') + ' 的身体数据' +
+        (latest.score != null ? ' · ' + latest.score + ' 分' : ''),
+      path: '/pages/member/member?openid=' + encodeURIComponent(this.id || ''),
+      imageUrl: latest.reportImage || ''
+    }
+  },
+
+  // 点「转发这份资料」那一行时的提示（真正的转发走按钮的 open-type）
+  shareHint() {
+    wx.showToast({ title: '点右边的「转发」按钮', icon: 'none' })
+  },
 
   // 看 TA 的公开资料页（只读，含和我的身体数据 PK）
   goPublicProfile() {

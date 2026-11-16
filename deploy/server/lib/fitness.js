@@ -460,6 +460,7 @@ async function fitnessOf(member, isSelf) {
   const showBody = isSelf || !!member.isBodyPublic
   const hide = obj => Object.assign({}, obj, { weight: null, bodyFat: null, muscle: null, visceral: null, bmi: null })
   return {
+    openid: member._id,
     memberName: memberLabel(member),
     gender: member.gender || '',
     isBodyPublic: !!member.isBodyPublic,

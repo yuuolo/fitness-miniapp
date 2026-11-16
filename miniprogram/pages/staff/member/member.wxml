@@ -44,6 +44,13 @@
       </view>
       <text class="muted">›</text>
     </view>
+    <view class="list-item" bindtap="shareHint">
+      <view class="grow">
+        <view>转发这份资料给朋友</view>
+        <view class="muted">发到微信里，对方打开能看到 TA 的身体数据</view>
+      </view>
+      <button class="btn ghost sm" open-type="share">转发</button>
+    </view>
     <view class="list-item" bindtap="goPublicProfile">
       <view class="grow">
         <view>查看公开资料</view>

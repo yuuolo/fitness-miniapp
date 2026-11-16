@@ -174,6 +174,14 @@ Page({
     })
   },
 
+  // 报告图全屏查看
+  previewReport(e) {
+    const src = (e && e.currentTarget && e.currentTarget.dataset.src) ||
+      (this.data.f && this.data.f.latestBody && this.data.f.latestBody.reportImage)
+    if (!src) return
+    wx.previewImage({ current: src, urls: [src] })
+  },
+
   toggleHistory() {
     this.setData({ showAllHistory: !this.data.showAllHistory })
   }

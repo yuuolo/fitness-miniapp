@@ -136,3 +136,12 @@
 .pk-note {
   font-size: 22rpx;
 }
+
+/* 体测报告图：完整显示，宽度撑满 */
+.report {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--r-sm);
+  background: var(--fill);
+}

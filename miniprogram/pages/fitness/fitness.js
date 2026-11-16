@@ -71,13 +71,15 @@ function buildSeg(b) {
 Page({
   data: {
     loaded: false, f: null, isPublic: false,
-    hasBody: false, score: 0, scoreDetail: [],
+    hasBody: false, score: 0, scoreDetail: [], openid: '',
     metrics: [], bestList: [], bodyList: [], actList: [],
     periods: PERIODS, days: 30, trend: null, trendList: [],
     segTab: 'fat', seg: null, segCurrent: null
   },
 
   onShow() {
+    // 开启右上角「···」里的转发入口
+    wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] })
     this.load()
   },
 
@@ -96,6 +98,7 @@ Page({
       this.setData({
         loaded: true,
         f,
+        openid: f.openid || '',
         isPublic: f.isBodyPublic,
         hasBody: !!latest,
         seg,
@@ -185,5 +188,36 @@ Page({
 
   goRank() {
     wx.navigateTo({ url: '/pages/rank/rank' })
+  },
+
+  // 报告图：点击全屏查看（和看相册里的图一样）
+  previewReport(e) {
+    const src = (e && e.currentTarget && e.currentTarget.dataset.src) ||
+      (this.data.f && this.data.f.latestBody && this.data.f.latestBody.reportImage)
+    if (!src) return
+    wx.previewImage({ current: src, urls: [src] })
+  },
+
+  // 转发身体数据给朋友
+  onShareAppMessage() {
+    const f = this.data.f || {}
+    const latest = f.latestBody || {}
+    const score = latest.score != null ? latest.score : ''
+    return {
+      title: (score !== '' ? '我的身体数据 · ' + score + ' 分' : '我的身体数据') +
+        (latest.date ? '（' + latest.date + '）' : ''),
+      path: '/pages/member/member?openid=' + encodeURIComponent(this.data.openid || ''),
+      imageUrl: latest.reportImage || ''
+    }
+  },
+
+  onShareTimeline() {
+    const f = this.data.f || {}
+    const latest = f.latestBody || {}
+    return {
+      title: '我的身体数据' + (latest.score != null ? ' · ' + latest.score + ' 分' : ''),
+      query: 'openid=' + encodeURIComponent(this.data.openid || ''),
+      imageUrl: latest.reportImage || ''
+    }
   }
 })
