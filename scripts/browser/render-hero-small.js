@@ -28,7 +28,7 @@ const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
     background: linear-gradient(135deg, #f0703f, #e9603a); overflow: hidden; }
   .fig { position: absolute; right: 4px; top: 50%; width: 39px; height: 39px; margin-top: -19.5px;
     background-repeat: no-repeat; background-position: center; background-size: contain; }
-</style></head><body>${['lift', 'run'].map(row).join('')}</body></html>`
+</style></head><body>${['lift', 'squat', 'curl', 'dip', 'run', 'pullup'].map(row).join('')}</body></html>`
 
 const out = 'C:/Users/yuuolo/Documents/deepseek/.dsh-tools/ui-preview'
 fs.writeFileSync(out + '/hero-small.html', html)
