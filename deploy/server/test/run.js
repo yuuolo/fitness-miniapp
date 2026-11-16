@@ -298,6 +298,22 @@ async function main() {
   assert.notStrictEqual(hist3.score, 999, '历史记录的分数也应实时算')
   ok('评分是动态的：改成绩立刻生效，不读库里缓存')
 
+  // 历史按测量日期排序；补录旧日期不能把「最新档案」改成旧的
+  const ORD_ID = 'openid-order'
+  await ensureMember(ORD_ID)
+  await act('updateProfile', ORD_ID, { nickName: '排序测试', phone: '13800007700' })
+  await act('saveBodyRecord', STAFF, { openid: ORD_ID, weight: 70, height: 175, bodyFat: 18, date: '2026-05-10' })
+  await act('saveBodyRecord', STAFF, { openid: ORD_ID, weight: 75, height: 175, bodyFat: 20, date: '2026-06-10' })
+  // 最后补录一条更早的记录
+  await act('saveBodyRecord', STAFF, { openid: ORD_ID, weight: 68, height: 175, bodyFat: 16, date: '2026-04-10' })
+
+  const ordFit = await act('memberFitness', COACH, { openid: ORD_ID })
+  const dates = (ordFit.bodyHistory || []).map(b => b.date)
+  assert.deepStrictEqual(dates, ['2026-06-10', '2026-05-10', '2026-04-10'], '历史应按测量日期倒序，实际 ' + dates.join(','))
+  assert.strictEqual(ordFit.latestBody.date, '2026-06-10', '最新档案应是测量日期最新的那条，实际 ' + ordFit.latestBody.date)
+  assert.strictEqual(Number(ordFit.latestBody.weight), 75, '最新档案的体重也要对应最新日期')
+  ok('身体数据历史按测量日期排序，补录旧日期不影响最新档案')
+
   // 误传资料要能删：教练/管理员可删历史体测，删完最新档案自动换成剩下最新的一条
   const DEL_ID = 'openid-bodydel'
   await ensureMember(DEL_ID)

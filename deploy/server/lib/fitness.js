@@ -305,18 +305,31 @@ async function saveBodyRecord({ me, data }) {
       `insert into body_records (${columns.join(', ')}) values (${placeholders})`, values
     )
 
-    // 会员档案上保留最新一份，首页/排行榜/好友列表直接读这里
-    const latestBody = {
-      date, measuredAt: now, weight, height, bmi, gender,
-      segmentFat, segmentMuscle, bodyShape, bodyType, deviceName, reportImage,
-      score: scored.score, detail: scored.detail, source: data.source || 'staff'
+    // 会员档案上保留「测量时间最新」的一份（补录旧日期时不会把最新改成旧的）
+    const newest = (await client.query(
+      `select * from body_records where openid = $1
+        order by date desc, created_at desc limit 1`,
+      [target._id]
+    )).rows[0]
+
+    let latestBody = null
+    if (newest) {
+      latestBody = bodyRow(newest)
+      const latestScored = scoreBody({
+        gender: gender || latestBody.gender,
+        weight: latestBody.weight,
+        height: height || latestBody.height,
+        bodyFat: latestBody.bodyFat,
+        sbdTotal: sbdOf(target.bestLift),
+        sbdCount: sbdCountOf(target.bestLift)
+      })
+      latestBody.score = latestScored.score
+      latestBody.detail = latestScored.detail
     }
-    for (const f of BODY_NUM_FIELDS) {
-      if (extra[f[1]] !== undefined) latestBody[f[0]] = extra[f[1]]
-    }
+
     await client.query(
       'update members set gender = $2, height = $3, latest_body = $4 where openid = $1',
-      [target._id, gender, height, JSON.stringify(latestBody)]
+      [target._id, gender, height, latestBody ? JSON.stringify(latestBody) : null]
     )
   })
 
@@ -542,8 +555,9 @@ async function saveActivity({ me, data }) {
 async function fitnessOf(member, isSelf) {
   const openid = member._id
   const items = await liftItems.list()
+  // 按「测量日期」倒序（补录旧日期时也能排到正确位置），同一天按保存时间
   const body = (await query(
-    'select * from body_records where openid = $1 order by created_at desc limit 20', [openid]
+    'select * from body_records where openid = $1 order by date desc, created_at desc limit 20', [openid]
   )).rows.map(bodyRow)
   const strength = (await query(
     'select * from strength_records where openid = $1 order by created_at desc limit 30', [openid]

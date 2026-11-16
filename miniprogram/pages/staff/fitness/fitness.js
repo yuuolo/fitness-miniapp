@@ -328,6 +328,17 @@ Page({
     this.setData({ 'body.reportImage': '' })
   },
 
+  // 点历史记录：看当时保存的体测报告图
+  previewBodyImage(e) {
+    const src = e.currentTarget.dataset.src
+    const date = e.currentTarget.dataset.date || ''
+    if (!src) {
+      wx.showToast({ title: (date ? date + ' ' : '') + '这条没有报告图', icon: 'none' })
+      return
+    }
+    wx.previewImage({ current: src, urls: [src] })
+  },
+
   previewReport() {
     const fid = this.data.body.reportImage
     if (!fid) return

@@ -109,9 +109,10 @@
         <text class="muted">{{bodyList.length}} 条</text>
       </view>
       <view class="card">
-        <view wx:for="{{bodyList}}" wx:key="id" wx:if="{{showAllHistory || index < 5}}" class="list-item">
+        <view wx:for="{{bodyList}}" wx:key="id" wx:if="{{showAllHistory || index < 5}}" class="list-item"
+          data-src="{{item.reportImage}}" bindtap="previewReport">
           <view class="grow">
-            <view class="title-sm">{{item.date}}</view>
+            <view class="title-sm">{{item.date}}<text wx:if="{{item.reportImage}}" class="tag orange">报告图</text></view>
             <view class="muted">体重 {{item.weight}}kg · 体脂 {{item.bodyFat}}% · 肌肉 {{item.muscle}}kg</view>
           </view>
           <text class="tag orange">{{item.score}} 分</text>

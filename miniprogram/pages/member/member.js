@@ -164,7 +164,8 @@ Page({
           bodyFat: b.bodyFat == null ? '-' : b.bodyFat,
           muscle: b.muscle == null ? '-' : b.muscle,
           bmi: b.bmi == null ? '-' : b.bmi,
-          score: b.score == null ? '-' : b.score
+          score: b.score == null ? '-' : b.score,
+          reportImage: b.reportImage || ''
         }))
       })
     }).catch(err => {

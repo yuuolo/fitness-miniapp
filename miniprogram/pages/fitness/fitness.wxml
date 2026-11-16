@@ -118,9 +118,10 @@
     <view class="section-title">身体数据历史</view>
     <view class="card">
       <view wx:if="{{!bodyList.length}}" class="muted">暂无记录</view>
-      <view wx:for="{{bodyList}}" wx:key="id" class="list-item">
+      <view wx:for="{{bodyList}}" wx:key="id" class="list-item"
+        data-src="{{item.reportImage}}" bindtap="previewReport">
         <view class="grow">
-          <view>{{item.date}}</view>
+          <view>{{item.date}}<text wx:if="{{item.reportImage}}" class="tag orange">报告图</text></view>
           <view class="muted">BMI {{item.bmi}} · 评分 {{item.score}}{{item.deviceScore ? ' · 设备 ' + item.deviceScore : ''}}</view>
         </view>
         <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>

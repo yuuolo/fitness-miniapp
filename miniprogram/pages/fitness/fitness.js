@@ -121,7 +121,8 @@ Page({
           bodyFat: b.bodyFat == null ? '-' : b.bodyFat,
           bmi: b.bmi == null ? '-' : b.bmi,
           score: b.score == null ? '-' : b.score,
-          deviceScore: b.deviceScore || 0
+          deviceScore: b.deviceScore || 0,
+          reportImage: b.reportImage || ''
         })),
         actList: (f.activity || []).map(a => {
           const names = { walk: '步行', run: '跑步', cycling: '骑行', swim: '游泳', strength: '力量训练', class: '团课', other: '其他' }

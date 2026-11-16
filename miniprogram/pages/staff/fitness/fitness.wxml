@@ -118,14 +118,16 @@
   <view class="section-title">身体数据历史</view>
   <view class="card">
     <view wx:if="{{!f.bodyHistory.length}}" class="muted">暂无记录</view>
-    <view wx:for="{{f.bodyHistory}}" wx:key="_id" class="list-item">
+    <view wx:for="{{f.bodyHistory}}" wx:key="_id" class="list-item"
+      data-src="{{item.reportImage}}" data-date="{{item.date}}" bindtap="previewBodyImage">
       <view class="grow">
-        <view>{{item.date}} <text class="tag">{{item.bmi}} BMI</text></view>
+        <view>{{item.date}} <text class="tag">{{item.bmi}} BMI</text><text wx:if="{{item.reportImage}}" class="tag orange">有报告图</text></view>
         <view class="muted">评分 {{item.score == null ? '-' : item.score}}{{item.deviceScore ? ' · 设备 ' + item.deviceScore + ' 分' : ''}}</view>
       </view>
       <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
       <button class="btn gray sm ml" data-id="{{item._id}}" data-date="{{item.date}}" catchtap="deleteBody">删除</button>
     </view>
+    <view class="muted mt-sm">点某一条可以看当时保存的体测报告图</view>
   </view>
   </block>
 
