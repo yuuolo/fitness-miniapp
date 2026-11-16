@@ -28,35 +28,28 @@ const POSES = [
   {
     key: 'lift',
     name: '举重',
-    // 正面视角过顶推举：杠铃从肩前推到头顶，横杆在头部处断开（看起来从脑后经过）
+    // 正面宽距过顶推举：两手在头部两侧外，横杆是一整根（画在身体上层）
     custom(be, gender, phase) {
-      const k = upDown(phase)                 // 0 = 肩前，1 = 头顶锁定
-      const dip = 1 - k                       // 起始阶段略微下蹲
+      const k = upDown(phase)                 // 0 = 胸前，1 = 头顶锁定
+      const dip = 1 - k
+
+      const headX = 60
+      const headY = 31 + 1.2 * dip
+      const shoulderY = 45 + 1.2 * dip
+      const hipY = 65 + 2 * dip
       const narrow = gender === 'female' ? 1.5 : 0
 
-      const headY = 30 + 1.5 * dip
-      const headX = 60
-      const shoulderY = 44 + 1.5 * dip
-      const hipY = 64 + 2.2 * dip
+      // 宽距：手比肩宽，落在头部两侧之外
+      const handX1 = 42 - 1 * k
+      const handX2 = 78 + 1 * k
+      const handY = 46 - 32 * k
 
-      // 手（握杠）位置：肩前 → 头顶上方
-      const handY = 47 - 33 * k
-      const handX1 = 50 - 1.5 * k
-      const handX2 = 70 + 1.5 * k
-
+      const sl = [headX - 7 + narrow, shoulderY]
+      const sr = [headX + 7 - narrow, shoulderY]
       const left = [handX1, handY]
       const right = [handX2, handY]
 
-      // 横杆：分两段，给头部留出空隙
-      const gap = 11
-      const barY = handY
-      be.line(24, barY, headX - gap, barY, 1.1)
-      be.line(headX + gap, barY, 96, barY, 1.1)
-      // 杠铃片
-      be.rect(24, barY - 10, 7, 20)
-      be.rect(89, barY - 10, 7, 20)
-
-      // 身体
+      // ---- 先画身体 ----
       be.circle(headX, headY, 8)
       be.poly([[headX, headY + 8], [headX, shoulderY]])
       be.poly([[headX - 7, shoulderY], [headX + 7, shoulderY]])
@@ -66,15 +59,18 @@ const POSES = [
       be.line(headX - 13, 104, headX - 6, 104, 0.9)
       be.line(headX + 6, 104, headX + 13, 104, 0.9)
 
-      // 手臂：肩 → 肘（IK）→ 手，肘朝外下方
-      const sl = [headX - 7 + narrow, shoulderY]
-      const sr = [headX + 7 - narrow, shoulderY]
-      const el = ik2(sl[0], sl[1], left[0], left[1], 14, 14, true)
-      const er = ik2(sr[0], sr[1], right[0], right[1], 14, 14, false)
+      // 手臂：宽距，肘朝外下方
+      const el = ik2(sl[0], sl[1], left[0], left[1], 15, 15, true)
+      const er = ik2(sr[0], sr[1], right[0], right[1], 15, 15, false)
       be.poly([sl, el, left])
       be.poly([sr, er, right])
 
-      // 女性：头发
+      // ---- 再画杠铃：一整根，压在手臂与身体之上 ----
+      be.line(26, handY, 94, handY, 1.15)
+      be.rect(26, handY - 10, 7, 20)
+      be.rect(87, handY - 10, 7, 20)
+
+      // 女性：头发（画在杠铃之后，避免被杆压住脸）
       if (gender === 'female') {
         const cy = headY
         be.path(`M${headX - 7.6} ${cy + 0.5} A 7.8 7.8 0 0 1 ${headX + 7.6} ${cy + 0.5}`)
@@ -147,15 +143,17 @@ const POSES = [
         const shinA = thighA - flex
         const ankle = [knee[0] + Math.sin(shinA) * SHIN, knee[1] + Math.cos(shinA) * SHIN]
         // 脚掌：朝脚尖方向，摆动腿脚尖略微下垂
-        const toe = [ankle[0] + 7 * Math.cos(shinA * 0.4 + 0.5), ankle[1] + 3]
+        const toe = [ankle[0] + 7 * Math.cos(shinA * 0.4 + 0.5), ankle[1] + 3 - 2 * clamp01(flex - 0.9)]
         return { knee, ankle, toe }
       }
 
-      // 右腿相位 phi，左腿反相
-      const thighR = 0.85 * Math.sin(phi)
-      const flexR = 0.08 + 1.35 * clamp01(Math.cos(phi - 1.25))
-      const thighL = 0.85 * Math.sin(phi + Math.PI)
-      const flexL = 0.08 + 1.35 * clamp01(Math.cos(phi + Math.PI - 1.25))
+      // 右腿相位 phi，左腿反相。
+      // 大腿整体相位后移 0.45，让「腿在身后 + 小腿高抬」同时发生，像真正的后踢腿
+      const PH = 0.45
+      const thighR = 0.9 * Math.sin(phi - PH)
+      const flexR = 0.12 + 1.8 * clamp01(Math.cos(phi - 5.16))
+      const thighL = 0.9 * Math.sin(phi + Math.PI - PH)
+      const flexL = 0.12 + 1.8 * clamp01(Math.cos(phi + Math.PI - 5.16))
 
       const r = leg(thighR, flexR)
       const l = leg(thighL, flexL)
