@@ -19,7 +19,8 @@ Page({
     lift: '',
     period: 'week',
     metric: 'absolute',
-    board: null
+    board: null,
+    autoNote: ''
   },
 
   onShow() {
@@ -44,10 +45,13 @@ Page({
       if (lift !== this.data.lift || period !== this.data.period || metric !== this.data.metric) return
       const board = Object.assign({}, r, { top: withPct(r.top || [], r.metric) })
       const me = r.me ? withPct([r.me], r.metric)[0] : null
+      // 服务端没指定项目时会挑「最近有变化」的那一项，这里给个说明
+      const autoNote = r.autoPicked ? ('默认显示最近有更新的「' + r.liftName + '」') : ''
       this.setData({
         loaded: true,
         lifts: r.lifts,
         lift: r.lift,
+        autoNote,
         period: r.period,
         metric: r.metric,
         board: Object.assign({}, board, { me })
@@ -57,7 +61,8 @@ Page({
 
   pickLift(e) {
     if (this.data.lift === e.currentTarget.dataset.key) return
-    this.setData({ lift: e.currentTarget.dataset.key })
+    // 手动选过项目后就不再提示「默认显示」
+    this.setData({ lift: e.currentTarget.dataset.key, autoNote: '' })
     this.load()
   },
 

@@ -59,3 +59,14 @@
 .bar-fill.first {
   background: linear-gradient(90deg, var(--brand-grad-a), var(--brand-grad-b));
 }
+
+/* 自动选中最近有变化项目的提示 */
+.auto-note {
+  font-size: 22rpx;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: var(--r-pill);
+  padding: 6rpx 18rpx;
+  margin: 4rpx 0 12rpx 0;
+  display: inline-block;
+}

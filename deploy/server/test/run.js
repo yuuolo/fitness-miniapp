@@ -180,6 +180,22 @@ async function main() {
   assert.strictEqual(mine.latestBody.weight, 72.5)
   ok('力量成绩 Epley 估算 + SBD 合计')
 
+  // 排行榜默认项目：最近有成绩变化的那一项
+  await act('saveStrength', STAFF, { openid: MEMBER, lift: 'squat', weight: 120, reps: 5 })
+  const autoBoard = await act('leaderboard', MEMBER, { period: 'week' })
+  assert.strictEqual(autoBoard.lift, 'squat', '默认应显示最近有更新的项目，实际 ' + autoBoard.lift)
+  assert.strictEqual(autoBoard.autoPicked, true, '应标记为自动选中')
+  assert.ok(autoBoard.recentAt > 0, '应带最近变化的时间')
+  const manualBoard = await act('leaderboard', MEMBER, { lift: 'bench', period: 'week' })
+  assert.strictEqual(manualBoard.lift, 'bench', '指定项目时按指定来')
+  assert.strictEqual(manualBoard.autoPicked, false, '指定项目时不应标记自动')
+
+  // 换个项目再练一次，默认应该跟着变
+  await act('saveStrength', STAFF, { openid: MEMBER, lift: 'deadlift', weight: 150, reps: 3 })
+  const autoBoard2 = await act('leaderboard', MEMBER, { period: 'week' })
+  assert.strictEqual(autoBoard2.lift, 'deadlift', '默认应跟着最新变化走，实际 ' + autoBoard2.lift)
+  ok('排行榜默认显示最近有变化的项目')
+
   await act('saveActivity', STAFF, { openid: MEMBER, type: 'run', steps: 8000, duration: 45, calories: 400 })
   await act('saveActivity', STAFF, { openid: MEMBER, type: 'run', steps: 9000, duration: 50, calories: 450 })
   const acts = (await query('select * from activity_records where openid = $1', [MEMBER])).rows

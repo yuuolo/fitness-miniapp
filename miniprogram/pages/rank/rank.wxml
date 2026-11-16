@@ -10,6 +10,8 @@
       <view wx:for="{{lifts}}" wx:key="key" class="tab {{lift === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="pickLift">{{item.name}}</view>
     </scroll-view>
 
+    <view wx:if="{{autoNote}}" class="auto-note">{{autoNote}}</view>
+
     <!-- 周期切换 -->
     <view class="date-bar">
       <view wx:for="{{board.periods}}" wx:key="key" class="d {{period === item.key ? 'on' : ''}}" data-period="{{item.key}}" bindtap="pickPeriod">
