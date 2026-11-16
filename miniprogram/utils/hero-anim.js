@@ -20,6 +20,19 @@ function ik2(sx, sy, tx, ty, len1, len2, bendDown) {
 const clamp01 = x => Math.max(0, Math.min(1, x))
 
 // 0 → 1 → 0 的平滑往返（举重一次上推再放下）
+// 平滑加速-减速（0→1）
+// 每个动作的循环时长（毫秒）；默认 2200，硬拉要留出顶部停顿所以更长
+const CYCLE_DEFAULT = 2200
+function cycleOf(poseKey) {
+  const p = BY_KEY[poseKey]
+  return (p && p.cycle) || CYCLE_DEFAULT
+}
+
+function easeInOut(x) {
+  const c = Math.max(0, Math.min(1, x))
+  return c * c * (3 - 2 * c)
+}
+
 function upDown(phase) {
   return 0.5 - 0.5 * Math.cos(phase * Math.PI * 2)
 }
@@ -204,9 +217,20 @@ const POSES = [
   {
     key: 'deadlift',
     name: '硬拉',
+    cycle: 3200,          // 顶部要停顿 1 秒，循环比别的动作长
     // 正对面视角传统硬拉：杠铃在地面 → 站直锁死在大腿位置
     custom(be, gender, phase) {
-      const k = upDown(phase)          // 0 = 杠贴地，1 = 站直
+      // 顶部停顿约 1 秒：拉起 34% → 停顿 32% → 放下 34%（循环 3.2 秒 ≈ 1.09s / 1.02s / 1.09s）
+      const UP = 0.34
+      const HOLD_END = 0.66
+      let k
+      if (phase < UP) {
+        k = easeInOut(phase / UP)
+      } else if (phase < HOLD_END) {
+        k = 1                                    // 站直锁死，保持不动
+      } else {
+        k = easeInOut(1 - (phase - HOLD_END) / (1 - HOLD_END))
+      }
       const narrow = gender === 'female' ? 1.5 : 0
       const lerp = (a, b) => a + (b - a) * k
 
@@ -481,4 +505,4 @@ function poseOfDay(seed, dateStr) {
   return POSES[hash32(String(seed || '') + '#' + String(dateStr || '')) % POSES.length]
 }
 
-module.exports = { POSES, BY_KEY, poseOfDay, drawCanvas, toSvg, figureUri, paint, joints, base64 }
+module.exports = { POSES, BY_KEY, poseOfDay, drawCanvas, toSvg, figureUri, paint, joints, base64, cycleOf, CYCLE_DEFAULT }

@@ -226,14 +226,16 @@ Page({
       canvas.height = Math.round(size * dpr)
       const ctx = canvas.getContext('2d')
       const gender = (this.data.me && this.data.me.gender) || 'male'
-      const PERIOD = 2200
+      // 每个动作可以有自己的循环时长（硬拉要留出顶部停顿）
+      const periodOf = () => (heroAnim.cycleOf ? heroAnim.cycleOf(this.data.heroPoseKey) : 2200)
       this.heroAnimOn = true
       let start = 0
       this.heroFrames = 0
       const step = ts => {
         if (!this.heroAnimOn) return
         if (!start) start = ts
-        const phase = ((ts - start) % PERIOD) / PERIOD
+        const period = periodOf()
+        const phase = ((ts - start) % period) / period
         this.heroFrames++
         heroAnim.drawCanvas(ctx, this.data.heroPoseKey, gender, phase, size, dpr)
         if (canvas.requestAnimationFrame) canvas.requestAnimationFrame(step)
@@ -246,7 +248,8 @@ Page({
           if (!this.heroAnimOn) return
           const ts = Date.now()
           if (!start) start = ts
-          heroAnim.drawCanvas(ctx, poseKey, gender, ((ts - start) % PERIOD) / PERIOD, size, dpr)
+          const period = periodOf()
+          heroAnim.drawCanvas(ctx, this.data.heroPoseKey, gender, ((ts - start) % period) / period, size, dpr)
         }, 40)
       }
     })
