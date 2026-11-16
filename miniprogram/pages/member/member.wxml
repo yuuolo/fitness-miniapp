@@ -122,6 +122,19 @@
       </view>
     </block>
 
+    <!-- 最近运动 -->
+    <block wx:if="{{actList.length}}">
+      <view class="section-title">最近运动</view>
+      <view class="card">
+        <view wx:for="{{actList}}" wx:key="id" class="list-item">
+          <view class="grow">
+            <view class="title-sm">{{item.typeName}} <text class="muted">{{item.date}}</text></view>
+            <view class="muted">{{item.detail || '已记录'}}</view>
+          </view>
+        </view>
+      </view>
+    </block>
+
     <!-- 力量成绩 -->
     <block wx:if="{{bestList.length}}">
       <view class="section-title">力量成绩</view>

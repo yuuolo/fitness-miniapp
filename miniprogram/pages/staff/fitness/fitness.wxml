@@ -120,19 +120,31 @@
     <view class="muted mt">用 Epley 公式换算 1RM：重量 × (1 + 次数 ÷ 30)</view>
   </view>
 
-  <view class="section-title">录入运动数据</view>
+  <view class="section-title between">
+    <text>记录运动</text>
+    <text class="muted" wx:if="{{actDate}}">{{actDate}}</text>
+  </view>
   <view class="card">
+    <view class="muted" style="margin-bottom:12rpx">
+      记一次这个会员当天做的运动。不同类型的运动要填的东西不一样：
+      步行填步数，骑行/跑步/游泳填距离和时长，力量训练和团课填时长。
+    </view>
+
     <view class="form-row">
-      <text class="label">类型</text>
+      <text class="label">运动类型</text>
       <picker range="{{actionTypes}}" range-key="name" value="{{typeIndex}}" bindchange="onType">
         <view class="picker-text">{{actionTypes[typeIndex].name}} ›</view>
       </picker>
     </view>
-    <view class="form-row"><text class="label">步数</text><input type="number" value="{{activity.steps}}" data-field="steps" bindinput="onActivityInput" placeholder="选填" /></view>
-    <view class="form-row"><text class="label">时长(分钟)</text><input type="number" value="{{activity.duration}}" data-field="duration" bindinput="onActivityInput" placeholder="选填" /></view>
-    <view class="form-row"><text class="label">消耗(千卡)</text><input type="number" value="{{activity.calories}}" data-field="calories" bindinput="onActivityInput" placeholder="选填" /></view>
-    <view class="form-row"><text class="label">平均心率</text><input type="number" value="{{activity.avgHr}}" data-field="avgHr" bindinput="onActivityInput" placeholder="选填" /></view>
-    <button class="btn block mt" bindtap="submitActivity">保存运动数据</button>
+    <view wx:if="{{currentType.desc}}" class="muted" style="margin:-4rpx 0 8rpx 0">{{currentType.desc}}</view>
+
+    <view wx:for="{{currentFields}}" wx:key="key" class="form-row">
+      <text class="label">{{item.label}}<text wx:if="{{item.required}}" class="req">*</text><text class="unit">（{{item.unit}}）</text></text>
+      <input type="{{item.integer ? 'number' : 'digit'}}" value="{{activity[item.key]}}" data-field="{{item.key}}" bindinput="onActivityInput" placeholder="{{item.placeholder}}" />
+    </view>
+
+    <button class="btn block mt" bindtap="submitActivity">保存这条运动记录</button>
+    <view class="muted mt">{{hintText}}</view>
   </view>
 
   <view class="section-title">身体数据历史</view>

@@ -103,6 +103,7 @@ Page({
     metrics: [],
     bestList: [],
     bodyList: [],
+    actList: [],
     showAllHistory: false,
     pk: null
   },
@@ -146,6 +147,15 @@ Page({
         bestList: ((f && f.lifts) || []).map(l => {
           const b = f.bestLift[l.key]
           return { key: l.key, name: l.name, oneRM: b ? b.oneRM : 0, has: !!b }
+        }),
+        actList: ((f && f.activity) || []).map(a => {
+          const names = { walk: '步行', run: '跑步', cycling: '骑行', swim: '游泳', strength: '力量训练', class: '团课', other: '其他' }
+          const parts = []
+          if (a.distance > 0) parts.push(a.distance + ' 公里')
+          if (a.duration > 0) parts.push(a.duration + ' 分钟')
+          if (a.steps > 0) parts.push(a.steps + ' 步')
+          if (a.calories > 0) parts.push(a.calories + ' 千卡')
+          return { id: a._id, date: a.date, typeName: names[a.type] || '运动', detail: parts.join(' · ') }
         }),
         bodyList: history.map(b => ({
           id: b._id,

@@ -27,7 +27,7 @@ const EMPTY_BODY = {
 }
 
 const EMPTY_STRENGTH = { weight: '', reps: '' }
-const EMPTY_ACTIVITY = { steps: '', duration: '', calories: '', avgHr: '' }
+const EMPTY_ACTIVITY = {}
 
 const RAW_FIELDS = [
   'weight', 'height', 'bodyFat', 'heartRate', 'visceral', 'muscle',
@@ -37,6 +37,21 @@ const RAW_FIELDS = [
   'bmr', 'fatFreeMass', 'deviceScore',
   'bodyShape', 'bodyType', 'deviceName', 'reportImage', 'date'
 ]
+
+// 按运动类型给出填写提示
+function hintOf(type) {
+  if (!type || !type.fields) return ''
+  const names = type.fields.map(f => f.label + '(' + f.unit + ')')
+  if (type.strict) {
+    const req = type.fields.find(f => f.required)
+    return '必填：' + (req ? req.label : '') + '；其他选填'
+  }
+  const reqs = (type.required || []).map(k => {
+    const f = type.fields.find(x => x.key === k)
+    return f ? f.label : k
+  })
+  return '至少填一项：' + reqs.join(' / ') + '；其他选填'
+}
 
 Page({
 
@@ -49,7 +64,11 @@ Page({
     uploading: false,
     body: EMPTY_BODY,
     strength: EMPTY_STRENGTH,
-    activity: EMPTY_ACTIVITY
+    activity: EMPTY_ACTIVITY,
+    currentType: null,
+    currentFields: [],
+    hintText: '',
+    actDate: ''
   },
 
   onLoad(query) {
@@ -59,12 +78,24 @@ Page({
 
   load() {
     return api.call('memberFitness', { openid: this.data.id }).then(f => {
+      const types = (f && f.actionTypes && f.actionTypes.length) ? f.actionTypes : []
+      const typeIndex = Math.min(this.data.typeIndex, Math.max(0, types.length - 1))
+      const cur = types[typeIndex] || { name: '', desc: '', fields: [], strict: false, required: [] }
+      this.actionTypes = types
       const gi = GENDERS.findIndex(g => g.value === (f.gender || ''))
+      // 运动表单按类型动态生成字段；首次进入用当前选中的类型
+      const act = {}
+      ;(cur.fields || []).forEach(x => { act[x.key] = this.data.activity[x.key] || '' })
       this.setData({
         loaded: true,
         f,
         lifts: f.lifts || [],
-        actionTypes: f.actionTypes || [],
+        actionTypes: types,
+        typeIndex,
+        currentType: cur,
+        currentFields: cur.fields || [],
+        hintText: hintOf(cur),
+        activity: act,
         genderIndex: gi < 0 ? 2 : gi
       })
     }, () => this.setData({ loaded: true }))
@@ -190,7 +221,19 @@ Page({
   },
 
   onType(e) {
-    this.setData({ typeIndex: Number(e.detail.value) })
+    const typeIndex = Number(e.detail.value)
+    const types = this.actionTypes || this.data.actionTypes || []
+    const cur = types[typeIndex]
+    if (!cur) return
+    const activity = {}
+    cur.fields.forEach(f => { activity[f.key] = '' })
+    this.setData({
+      typeIndex,
+      currentType: cur,
+      currentFields: cur.fields,
+      hintText: hintOf(cur),
+      activity
+    })
   },
 
   // 拍/选一张体测报告照片，传到自建后端，只把图片地址交给服务端
@@ -269,20 +312,37 @@ Page({
   },
 
   submitActivity() {
+    const cur = this.data.currentType
+    if (!cur || !cur.fields) return wx.showToast({ title: '请先选择运动类型', icon: 'none' })
     const a = this.data.activity
-    const t = this.data.actionTypes[this.data.typeIndex]
-    if (!t) return wx.showToast({ title: '请选择类型', icon: 'none' })
-    api.call('saveActivity', {
-      openid: this.data.id,
-      type: t.key,
-      steps: Number(a.steps) || undefined,
-      duration: Number(a.duration) || undefined,
-      calories: Number(a.calories) || undefined,
-      avgHr: Number(a.avgHr) || undefined
-    }, { loading: '保存中' }).then(() => {
-      wx.showToast({ title: '已录入' })
-      this.setData({ activity: EMPTY_ACTIVITY })
-      this.load()
+
+    // 必填校验：单一必填类型要求那一项；多必填类型要求至少一项
+    const filled = (cur.required || []).filter(k => Number(a[k]) > 0)
+    if (!filled.length) {
+      if (cur.strict) {
+        const req = cur.fields.find(f => f.required)
+        return wx.showToast({ title: '请填写' + (req ? req.label : '必填项'), icon: 'none' })
+      }
+      const names = (cur.required || []).map(k => {
+        const f = cur.fields.find(x => x.key === k)
+        return f ? f.label : k
+      })
+      return wx.showToast({ title: '请至少填写' + names.join('/') + '中的一项', icon: 'none' })
+    }
+
+    const payload = { openid: this.data.id, type: cur.key }
+    cur.fields.forEach(f => {
+      const v = a[f.key]
+      if (v === '' || v === undefined || v === null) return
+      payload[f.key] = Number(v)
     })
+
+    api.call('saveActivity', payload, { loading: '保存中' }).then(() => {
+      const empty = {}
+      cur.fields.forEach(f => { empty[f.key] = '' })
+      this.setData({ activity: empty })
+      wx.showToast({ title: '已记录' })
+      this.load()
+    }, () => {})
   }
 })

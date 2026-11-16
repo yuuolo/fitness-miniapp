@@ -185,7 +185,35 @@ async function main() {
   const acts = (await query('select * from activity_records where openid = $1', [MEMBER])).rows
   assert.strictEqual(acts.length, 1)
   assert.strictEqual(acts[0].steps, 9000)
-  ok('运动数据同一天同来源幂等覆盖')
+  ok('运动数据同一天同类型幂等覆盖')
+
+  // 每种运动只收集自己的指标：骑行不写步数，步行必须填步数
+  await expectFail(
+    () => act('saveActivity', STAFF, { openid: MEMBER, type: 'cycling', steps: 8000 }),
+    '至少要填', '骑行只填步数应被拒绝'
+  )
+  await expectFail(
+    () => act('saveActivity', STAFF, { openid: MEMBER, type: 'walk' }),
+    '需要填写步数', '步行不填步数应被拒绝'
+  )
+  await expectFail(
+    () => act('saveActivity', STAFF, { openid: MEMBER, type: 'strength', steps: 3000 }),
+    '需要填', '力量训练填步数应被拒绝'
+  )
+
+  await act('saveActivity', STAFF, {
+    openid: MEMBER, type: 'cycling', distance: 20.5, duration: 60, steps: 9999
+  })
+  const cyc = (await query(
+    "select * from activity_records where openid = $1 and type = 'cycling'", [MEMBER]
+  )).rows[0]
+  assert.ok(cyc, '骑行记录应写入')
+  assert.strictEqual(Number(cyc.distance), 20.5, '骑行要保存距离')
+  assert.strictEqual(cyc.steps, 0, '骑行不应被写进步数')
+
+  const acts2 = (await query('select type from activity_records where openid = $1 order by type', [MEMBER])).rows
+  assert.ok(acts2.length >= 2, '同一会员同一天应能记录多种运动，实际 ' + acts2.length)
+  ok('运动数据按类型区分字段（骑行存距离、步行需步数、同天可多类型）')
 
   const trend = await act('bodyTrend', MEMBER, { days: 30 })
   // 教练录了一次、管理员又录了一次，所以至少有 2 个点

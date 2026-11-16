@@ -122,5 +122,22 @@
         <view class="muted">{{item.weight}} kg · {{item.bodyFat}}%</view>
       </view>
     </view>
+
+  </block>
+
+  <block wx:if="{{actList.length}}">
+    <view class="between section-title">
+      <text>最近运动</text>
+      <text class="muted">最近 {{actList.length}} 次</text>
+    </view>
+    <view class="card">
+      <view wx:for="{{actList}}" wx:key="id" class="list-item">
+        <view class="grow">
+          <view>{{item.typeName}} <text class="muted">{{item.date}}</text></view>
+          <view class="muted">{{item.detail || '已记录'}}</view>
+        </view>
+        <text wx:if="{{item.avgHr}}" class="tag">{{item.avgHr}} 次/分</text>
+      </view>
+    </view>
   </block>
 </view>

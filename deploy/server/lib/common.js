@@ -161,6 +161,7 @@ function strengthRow(r) {
 function activityRow(r) {
   return {
     _id: r.id, openid: r.openid, date: r.date, type: r.type, steps: r.steps,
+    distance: Number(r.distance) || 0,
     duration: r.duration, calories: r.calories, avgHr: r.avg_hr,
     source: r.source, operator: r.operator, createdAt: r.created_at
   }

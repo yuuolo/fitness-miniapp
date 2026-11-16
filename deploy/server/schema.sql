@@ -96,6 +96,7 @@ create table if not exists activity_records (
   date       text not null,
   type       text not null default 'other',
   steps      int  not null default 0,
+  distance   numeric not null default 0,
   duration   int  not null default 0,
   calories   int  not null default 0,
   avg_hr     int  not null default 0,
@@ -200,3 +201,6 @@ alter table members add column if not exists latest_body    jsonb;
 
 -- 「前台」角色已移除：历史 staff 账号一次性迁移成管理员（幂等）
 update members set role = 'admin' where role = 'staff';
+
+-- 运动数据补「距离」列（骑行/跑步/游泳用），老库升级用
+alter table activity_records add column if not exists distance numeric not null default 0;
