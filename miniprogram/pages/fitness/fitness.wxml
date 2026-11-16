@@ -18,7 +18,9 @@
         <text class="label">{{item.label}}</text>
         <text class="grow">{{item.score}} / {{item.max}}</text>
       </view>
+      <view wx:for="{{scoreDetail}}" wx:key="key" wx:if="{{item.note}}" class="muted">· {{item.note}}</view>
       <view class="muted mt">评分 = 体脂率 40 + 相对力量 40 + 体重指数 20，缺项自动归一</view>
+      <view class="muted">相对力量要求卧推/深蹲/硬拉三项都录入；缺任意一项这一项最多得 15 分</view>
     </view>
 
     <view wx:if="{{metrics.length}}" class="section-title">身体指标</view>

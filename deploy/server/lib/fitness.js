@@ -98,8 +98,12 @@ function fatRange(gender) {
 }
 
 // 身体评分 = 体脂率 40 + 相对力量 40 + 体重指数 20，缺项按已有项归一到百分制
+// sbdCount：卧推/深蹲/硬拉里录了几项（0–3）
+// 三项没录全时，相对力量最多只能拿 15 分（避免只录一项就顶到满分）
+const STRENGTH_CAP_PARTIAL = 15
+
 function scoreBody(input) {
-  const { gender, weight, height, bodyFat, sbdTotal } = input
+  const { gender, weight, height, bodyFat, sbdTotal, sbdCount } = input
   const detail = []
   let got = 0
   let full = 0
@@ -121,8 +125,20 @@ function scoreBody(input) {
     const ratio = sbdTotal / weight
     const target = gender === 'female' ? 2.2 : 3.0
     const s = Math.max(0, Math.min(1, ratio / target))
-    detail.push({ key: 'strength', label: '相对力量', score: round(40 * s, 1), max: 40 })
-    got += 40 * s
+    const count = Number(sbdCount) || 0
+    const missing = count < 3
+    // 三项没录全时封顶 15 分
+    const raw40 = 40 * s
+    const capped = missing ? Math.min(raw40, STRENGTH_CAP_PARTIAL) : raw40
+    detail.push({
+      key: 'strength',
+      label: '相对力量',
+      score: round(capped, 1),
+      max: 40,
+      capped: missing && raw40 > STRENGTH_CAP_PARTIAL,
+      note: missing ? '卧推/深蹲/硬拉未录全，本次最多 ' + STRENGTH_CAP_PARTIAL + ' 分' : ''
+    })
+    got += capped
     full += 40
   }
 
@@ -140,6 +156,12 @@ function scoreBody(input) {
   return { score: round((got / full) * 100, 0), detail }
 }
 
+// 卧推/深蹲/硬拉里录了几项（有 1RM 才计数）
+function sbdCountOf(bestLift) {
+  const b = bestLift || {}
+  return ['bench', 'squat', 'deadlift'].filter(k => b[k] && b[k].oneRM > 0).length
+}
+
 function sbdOf(bestLift) {
   const b = bestLift || {}
   return round(['bench', 'squat', 'deadlift'].reduce((sum, k) => sum + ((b[k] && b[k].oneRM) || 0), 0), 1)
@@ -154,7 +176,8 @@ function refreshScore(member, bestLift) {
     weight: latest.weight,
     height: member.height || latest.height,
     bodyFat: latest.bodyFat,
-    sbdTotal: sbdOf(bestLift)
+    sbdTotal: sbdOf(bestLift),
+    sbdCount: sbdCountOf(bestLift)
   })
   latest.score = scored.score
   latest.detail = scored.detail
@@ -239,7 +262,8 @@ async function saveBodyRecord({ me, data }) {
     weight,
     height,
     bodyFat: extra.body_fat || 0,
-    sbdTotal: sbdOf(target.bestLift)
+    sbdTotal: sbdOf(target.bestLift),
+    sbdCount: sbdCountOf(target.bestLift)
   })
 
   const id = newId()
@@ -318,7 +342,8 @@ async function deleteBodyRecord({ me, data }) {
       weight: latestBody.weight,
       height: member.height || latestBody.height,
       bodyFat: latestBody.bodyFat,
-      sbdTotal: sbdOf(member.bestLift)
+      sbdTotal: sbdOf(member.bestLift),
+      sbdCount: sbdCountOf(member.bestLift)
     })
     latestBody.score = scored.score
     latestBody.detail = scored.detail
@@ -821,6 +846,8 @@ async function setBodyPublic({ me, data }) {
 }
 
 module.exports = {
+  // 评分相关（重算脚本 / 测试会用到）
+  scoreBody, sbdOf, sbdCountOf, fatRange, bmiOf,
   saveBodyRecord, deleteBodyRecord, saveStrength, saveActivity,
   myFitness, memberFitness, memberProfile, leaderboard, setBodyPublic, bodyTrend,
   listLiftItems, saveLiftItem, setLiftItemEnabled, deleteLiftItem,
