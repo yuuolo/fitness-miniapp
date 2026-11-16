@@ -167,6 +167,21 @@ function sbdOf(bestLift) {
   return round(['bench', 'squat', 'deadlift'].reduce((sum, k) => sum + ((b[k] && b[k].oneRM) || 0), 0), 1)
 }
 
+// 用「当前评分规则 + 当前最好成绩」实时给一条身体数据打分。
+// 库里存的 score 只是缓存，展示时一律走这里，保证规则调整后立刻生效。
+function withScore(member, body) {
+  if (!body || !body.weight) return body
+  const scored = scoreBody({
+    gender: member.gender || body.gender,
+    weight: body.weight,
+    height: member.height || body.height,
+    bodyFat: body.bodyFat,
+    sbdTotal: sbdOf(member.bestLift),
+    sbdCount: sbdCountOf(member.bestLift)
+  })
+  return Object.assign({}, body, { score: scored.score, detail: scored.detail })
+}
+
 // 重新算分（bestLift 变化时分数也要跟着变）
 function refreshScore(member, bestLift) {
   const latest = Object.assign({}, member.latestBody || {})
@@ -380,12 +395,15 @@ async function bodyTrend({ me, data }) {
     `select * from body_records where openid = $1 and measured_at >= $2
      order by measured_at asc limit 200`, [openid, from]
   )).rows.map(bodyRow)
+  // 趋势里的评分也实时算（不读库里的旧分数）
+  const trendMember = memberRow((await query('select * from members where openid = $1', [openid])).rows[0])
+  const scoredList = trendMember ? list.map(b => withScore(trendMember, b)) : list
 
   const metrics = ['weight', 'bodyFat', 'muscle', 'visceral', 'bmi', 'score']
-  const first = list[0]
-  const last = list[list.length - 1]
+  const first = scoredList[0]
+  const last = scoredList[scoredList.length - 1]
   const delta = {}
-  if (first && last && list.length > 1) {
+  if (first && last && scoredList.length > 1) {
     metrics.forEach(k => {
       if (first[k] != null && last[k] != null) delta[k] = round(last[k] - first[k], 1)
     })
@@ -394,8 +412,8 @@ async function bodyTrend({ me, data }) {
   return {
     days,
     from: cnDate(from),
-    count: list.length,
-    points: list.map(r => {
+    count: scoredList.length,
+    points: scoredList.map(r => {
       const p = { date: r.date, measuredAt: r.measuredAt }
       metrics.forEach(k => { p[k] = r[k] == null ? null : r[k] })
       return p
@@ -534,18 +552,21 @@ async function fitnessOf(member, isSelf) {
     'select * from activity_records where openid = $1 order by date desc limit 14', [openid]
   )).rows.map(activityRow)
 
-  const latest = member.latestBody || null
+  const latestSrc = member.latestBody || null
   // 别人没公开身体数据时，只能看到评分，看不到体重体脂
   const showBody = isSelf || !!member.isBodyPublic
   const hide = obj => Object.assign({}, obj, { weight: null, bodyFat: null, muscle: null, visceral: null, bmi: null })
+  // 评分一律实时算（不读库里的旧分数）
+  const latest = latestSrc ? withScore(member, latestSrc) : null
+  const scoredHistory = body.map(b => withScore(member, b))
   return {
     openid: member._id,
     memberName: memberLabel(member),
     gender: member.gender || '',
     isBodyPublic: !!member.isBodyPublic,
     height: member.height || 0,
-    latestBody: latest ? (showBody ? Object.assign({}, latest) : hide(latest)) : null,
-    bodyHistory: showBody ? body : body.map(hide),
+    latestBody: latest ? (showBody ? latest : hide(latest)) : null,
+    bodyHistory: showBody ? scoredHistory : scoredHistory.map(hide),
     bestLift: member.bestLift || {},
     sbdTotal: member.sbdTotal || 0,
     strengthHistory: strength,
@@ -701,7 +722,7 @@ async function leaderboard({ me, data }) {
       value,
       weight: isPublic ? weight : null,
       relative: isPublic ? rel : null,
-      bodyScore: isPublic && m.latestBody ? m.latestBody.score : null,
+      bodyScore: isPublic && m.latestBody ? withScore(m, m.latestBody).score : null,
       isMe: m._id === me._id
     })
   }
