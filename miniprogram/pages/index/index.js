@@ -26,21 +26,43 @@ function withPct(list, unit) {
 // 这样在 wxss 里由 view 承载就行，深色模式、缩放都不用额外处理。
 const B64CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 
-function base64(str) {
-  let out = ''
-  for (let i = 0; i < str.length; i += 3) {
-    const c1 = str.charCodeAt(i)
-    const c2 = str.charCodeAt(i + 1)
-    const c3 = str.charCodeAt(i + 2)
-    out += B64CHARS[c1 >> 2]
-    out += B64CHARS[((c1 & 3) << 4) | (isNaN(c2) ? 0 : c2 >> 4)]
-    if (isNaN(c2)) { out += '=='; break }
-    out += B64CHARS[((c2 & 15) << 2) | (isNaN(c3) ? 0 : c3 >> 6)]
-    if (isNaN(c3)) { out += '='; break }
-    out += B64CHARS[c3 & 63]
+// 字符串 → UTF-8 字节数组（SVG 里可能有中文，不能按单字节编码）
+function utf8Bytes(str) {
+  const out = []
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i)
+    if (c < 0x80) {
+      out.push(c)
+    } else if (c < 0x800) {
+      out.push(0xc0 | (c >> 6), 0x80 | (c & 0x3f))
+    } else if (c < 0xd800 || c >= 0xe000) {
+      out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f))
+    } else {
+      const c2 = str.charCodeAt(++i)
+      const cp = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00)
+      out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f))
+    }
   }
   return out
 }
+
+function base64(str) {
+  const bytes = utf8Bytes(str)
+  let out = ''
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b1 = bytes[i]
+    const b2 = bytes[i + 1]
+    const b3 = bytes[i + 2]
+    out += B64CHARS[b1 >> 2]
+    out += B64CHARS[((b1 & 3) << 4) | (b2 === undefined ? 0 : b2 >> 4)]
+    if (b2 === undefined) { out += '=='; break }
+    out += B64CHARS[((b2 & 15) << 2) | (b3 === undefined ? 0 : b3 >> 6)]
+    if (b3 === undefined) { out += '='; break }
+    out += B64CHARS[b3 & 63]
+  }
+  return out
+}
+
 
 // 六个维度，值都是 0~100；拿不到数据的维度记 0
 function radarValues(f) {
@@ -79,12 +101,15 @@ function round1(n) {
 function radarSvg(values) {
   const SIZE = 120
   const C = SIZE / 2
-  const R = 44
+  const R = 33            // 网格半径（比原来小，给六角的字留位置）
   const N = 6
+  const LABEL_R = 49      // 文字离中心的距离
+
+  const angleOf = i => -Math.PI / 2 + (Math.PI * 2 * i) / N
 
   const point = (i, ratio) => {
     // 从正上方开始，顺时针分布
-    const angle = -Math.PI / 2 + (Math.PI * 2 * i) / N
+    const angle = angleOf(i)
     return [C + Math.cos(angle) * R * ratio, C + Math.sin(angle) * R * ratio]
   }
   const poly = (ratio) => {
@@ -107,6 +132,19 @@ function radarSvg(values) {
     grid += '<line x1="' + C + '" y1="' + C + '" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) +
       '" stroke="#c9c2ba" stroke-width="1" opacity="0.45"/>'
   }
+
+  // 六个角上的名称（即六个维度的参考值含义）
+  let labels = ''
+  values.forEach((v, i) => {
+    const angle = angleOf(i)
+    const lx = C + Math.cos(angle) * LABEL_R
+    const ly = C + Math.sin(angle) * LABEL_R
+    labels += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" ' +
+      'text-anchor="middle" dominant-baseline="middle" font-size="11" ' +
+      'font-family="-apple-system, PingFang SC, Microsoft YaHei, sans-serif" ' +
+      'fill="#9c948c">' + v.label + '</text>'
+  })
+
   // 数据多边形
   const dataPts = values.map((v, i) => {
     const [x, y] = point(i, Math.max(0.04, Math.min(1, v.value / 100)))
@@ -116,6 +154,7 @@ function radarSvg(values) {
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + SIZE + ' ' + SIZE + '">' +
     grid +
     '<polygon points="' + dataPts + '" fill="#e9603a" fill-opacity="0.35" stroke="#e9603a" stroke-width="2" stroke-linejoin="round"/>' +
+    labels +
     '</svg>'
 
   return 'data:image/svg+xml;base64,' + base64(svg)

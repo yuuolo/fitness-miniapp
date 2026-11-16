@@ -139,29 +139,29 @@
 .q-rank { display: flex; flex-direction: column; }
 
 .radar-wrap {
-  height: 150rpx;
+  height: 220rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 12rpx;
 }
 .radar {
-  width: 150rpx;
-  height: 150rpx;
+  width: 220rpx;
+  height: 220rpx;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
 }
 .radar-empty {
-  width: 130rpx;
-  height: 130rpx;
+  width: 150rpx;
+  height: 150rpx;
   border-radius: 50%;
   background: var(--fill);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.radar-hint { font-size: 20rpx; color: var(--muted); }
+.radar-hint { font-size: 22rpx; color: var(--muted); }
 
 /* ---------- 快捷入口：友圈缩略图 ---------- */
 .q-moments { display: flex; flex-direction: column; }
