@@ -12,14 +12,35 @@
 }
 
 /* 欢迎栏右侧的小人 */
-.hero-canvas {
+/* 小人的容器：负责位移与淡入淡出，canvas 只负责画动作 */
+.hero-fig-wrap {
   position: absolute;
   right: 20rpx;
   top: 50%;
   width: 156rpx;
   height: 156rpx;
   margin-top: -78rpx;
-  pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.22, 0.8, 0.3, 1), opacity 0.5s ease;
+}
+
+/* 点一下：往右跑出画面（1 秒内） */
+.hero-fig-wrap.run {
+  transform: translateX(260%);
+  opacity: 0;
+  transition: transform 0.9s cubic-bezier(0.3, 0, 1, 0.7), opacity 0.9s ease;
+}
+
+/* 瞬间移到左边画面外（不要过渡，避免看到穿场） */
+.hero-fig-wrap.reenter {
+  transform: translateX(-260%);
+  opacity: 0;
+  transition: none;
+}
+
+.hero-canvas {
+  width: 156rpx;
+  height: 156rpx;
+  display: block;
 }
 .hero .hello { font-size: 40rpx; font-weight: 600; letter-spacing: 0.5rpx; }
 .hero .sub { font-size: 24rpx; opacity: 0.92; margin-top: 10rpx; }

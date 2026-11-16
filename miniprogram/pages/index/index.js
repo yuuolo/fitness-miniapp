@@ -1,5 +1,6 @@
 const api = require('../../utils/api')
 const heroAnim = require('../../utils/hero-anim')
+const sfx = require('../../utils/sfx')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
 
@@ -144,7 +145,8 @@ Page({
     // 欢迎栏里的运动小人（Canvas 动画，姿势每天一个）
     heroPoseKey: '',
     heroPoseName: '',
-    heroFigSize: 78
+    heroFigSize: 78,
+    figureState: ''
   },
 
   onShow() {
@@ -184,7 +186,6 @@ Page({
       canvas.width = Math.round(size * dpr)
       canvas.height = Math.round(size * dpr)
       const ctx = canvas.getContext('2d')
-      const poseKey = this.data.heroPoseKey
       const gender = (this.data.me && this.data.me.gender) || 'male'
       const PERIOD = 2200
       this.heroAnimOn = true
@@ -195,7 +196,7 @@ Page({
         if (!start) start = ts
         const phase = ((ts - start) % PERIOD) / PERIOD
         this.heroFrames++
-        heroAnim.drawCanvas(ctx, poseKey, gender, phase, size, dpr)
+        heroAnim.drawCanvas(ctx, this.data.heroPoseKey, gender, phase, size, dpr)
         if (canvas.requestAnimationFrame) canvas.requestAnimationFrame(step)
       }
       if (canvas.requestAnimationFrame) {
@@ -212,8 +213,50 @@ Page({
     })
   },
 
+  // 点小人：先切成跑步姿势往右跑掉，再换个动作从左边跑回来
+  tapFigure() {
+    if (this.figureBusy || !this.data.heroPoseKey) return
+    this.figureBusy = true
+    this.clearFigureTimers()
+
+    // 1) 变成跑步姿势，同时容器往右滑出（0.9s）
+    sfx.playRunAway()
+    this.setData({ heroPoseKey: 'run', heroPoseName: '跑步', figureState: 'run' })
+
+    this.figureTimers.push(setTimeout(() => {
+      // 2) 瞬间移到左侧画面外，并换一个动作
+      const next = this.pickOtherPose()
+      this.setData({
+        figureState: 'reenter',
+        heroPoseKey: next.key,
+        heroPoseName: next.name
+      })
+      this.figureTimers.push(setTimeout(() => {
+        // 3) 从左边滑回原位，配一声「啵」
+        sfx.playAppear()
+        this.setData({ figureState: '' })
+        this.figureTimers.push(setTimeout(() => { this.figureBusy = false }, 600))
+      }, 80))
+    }, 900))
+  },
+
+  // 换一个和当前不同的动作
+  pickOtherPose() {
+    const cur = this.data.heroPoseKey
+    const list = heroAnim.POSES.filter(p => p.key !== cur)
+    const pool = list.length ? list : heroAnim.POSES
+    return pool[Math.floor(Math.random() * pool.length)]
+  },
+
+  clearFigureTimers() {
+    (this.figureTimers || []).forEach(t => clearTimeout(t))
+    this.figureTimers = []
+  },
+
   stopHeroAnim() {
     this.heroAnimOn = false
+    this.clearFigureTimers()
+    this.figureBusy = false
     if (this.heroTimer) {
       clearInterval(this.heroTimer)
       this.heroTimer = null
