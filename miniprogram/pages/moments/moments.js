@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const sfx = require('../../utils/sfx')
 const features = require('../../utils/features')
 
 // 自建后端存的是 https 地址，video 组件可以直接播；不再需要临时链接
@@ -73,6 +74,7 @@ Page({
       success: res => {
         if (!res.confirm) return
         api.call('deleteMoment', { id }, { loading: '删除中' }).then(() => {
+        sfx.playDelete()
           this.setData({ list: this.data.list.filter(m => m._id !== id) })
           wx.showToast({ title: '已删除', icon: 'none' })
         }, err => {

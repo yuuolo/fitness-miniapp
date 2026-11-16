@@ -1,4 +1,5 @@
 const api = require('../../../utils/api')
+const sfx = require('../../../utils/sfx')
 
 // 友圈视频限制：时长 + 压缩后大小，避免把云存储 5GB 额度很快吃满
 const MAX_DURATION = 15
@@ -224,6 +225,7 @@ Page({
       return api.call('postMoment', payload, { silent: true })
     }).then(() => {
       wx.hideLoading()
+      sfx.playSave()
       wx.showToast({ title: '已发布' })
       setTimeout(() => wx.navigateBack(), 600)
     }).catch(err => {

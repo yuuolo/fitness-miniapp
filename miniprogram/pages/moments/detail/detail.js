@@ -1,4 +1,5 @@
 const api = require('../../../utils/api')
+const sfx = require('../../../utils/sfx')
 
 const W = 750
 const H = 1200
@@ -114,6 +115,7 @@ Page({
     const m = this.data.m
     if (!m) return
     api.call('likeMoment', { id: m._id }, { silent: true }).then(r => {
+      if (r.liked) sfx.playLike()
       this.setData({ m: Object.assign({}, m, { liked: r.liked, likeCount: r.likeCount }) })
     }, () => {})
   },
@@ -126,6 +128,7 @@ Page({
       success: r => {
         if (!r.confirm) return
         api.call('deleteMoment', { id: this.data.m._id }, { loading: '删除中' }).then(() => {
+        sfx.playDelete()
           wx.showToast({ title: '已删除' })
           setTimeout(() => wx.navigateBack(), 500)
         })

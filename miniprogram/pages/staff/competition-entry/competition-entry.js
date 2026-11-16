@@ -1,4 +1,5 @@
 const api = require('../../../utils/api')
+const sfx = require('../../../utils/sfx')
 
 Page({
 
@@ -132,6 +133,7 @@ Page({
     }, { loading: '保存中' }).then(r => {
       this.setData({ saving: false })
       const best = r.myBest
+      sfx.playSave()
       wx.showModal({
         title: '已录入',
         content: m.nickName + ' 本次成绩 ' + r.entry.value + ' ' + this.data.unit +

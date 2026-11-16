@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const sfx = require('../../utils/sfx')
 
 Page({
 
@@ -108,6 +109,7 @@ Page({
   },
 
   afterSaved() {
+    sfx.playSave()
     wx.showToast({ title: '已保存' })
     setTimeout(() => this.back(), 600)
   },

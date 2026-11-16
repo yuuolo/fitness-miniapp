@@ -1,4 +1,5 @@
 const api = require('../../../utils/api')
+const sfx = require('../../../utils/sfx')
 const fmt = require('../../../utils/format')
 
 // 角色只有三级（原「前台」已移除）
@@ -79,6 +80,7 @@ Page({
     const payload = { openid: this.id, nickName: f.nickName, phone: f.phone, gender: f.gender }
     if (f.height !== '' && f.height !== null) payload.height = Number(f.height)
     api.call('staffUpdateProfile', payload, { loading: '保存中' }).then(() => {
+      sfx.playSave()
       wx.showToast({ title: '已保存' })
       this.setData({ editingProfile: false })
       this.load()

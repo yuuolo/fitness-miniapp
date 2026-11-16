@@ -1,4 +1,5 @@
 const api = require('../../../utils/api')
+const sfx = require('../../../utils/sfx')
 
 const GENDERS = [
   { value: 'male', label: '男' },
@@ -258,7 +259,8 @@ Page({
         api.upload(file.tempFilePath, ext).then(fileID => {
           wx.hideLoading()
           this.setData({ 'body.reportImage': fileID, uploading: false })
-          wx.showToast({ title: '报告已上传' })
+          sfx.playSave()
+      wx.showToast({ title: '报告已上传' })
         }, () => {
           wx.hideLoading()
           this.setData({ uploading: false })
@@ -298,6 +300,7 @@ Page({
     if (Object.keys(segMus).length) payload.segmentMuscle = segMus
 
     api.call('saveBodyRecord', payload, { loading: '保存中' }).then(r => {
+      sfx.playSave()
       wx.showToast({ title: '已录入，评分 ' + r.score })
       this.setData({ body: EMPTY_BODY, showDevice: false })
       this.load()
@@ -311,6 +314,7 @@ Page({
     api.call('saveStrength', {
       openid: this.data.id, lift: lift.key, weight: Number(s.weight), reps: Number(s.reps)
     }, { loading: '保存中' }).then(r => {
+      sfx.playSave()
       wx.showToast({ title: '1RM 约 ' + r.oneRM + ' kg' })
       this.setData({ strength: EMPTY_STRENGTH })
       this.load()
@@ -331,6 +335,7 @@ Page({
       success: r => {
         if (!r.confirm) return
         api.call('deleteBodyRecord', { id }, { loading: '删除中' }).then(() => {
+          sfx.playDelete()
           wx.showToast({ title: '已删除' })
           this.load()
         }, () => {})
@@ -368,6 +373,7 @@ Page({
       const empty = {}
       cur.fields.forEach(f => { empty[f.key] = '' })
       this.setData({ activity: empty })
+      sfx.playSave()
       wx.showToast({ title: '已记录' })
       this.load()
     }, () => {})
