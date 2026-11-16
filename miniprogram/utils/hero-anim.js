@@ -274,15 +274,24 @@ function figureUri(poseKey, gender, phase) {
   return 'data:image/svg+xml;base64,' + base64(toSvg(poseKey, gender, phase || 0))
 }
 
-/** 每天固定一个姿势：同一天同一个人始终是同一个动作 */
-function poseOfDay(seed, dateStr) {
-  const s = String(seed || '') + '#' + String(dateStr || '')
+// 32 位散列 + 雪崩混淆：openid 前缀都很像，不混淆的话取模会扎堆
+function hash32(str) {
   let h = 2166136261
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i)
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
     h = Math.imul(h, 16777619)
   }
-  return POSES[Math.abs(h) % POSES.length]
+  h ^= h >>> 16
+  h = Math.imul(h, 2246822507)
+  h ^= h >>> 13
+  h = Math.imul(h, 3266489909)
+  h ^= h >>> 16
+  return h >>> 0
+}
+
+/** 每天固定一个姿势：同一个人同一天始终是同一个动作，不同人互不影响 */
+function poseOfDay(seed, dateStr) {
+  return POSES[hash32(String(seed || '') + '#' + String(dateStr || '')) % POSES.length]
 }
 
 module.exports = { POSES, BY_KEY, poseOfDay, drawCanvas, toSvg, figureUri, paint, joints, base64 }

@@ -10,6 +10,7 @@ const { accessToken } = require('./notify')
 function publicMe(me) {
   if (!me) return null
   return {
+    _id: me._id,
     nickName: me.nickName,
     phone: me.phone,
     role: me.role,
@@ -44,19 +45,6 @@ function postJson(url, body) {
     req.write(payload)
     req.end()
   })
-}
-
-function publicMe(me) {
-  if (!me) return null
-  return {
-    nickName: me.nickName,
-    phone: me.phone,
-    role: me.role,
-    blockUntil: me.blockUntil || 0,
-    avatar: me.avatar || '',
-    // 前端用来提示「资料还没填完」
-    profileReady: !!(me.nickName && me.phone)
-  }
 }
 
 async function home({ openid, me }) {

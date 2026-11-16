@@ -242,8 +242,9 @@ Page({
       const hasBlock = {}
       blocks.forEach(b => { hasBlock[b.type] = true })
 
-      // 欢迎栏的小人：姿势按「日期」定，一天只换一次
-      const fig = heroAnim.poseOfDay('', this.todayStr())
+      // 欢迎栏的小人：每个人的动作各不相同，同一个人一天内固定
+      const seed = (res.me && (res.me._id || res.me.phone || res.me.nickName)) || ''
+      const fig = heroAnim.poseOfDay(seed, this.todayStr())
 
       this.setData({
         loaded: true,
