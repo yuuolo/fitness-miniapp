@@ -1,5 +1,6 @@
 const api = require('../../../utils/api')
 const sfx = require('../../../utils/sfx')
+const memberSearch = require('../../../utils/member-search')
 
 // 友圈上传限制：默认值只是兜底，真正生效的是管理页配置（首页接口下发）
 const FALLBACK = {
@@ -13,7 +14,7 @@ function fmtMB(bytes) {
   return (bytes / 1024 / 1024).toFixed(1) + ' MB'
 }
 
-Page({
+Page(Object.assign({}, memberSearch.mixin, {
 
   // 取当前生效的限制（服务端没返回就用兜底值）
   lim() {
@@ -25,8 +26,12 @@ Page({
     media: [],
     totalText: '',
     canCoach: false,
+    // 代发时选会员：与其它页面一致的搜索行为
     members: [],
-    memberIndex: -1,
+    keyword: '',
+    memberLoading: false,
+    memberEmpty: false,
+    pickedMember: null,
     submitting: false,
     maxDuration: FALLBACK.maxDuration,
     maxDurationText: '',
@@ -69,19 +74,39 @@ Page({
   },
 
   loadMembers() {
-    api.call('searchMembers', { keyword: '' }, { silent: true }).then(list => {
-      this.setData({
-        members: list.map(m => ({ _id: m._id, name: m.nickName || m.phone || '未命名会员' }))
-      })
-    }, () => {})
+    this.memberLimit = 20
+    return this.fetchMembers()
+  },
+
+  onKeywordInput(e) {
+    this.memberInput(e)
+  },
+
+  onKeywordConfirm() {
+    this.memberConfirm()
+  },
+
+  clearKeyword() {
+    this.clearMemberSearch()
+  },
+
+  pickMember(e) {
+    const openid = e.currentTarget.dataset.openid
+    const m = (this.data.members || []).find(x => x._id === openid)
+    if (!m) return
+    this.setData({ pickedMember: m })
+  },
+
+  clearPickedMember() {
+    this.setData({ pickedMember: null })
+  },
+
+  onUnload() {
+    this.stopMemberSearch()
   },
 
   onContent(e) {
     this.setData({ content: e.detail.value })
-  },
-
-  onMember(e) {
-    this.setData({ memberIndex: Number(e.detail.value) })
   },
 
   refreshTotal() {
@@ -335,9 +360,8 @@ Page({
 
     this.uploadAll().then(media => {
       const payload = { content, media }
-      if (this.data.canCoach && this.data.memberIndex >= 0) {
-        const t = this.data.members[this.data.memberIndex]
-        if (t) payload.openid = t._id
+      if (this.data.canCoach && this.data.pickedMember) {
+        payload.openid = this.data.pickedMember._id
       }
       return api.call('postMoment', payload, { silent: true })
     }).then(() => {
@@ -351,4 +375,4 @@ Page({
       wx.showToast({ title: err.message || '发布失败', icon: 'none' })
     })
   }
-})
+}))

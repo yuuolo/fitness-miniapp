@@ -1,9 +1,14 @@
 const api = require('../../../utils/api')
+const memberSearch = require('../../../utils/member-search')
 const sfx = require('../../../utils/sfx')
 
-Page({
+Page(Object.assign({}, memberSearch.mixin, {
 
   data: {
+    keyword: '',
+    members: [],
+    memberLoading: false,
+    memberEmpty: false,
     id: '',
     competition: null,
     keyword: '',
@@ -26,6 +31,8 @@ Page({
       wx.showToast({ title: '缺少竞赛 id', icon: 'none' })
       return
     }
+    this.memberLimit = 20
+    this.fetchMembers()
     api.call('competitionDetail', { id }).then(r => {
       const c = r.competition
       this.setData({ competition: c, unit: c.unit })
@@ -33,17 +40,26 @@ Page({
     }, err => wx.showToast({ title: err.message, icon: 'none' }))
   },
 
+  // 与会员列表、友圈代发共用同一套搜索：输入即搜（1 个字起）
   onKeyword(e) {
-    this.setData({ keyword: e.detail.value })
+    this.memberInput(e)
   },
 
-  search() {
-    const kw = String(this.data.keyword || '').trim()
-    if (!kw) return
-    api.call('searchMembers', { keyword: kw }, { silent: true }).then(list => {
-      this.setData({ members: list.slice(0, 20) })
-      if (!list.length) wx.showToast({ title: '没找到会员', icon: 'none' })
-    }, err => wx.showToast({ title: err.message || '搜索失败', icon: 'none' }))
+  onSearchTap() {
+    this.memberSearchNow()
+  },
+
+  clearKeyword() {
+    this.clearMemberSearch()
+  },
+
+  // 重新选一个人
+  repick() {
+    this.setData({ picked: null })
+  },
+
+  onUnload() {
+    this.stopMemberSearch()
   },
 
   pick(e) {
@@ -156,4 +172,4 @@ Page({
       })
     }, () => this.setData({ saving: false }))
   }
-})
+}))

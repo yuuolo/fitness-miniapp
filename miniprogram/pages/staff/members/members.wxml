@@ -1,13 +1,20 @@
 <view class="page">
+  <!-- 与其他会员搜索一致：输入 1 个字就开始预搜 -->
   <view class="card row">
-    <input class="grow" value="{{keyword}}" bindinput="onInput" bindconfirm="search" confirm-type="search" placeholder="输入手机号或昵称搜索" />
-    <button class="btn" bindtap="search">搜索</button>
+    <input class="grow" value="{{keyword}}" bindinput="onInput" bindconfirm="onConfirm"
+      confirm-type="search" placeholder="输入昵称或手机号，1 个字就能搜" />
+    <text wx:if="{{keyword}}" class="muted" style="margin-right:12rpx" bindtap="clearKeyword">清空</text>
+    <button class="btn" bindtap="onSearchTap">刷新</button>
   </view>
+
   <view class="hint-block">会员需先打开一次小程序才会出现在这里；没填手机号的可以让教练代填。</view>
 
-  <view wx:if="{{loaded && !list.length}}" class="empty">没有找到会员</view>
-  <view class="card" wx:if="{{list.length}}">
-    <view wx:for="{{list}}" wx:key="_id" class="list-item" data-id="{{item._id}}" bindtap="open">
+  <view wx:if="{{memberLoading}}" class="empty">搜索中…</view>
+  <view wx:elif="{{memberEmpty}}" class="empty">没有找到匹配「{{keyword}}」的会员</view>
+  <view wx:elif="{{loaded && !members.length}}" class="empty">还没有会员</view>
+
+  <view class="card" wx:if="{{members.length}}">
+    <view wx:for="{{members}}" wx:key="_id" class="list-item" data-id="{{item._id}}" bindtap="open">
       <view class="grow">
         <view>{{item.nickName || '未设置昵称'}} <text wx:if="{{item.role !== 'member'}}" class="tag orange">{{item.roleName}}</text></view>
         <view class="muted">{{item.phone || '未填手机号'}} · {{item.since}} 加入</view>
