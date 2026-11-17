@@ -29,6 +29,7 @@ Page({
     memberIndex: -1,
     submitting: false,
     maxDuration: FALLBACK.maxDuration,
+    maxDurationText: '',
     maxCount: FALLBACK.maxCount,
     limitText: ''
   },
@@ -40,18 +41,28 @@ Page({
       // 管理页配置的上传/展示限制
       const lim = (res && res.mediaLimits) || {}
       const mb = n => (Number(n) || 0) * 1024 * 1024
-      this.limits = {
-        maxDuration: Math.round(Number(lim.maxDuration) || FALLBACK.maxDuration),
-        maxVideoBytes: lim.maxVideoMB ? mb(lim.maxVideoMB) : FALLBACK.maxVideoBytes,
-        maxCount: Math.round(Number(lim.maxCount) || FALLBACK.maxCount),
-        maxTotalBytes: lim.maxTotalMB ? mb(lim.maxTotalMB) : FALLBACK.maxTotalBytes
+      // 管理页填 0 表示不限：时长和体积用 0 表示不限，数量固定 1–9
+      const num = (v, fallback) => {
+        const n = Number(v)
+        return Number.isFinite(n) && n > 0 ? Math.round(n) : (n === 0 ? 0 : fallback)
       }
+      const dur = num(lim.maxDuration, FALLBACK.maxDuration)
+      const videoMB = num(lim.maxVideoMB, FALLBACK.maxVideoBytes / 1024 / 1024)
+      const totalMB = num(lim.maxTotalMB, FALLBACK.maxTotalBytes / 1024 / 1024)
+      this.limits = {
+        maxDuration: dur,                                  // 0 = 不限
+        maxVideoBytes: videoMB > 0 ? mb(videoMB) : 0,      // 0 = 不限
+        maxCount: num(lim.maxCount, FALLBACK.maxCount),
+        maxTotalBytes: totalMB > 0 ? mb(totalMB) : 0       // 0 = 不限
+      }
+      const sayDur = dur > 0 ? '视频 ≤ ' + dur + ' 秒' : '视频不限时长'
+      const sayTotal = totalMB > 0 ? '合计 ≤ ' + fmtMB(mb(totalMB)) : '合计不限大小'
       this.setData({
         canCoach,
-        maxDuration: this.limits.maxDuration,
+        maxDuration: dur > 0 ? dur : 60,
+        maxDurationText: dur > 0 ? dur + ' 秒' : '不限',
         maxCount: this.limits.maxCount,
-        limitText: '视频 ≤ ' + this.limits.maxDuration + ' 秒，最多 ' + this.limits.maxCount +
-          ' 个，合计 ≤ ' + fmtMB(this.limits.maxTotalBytes)
+        limitText: sayDur + '，最多 ' + this.limits.maxCount + ' 个，' + sayTotal
       })
       if (canCoach) this.loadMembers()
     }, () => {})
@@ -86,7 +97,7 @@ Page({
       return false
     }
     const total = this.data.media.reduce((s, m) => s + (m.size || 0), 0) + (item.size || 0)
-    if (total > lim.maxTotalBytes) {
+    if (lim.maxTotalBytes > 0 && total > lim.maxTotalBytes) {
       wx.showModal({
         title: '内容太大了',
         content: '合计已超过 ' + fmtMB(lim.maxTotalBytes) + '，请删掉一些再发。',
@@ -108,7 +119,8 @@ Page({
       count: 1,
       mediaType: ['video'],
       sourceType: ['album', 'camera'],
-      maxDuration: lim.maxDuration,
+      // 微信这个参数只接受 3–60 秒；配置更大时按 60 录（相册选的不受此限）
+      maxDuration: Math.min(60, Math.max(3, Number(lim.maxDuration) || 60)),
       camera: 'back',
       success: res => {
         const file = (res.tempFiles || [])[0]
@@ -133,6 +145,7 @@ Page({
   // 视频超过限制：告诉用户，并给「只保留前 N 秒」的选择（裁切在服务端做）
   askTrim(file, duration) {
     const lim = this.lim()
+    if (!(lim.maxDuration > 0)) return this.compressVideo(file)
     const rawMB = (file.size || 0) / 1024 / 1024
     wx.showModal({
       title: '视频超过 ' + lim.maxDuration + ' 秒',
@@ -188,12 +201,9 @@ Page({
     // 选视频时微信会给一张封面图，海报要用，别丢
     const thumbPath = file.thumbTempFilePath || ''
     const lim = this.lim()
-    if (duration > lim.maxDuration + 1) {
-      return wx.showModal({
-        title: '视频太长',
-        content: '只能发 ' + lim.maxDuration + ' 秒以内的视频，请重新拍摄。',
-        showCancel: false
-      })
+    // maxDuration 为 0 表示不限时长
+    if (lim.maxDuration > 0 && duration > lim.maxDuration + 1) {
+      return this.askTrim(file, duration)
     }
 
     // 老基础库没有压缩 API，只能靠大小兜底
@@ -316,7 +326,8 @@ Page({
     if (!content && !this.data.media.length) {
       return wx.showToast({ title: '写点什么或选个视频', icon: 'none' })
     }
-    if (this.data.media.reduce((s, m) => s + (m.size || 0), 0) > this.lim().maxTotalBytes) {
+    const limSubmit = this.lim()
+    if (limSubmit.maxTotalBytes > 0 && this.data.media.reduce((s, m) => s + (m.size || 0), 0) > limSubmit.maxTotalBytes) {
       return wx.showToast({ title: '内容超过大小上限', icon: 'none' })
     }
     this.setData({ submitting: true })

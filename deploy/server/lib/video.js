@@ -118,10 +118,12 @@ async function encodeToSize(input, { keep, maxBytes, ext, maxHeight }) {
 // 把上传的临时文件整理好：超时长就裁切，返回最终文件和说明
 async function prepare(inputPath, { maxDuration, ext, maxHeight, maxBytes, maxVideoBytes }) {
   const before = await probe(inputPath)
-  if (before.bytes > maxBytes) {
+  // maxBytes 为 0 表示不限体积
+  if (maxBytes > 0 && before.bytes > maxBytes) {
     throw new Error('原视频 ' + (before.bytes / 1024 / 1024).toFixed(1) + 'MB，超过上限')
   }
-  if (before.duration <= maxDuration + 0.5) {
+  // maxDuration 为 0 表示不限时长，不裁切
+  if (!maxDuration || maxDuration <= 0 || before.duration <= maxDuration + 0.5) {
     return { path: inputPath, before, after: before, trimmed: false, keep: null, method: 'none' }
   }
   let t = await trim(inputPath, { keepSeconds: maxDuration, ext, maxHeight })

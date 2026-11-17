@@ -71,16 +71,17 @@ function cleanMedia(list, cfg) {
   let total = 0
   for (const m of out) {
     if (m.type === 'video') {
-      if (m.duration > c.maxDuration) {
+      // 0 表示不限
+      if (c.maxDuration > 0 && m.duration > c.maxDuration) {
         fail('视频 ' + m.duration + ' 秒，超过 ' + c.maxDuration + ' 秒上限，请拍短一点')
       }
-      if (m.size > c.maxVideoMB * limits.MB) {
+      if (c.maxVideoMB > 0 && m.size > c.maxVideoMB * limits.MB) {
         fail('视频 ' + mb(m.size) + '，超过 ' + c.maxVideoMB + 'MB 上限')
       }
     }
     total += m.size
   }
-  if (total > c.maxTotalMB * limits.MB) {
+  if (c.maxTotalMB > 0 && total > c.maxTotalMB * limits.MB) {
     fail('这条动态合计 ' + mb(total) + '，超过 ' + c.maxTotalMB + 'MB 上限，少选几个或选小一点的')
   }
   return out

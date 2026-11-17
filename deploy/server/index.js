@@ -224,15 +224,19 @@ app.post('/api/video', async (req, res) => {
     const cfg = await limits.get()
     if (!(await video.available())) return res.json({ code: 500, msg: '服务器未安装 ffmpeg，无法处理视频' })
 
-    const maxRaw = cfg.maxRawVideoMB * 1024 * 1024
+    // 0 = 不限，但仍留一个物理安全上限（防止把磁盘塞满）
+    const SAFETY_MAX = 1024 * 1024 * 1024
+    const maxRaw = cfg.maxRawVideoMB > 0 ? cfg.maxRawVideoMB * 1024 * 1024 : SAFETY_MAX
     // 客户端有 Content-Length 时先拦一道，别让用户白传几十兆
     const declared = Number(req.headers['content-length'] || 0)
     if (declared > maxRaw + 1024 * 1024) {
       req.resume()
       return res.json({
         code: 400,
-        msg: '原视频约 ' + (declared / 1024 / 1024).toFixed(1) + 'MB，超过 ' + cfg.maxRawVideoMB +
-          'MB 上限，无法自动裁切，请到相册里裁剪后再发'
+        msg: cfg.maxRawVideoMB > 0
+          ? '原视频约 ' + (declared / 1024 / 1024).toFixed(1) + 'MB，超过 ' + cfg.maxRawVideoMB +
+            'MB 上限，无法自动裁切，请到相册里裁剪后再发'
+          : '原视频约 ' + (declared / 1024 / 1024).toFixed(1) + 'MB，超过单次上传的物理上限（1GB）'
       })
     }
     tmp = video.tmpFile(ext)
@@ -245,8 +249,10 @@ app.post('/api/video', async (req, res) => {
       ext,
       maxHeight: 720,
       maxBytes: maxRaw,
-      // 裁切后还要满足「单视频体积上限」，否则发不出去
-      maxVideoBytes: Math.min(cfg.maxVideoMB, cfg.maxTotalMB) * 1024 * 1024
+      // 裁切后还要满足「单视频体积上限」，否则发不出去；0 = 不限
+      maxVideoBytes: cfg.maxVideoMB > 0
+        ? Math.min(cfg.maxVideoMB, cfg.maxTotalMB > 0 ? cfg.maxTotalMB : cfg.maxVideoMB) * 1024 * 1024
+        : 0
     })
     outPath = prepared.path
 
@@ -265,6 +271,11 @@ app.post('/api/video', async (req, res) => {
         originalDuration: prepared.before.duration,
         trimmed: prepared.trimmed,
         keptSeconds: prepared.trimmed ? cfg.maxDuration : null,
+        unlimited: {
+          duration: !(cfg.maxDuration > 0),
+          videoMB: !(cfg.maxVideoMB > 0),
+          rawMB: !(cfg.maxRawVideoMB > 0)
+        },
         method: prepared.method
       }
     })
@@ -418,7 +429,18 @@ app.put('/api/admin/media-limits', requireAdmin, async (req, res) => {
   try {
     const value = await limits.save((req.body && req.body.value) || {}, 'admin')
     console.log('media limits changed ->', JSON.stringify(value))
-    res.json({ code: 0, data: { value, summary: '已保存：视频 ≤ ' + value.maxDuration + ' 秒 / ' + value.maxVideoMB + 'MB，最多 ' + value.maxCount + ' 个，合计 ≤ ' + value.maxTotalMB + 'MB，列表显示 ' + value.feedThumbs + ' 个' } })
+    const say = (v, unit) => (v > 0 ? v + ' ' + unit : '不限')
+    res.json({
+      code: 0,
+      data: {
+        value,
+        summary: '已保存：时长 ' + say(value.maxDuration, '秒') +
+          ' / 成品体积 ' + say(value.maxVideoMB, 'MB') +
+          ' / 原视频 ' + say(value.maxRawVideoMB, 'MB') +
+          '，最多 ' + value.maxCount + ' 个，合计 ' + say(value.maxTotalMB, 'MB') +
+          '，列表显示 ' + value.feedThumbs + ' 个'
+      }
+    })
   } catch (e) {
     res.json({ code: 400, msg: e.message })
   }
