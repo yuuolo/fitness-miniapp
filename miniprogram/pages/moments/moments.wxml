@@ -5,13 +5,10 @@
   </view>
 
   <block wx:else>
-    <view class="between section-title">
-      <text>健身友圈</text>
-      <view class="row" style="gap:14rpx;align-items:center">
-        <!-- 点这个图标才展开搜索栏 -->
-        <view class="search-toggle {{searchOpen ? 'on' : ''}}" bindtap="toggleSearch">🔍</view>
-        <button class="btn" bindtap="goPost">发一条</button>
-      </view>
+    <!-- 头部：左边搜索图标（点开才出搜索栏），右边发一条；不再显示标题 -->
+    <view class="moments-head">
+      <view class="search-toggle {{searchOpen ? 'on' : ''}}" bindtap="toggleSearch">🔍</view>
+      <button class="btn" bindtap="goPost">发一条</button>
     </view>
 
     <!-- 搜索：点图标才展开；输入 1 个字就开始预搜；可只看视频 -->

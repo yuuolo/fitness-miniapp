@@ -1,3 +1,18 @@
+/* 友圈头部：左搜索图标 + 右发一条，不放标题 */
+.moments-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8rpx 0 16rpx;
+}
+/* 微信 button 默认宽度 184px，这里按内容自适应，靠右放 */
+.moments-head .btn {
+  width: auto;
+  padding: 0 32rpx;
+  /* 微信 button 默认左右 margin:auto，会把按钮挤到中间，这里明确靠右 */
+  margin-left: auto;
+  margin-right: 0;
+}
 .media {
   display: flex;
   flex-wrap: wrap;
