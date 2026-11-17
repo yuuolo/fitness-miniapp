@@ -477,6 +477,10 @@ async function saveStrength({ me, data }) {
   const date = data.date || cnDate(now)
   // one_rm 列存的是「按该项目算法算出的成绩」，排行榜直接按它排名
   const score = liftItems.computeValue(item.metric, weight, reps)
+  // 可选：附一段视频（已由 /api/video 上传，超时长的会被自动裁切）
+  const videoUrl = String(data.videoUrl || '')
+  const videoThumb = String(data.videoThumb || '')
+  if (videoUrl && !/^(cloud:\/\/|https:\/\/)/.test(videoUrl)) fail('视频地址不正确')
 
   return tx(async client => {
     const target = memberRow((await client.query(
@@ -485,9 +489,9 @@ async function saveStrength({ me, data }) {
     if (!target) fail('会员不存在')
 
     await client.query(
-      `insert into strength_records (id, openid, lift, weight, reps, one_rm, date, operator, created_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [newId(), target._id, lift, weight, reps, score, date, me._id, now]
+      `insert into strength_records (id, openid, lift, weight, reps, one_rm, date, video_url, video_thumb, operator, created_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [newId(), target._id, lift, weight, reps, score, date, videoUrl, videoThumb, me._id, now]
     )
 
     const bestLift = Object.assign({}, target.bestLift || {})
@@ -513,6 +517,8 @@ async function saveStrength({ me, data }) {
       reps,
       oneRM: score,
       value: score,
+      videoUrl,
+      videoThumb,
       improved,
       best: bestLift[lift],
       sbdTotal,

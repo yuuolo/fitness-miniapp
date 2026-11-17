@@ -12,7 +12,11 @@ function resolveVideoUrls(list) {
 }
 
 Page({
-  data: { list: [], loaded: false, hasMore: true, loading: false, disabled: false },
+  data: {
+    list: [], loaded: false, hasMore: true, loading: false, disabled: false,
+    // 搜索：1 个字起就预搜；可以只看视频
+    keyword: '', onlyVideo: false
+  },
 
   onShow() {
     this.syncTabBar()
@@ -41,9 +45,44 @@ Page({
     this.loadMore()
   },
 
+  // 输入即预搜（300ms 防抖）
+  onSearchInput(e) {
+    const keyword = e.detail.value
+    this.setData({ keyword })
+    if (this.searchTimer) clearTimeout(this.searchTimer)
+    this.searchTimer = setTimeout(() => this.reload(), 300)
+  },
+
+  onSearchConfirm() {
+    if (this.searchTimer) clearTimeout(this.searchTimer)
+    this.reload()
+  },
+
+  clearSearch() {
+    if (this.searchTimer) clearTimeout(this.searchTimer)
+    this.setData({ keyword: '', onlyVideo: false })
+    this.reload()
+  },
+
+  toggleVideoOnly() {
+    this.setData({ onlyVideo: !this.data.onlyVideo })
+    this.reload()
+  },
+
+  // 当前搜索条件（1 个字起就传，服务端按内容/作者名模糊搜）
+  searchParams() {
+    const p = {}
+    const kw = String(this.data.keyword || '').trim()
+    if (kw) p.keyword = kw
+    if (this.data.onlyVideo) p.onlyVideo = true
+    return p
+  },
+
   reload() {
-    return api.call('momentList', {}).then(r => resolveVideoUrls(r.list)).then(list => {
-      this.setData({ loaded: true, list, hasMore: this.data.hasMore && list.length > 0 })
+    const params = this.searchParams()
+    this.setData({ loading: false })
+    return api.call('momentList', params).then(r => resolveVideoUrls(r.list)).then(list => {
+      this.setData({ loaded: true, list, hasMore: list.length >= 20 })
     }, () => this.setData({ loaded: true }))
   },
 
@@ -51,7 +90,7 @@ Page({
     if (!this.data.hasMore || this.data.loading || !this.data.list.length) return
     const before = this.data.list[this.data.list.length - 1].createdAt
     this.setData({ loading: true })
-    return api.call('momentList', { before }, { silent: true })
+    return api.call('momentList', Object.assign({ before }, this.searchParams()), { silent: true })
       .then(r => resolveVideoUrls(r.list))
       .then(list => this.setData({
         list: this.data.list.concat(list),

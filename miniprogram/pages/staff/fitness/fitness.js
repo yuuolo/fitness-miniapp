@@ -70,6 +70,7 @@ function buildStrengthList(f) {
     weight: s.weight,
     reps: s.reps,
     oneRM: s.oneRM,
+    videoUrl: s.videoUrl || '',
     isBest: bestOf[s.lift] != null && Number(bestOf[s.lift]) === Number(s.oneRM)
   }))
 }
@@ -108,6 +109,10 @@ Page({
     uploading: false,
     body: EMPTY_BODY,
     strength: EMPTY_STRENGTH,
+    strengthVideo: '',
+    strengthVideoThumb: '',
+    strengthVideoTip: '',
+    videoUploading: false,
     activity: EMPTY_ACTIVITY,
     currentType: null,
     currentFields: [],
@@ -372,16 +377,79 @@ Page({
     })
   },
 
+  // 力量成绩附视频：走 /api/video，服务端按管理设定裁切/压缩，超限会被拒
+  chooseStrengthVideo() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['video'],
+      sourceType: ['camera', 'album'],
+      maxDuration: 60,
+      camera: 'back',
+      success: res => {
+        const file = (res.tempFiles || [])[0]
+        if (!file) return
+        this.setData({ videoUploading: true, strengthVideoTip: '上传中，超时长的视频会被自动裁切…' })
+        wx.showLoading({ title: '上传并处理中', mask: true })
+        api.uploadVideo(file.tempFilePath).then(v => {
+          wx.hideLoading()
+          this.setData({
+            strengthVideo: v.fileID,
+            strengthVideoThumb: '',
+            videoUploading: false,
+            strengthVideoTip: v.trimmed
+              ? '原视频 ' + Math.round(v.originalDuration) + ' 秒，已按管理设定裁到前 ' + v.keptSeconds +
+                ' 秒（' + (v.bytes / 1024 / 1024).toFixed(1) + 'MB）'
+              : '已上传（' + (v.bytes / 1024 / 1024).toFixed(1) + 'MB）'
+          })
+        }).catch(err => {
+          wx.hideLoading()
+          this.setData({ videoUploading: false, strengthVideoTip: '' })
+          wx.showModal({
+            title: '视频没传上去',
+            content: err.message || '请检查网络或视频大小（限制见管理页设定）',
+            showCancel: false
+          })
+        })
+      }
+    })
+  },
+
+  clearStrengthVideo() {
+    this.setData({ strengthVideo: '', strengthVideoThumb: '', strengthVideoTip: '' })
+  },
+
+  previewStrengthVideo() {
+    const src = this.data.strengthVideo
+    if (!src) return
+    wx.previewMedia({ sources: [{ url: src, type: 'video' }] })
+  },
+
+  // 历史里那条成绩的视频
+  playStrengthVideo(e) {
+    const src = e.currentTarget.dataset.src
+    if (!src) return
+    wx.previewMedia({ sources: [{ url: src, type: 'video' }] })
+  },
+
   submitStrength() {
     const s = this.data.strength
     const lift = this.data.lifts[this.data.liftIndex]
     if (!lift) return wx.showToast({ title: '请选择动作', icon: 'none' })
-    api.call('saveStrength', {
-      openid: this.data.id, lift: lift.key, weight: Number(s.weight), reps: Number(s.reps)
-    }, { loading: '保存中' }).then(r => {
+    const payload = { openid: this.data.id, lift: lift.key, weight: Number(s.weight), reps: Number(s.reps) }
+    // 附了视频就一起提交（视频已在 /api/video 按管理设定处理过）
+    if (this.data.strengthVideo) {
+      payload.videoUrl = this.data.strengthVideo
+      if (this.data.strengthVideoThumb) payload.videoThumb = this.data.strengthVideoThumb
+    }
+    api.call('saveStrength', payload, { loading: '保存中' }).then(r => {
       sfx.playSave()
       wx.showToast({ title: '1RM 约 ' + r.oneRM + ' kg' })
-      this.setData({ strength: EMPTY_STRENGTH })
+      this.setData({
+        strength: EMPTY_STRENGTH,
+        strengthVideo: '',
+        strengthVideoThumb: '',
+        strengthVideoTip: ''
+      })
       this.load()
     })
   },

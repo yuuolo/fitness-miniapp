@@ -46,3 +46,33 @@
   font-size: 28rpx;
   font-weight: 600;
 }
+
+/* 搜索栏：输入即预搜 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 8rpx 0 16rpx;
+}
+.search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  background: var(--fill);
+  border-radius: var(--r-pill);
+  padding: 0 20rpx;
+  height: 68rpx;
+}
+.search-ico { font-size: 24rpx; opacity: 0.6; }
+.search-input { flex: 1; font-size: 26rpx; color: var(--text); }
+.search-clear { font-size: 24rpx; color: var(--muted); padding: 0 6rpx; }
+.search-chip {
+  font-size: 24rpx;
+  color: var(--sub);
+  background: var(--fill);
+  border-radius: var(--r-pill);
+  padding: 14rpx 20rpx;
+  white-space: nowrap;
+}
+.search-chip.on { background: var(--brand); color: #fff; }

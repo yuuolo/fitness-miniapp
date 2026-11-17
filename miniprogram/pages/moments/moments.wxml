@@ -10,8 +10,20 @@
       <button class="btn" bindtap="goPost">发一条</button>
     </view>
 
+    <!-- 搜索：输入 1 个字就开始预搜；可只看视频 -->
+    <view class="search-bar">
+      <view class="search-box">
+        <text class="search-ico">🔍</text>
+        <input class="search-input" value="{{keyword}}" placeholder="搜内容 / 作者，1 个字就能搜"
+          confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
+        <text wx:if="{{keyword}}" class="search-clear" catchtap="clearSearch">✕</text>
+      </view>
+      <view class="search-chip {{onlyVideo ? 'on' : ''}}" bindtap="toggleVideoOnly">只看视频</view>
+    </view>
+
     <view wx:if="{{loaded && !list.length}}" class="card">
-      <view class="muted">还没有人发动态。训练完随手拍一段，或者让教练帮你拍。</view>
+      <view wx:if="{{keyword || onlyVideo}}" class="muted">没有搜到相关动态，换个词试试（或关掉「只看视频」）。</view>
+      <view wx:else class="muted">还没有人发动态。训练完随手拍一段，或者让教练帮你拍。</view>
     </view>
 
     <view wx:for="{{list}}" wx:key="_id" class="card">

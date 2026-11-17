@@ -86,7 +86,9 @@ create table if not exists strength_records (
   one_rm     numeric(6,1) not null default 0,
   date       text not null,
   operator   text not null default '',
-  created_at bigint not null default 0
+  created_at bigint not null default 0,
+  video_url   text not null default '',
+  video_thumb text not null default ''
 );
 create index if not exists idx_strength_openid on strength_records (openid, created_at desc);
 

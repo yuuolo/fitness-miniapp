@@ -80,23 +80,34 @@ Page({
       count: 1,
       mediaType: ['video'],
       sourceType: ['album', 'camera'],
-      maxDuration: 30,
+      maxDuration: 60,
       success: res => {
         const file = (res.tempFiles || [])[0]
         if (!file) return
-        if (file.size > 12 * 1024 * 1024) {
-          return wx.showToast({ title: '视频超过 12MB，请裁剪后重试', icon: 'none' })
-        }
         this.setData({ uploading: true })
-        wx.showLoading({ title: '上传中', mask: true })
-        api.upload(file.tempFilePath, 'mp4').then(url => {
+        wx.showLoading({ title: '上传并处理中', mask: true })
+        // 统一走 /api/video：按管理页设定限制时长/体积，超时长自动裁切
+        api.uploadVideo(file.tempFilePath).then(v => {
           wx.hideLoading()
-          this.setData({ videoUrl: url, uploading: false })
-          wx.showToast({ title: '视频已上传' })
-        }, () => {
+          this.setData({ videoUrl: v.fileID, uploading: false })
+          if (v.trimmed) {
+            wx.showModal({
+              title: '已自动裁切',
+              content: '原视频 ' + Math.round(v.originalDuration) + ' 秒，已保留前 ' +
+                v.keptSeconds + ' 秒（' + (v.bytes / 1024 / 1024).toFixed(1) + 'MB）。',
+              showCancel: false
+            })
+          } else {
+            wx.showToast({ title: '视频已上传' })
+          }
+        }).catch(err => {
           wx.hideLoading()
           this.setData({ uploading: false })
-          wx.showToast({ title: '视频上传失败', icon: 'none' })
+          wx.showModal({
+            title: '视频没传上去',
+            content: err.message || '请检查网络或视频大小（限制见管理页设定）',
+            showCancel: false
+          })
         })
       }
     })

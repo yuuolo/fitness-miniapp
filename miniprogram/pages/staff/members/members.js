@@ -11,8 +11,16 @@ Page({
     this.search()
   },
 
+  // 输入就开始预搜（1 个字符起），300ms 防抖，避免每敲一下都请求
   onInput(e) {
-    this.setData({ keyword: e.detail.value })
+    const keyword = e.detail.value
+    this.setData({ keyword })
+    if (this.searchTimer) clearTimeout(this.searchTimer)
+    this.searchTimer = setTimeout(() => this.search(), 300)
+  },
+
+  onUnload() {
+    if (this.searchTimer) clearTimeout(this.searchTimer)
   },
 
   onConfirm() {

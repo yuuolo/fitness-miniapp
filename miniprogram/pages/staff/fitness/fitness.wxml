@@ -143,6 +143,23 @@
     </view>
     <view class="form-row"><text class="label">重量(kg)</text><input type="digit" value="{{strength.weight}}" data-field="weight" bindinput="onStrengthInput" placeholder="如 80" /></view>
     <view class="form-row"><text class="label">次数</text><input type="number" value="{{strength.reps}}" data-field="reps" bindinput="onStrengthInput" placeholder="如 5，1 次为实测" /></view>
+
+    <!-- 可选：给这条成绩附一段视频（留档、防争议），限制按管理页设定，超时长自动裁切 -->
+    <view class="form-row">
+      <text class="label">视频</text>
+      <view class="grow row" style="justify-content:flex-end;gap:12rpx">
+        <button wx:if="{{!strengthVideo}}" class="btn ghost sm" bindtap="chooseStrengthVideo" disabled="{{videoUploading}}">
+          {{videoUploading ? '上传中…' : '拍摄 / 选择'}}
+        </button>
+        <block wx:else>
+          <text class="tag orange">已附视频</text>
+          <button class="btn gray sm" bindtap="previewStrengthVideo">预览</button>
+          <button class="btn gray sm" bindtap="clearStrengthVideo">移除</button>
+        </block>
+      </view>
+    </view>
+    <view wx:if="{{strengthVideoTip}}" class="muted">{{strengthVideoTip}}</view>
+
     <button class="btn block mt" bindtap="submitStrength">保存成绩</button>
     <view class="muted mt">用 Epley 公式换算 1RM：重量 × (1 + 次数 ÷ 30)</view>
   </view>
@@ -159,6 +176,7 @@
           <view class="muted">{{item.weight}} kg × {{item.reps}} 次 → 约 {{item.oneRM}} kg</view>
         </view>
         <text wx:if="{{item.isBest}}" class="tag orange">最好</text>
+        <text wx:if="{{item.videoUrl}}" class="tag" data-src="{{item.videoUrl}}" catchtap="playStrengthVideo">▶ 视频</text>
         <button wx:if="{{f.canManageStrength}}" class="btn gray sm ml" data-id="{{item.id}}"
           data-name="{{item.liftName}}" data-info="{{item.weight}} 公斤 × {{item.reps}} 次"
           catchtap="deleteStrength">删除</button>

@@ -145,12 +145,18 @@ async function postMoment({ me, data }) {
 async function momentList({ me, data }) {
   need(me, 'member')
   const before = Number(data.before) || 0
-  const list = (await query(
-    `select * from moments where status = 'normal'
-       and ($1::bigint = 0 or created_at < $1::bigint)
-     order by created_at desc limit $2`,
-    [before, PAGE_SIZE]
-  )).rows.map(momentRow)
+  // 搜索：1 个字起就能搜（匹配内容或作者名）；只看视频
+  const keyword = String(data.keyword || '').trim().slice(0, 30)
+  const onlyVideo = data.onlyVideo === true || data.onlyVideo === '1'
+  const params = [before, PAGE_SIZE]
+  let where = "status = 'normal' and ($1::bigint = 0 or created_at < $1::bigint)"
+  if (keyword) {
+    params.push('%' + keyword + '%')
+    where += ' and (content ilike $' + params.length + ' or author_name ilike $' + params.length + ')'
+  }
+  if (onlyVideo) where += " and type = 'video'"
+  const sql = 'select * from moments where ' + where + ' order by created_at desc limit $2'
+  const list = (await query(sql, params)).rows.map(momentRow)
   const cfg = await limits.get()
   return {
     // 列表里每条最多显示 feedThumbs 个，剩下的在详情页看
@@ -165,10 +171,11 @@ async function momentList({ me, data }) {
       return view
     }),
     hasMore: list.length === PAGE_SIZE,
-    feedThumbs: cfg.feedThumbs
+    feedThumbs: cfg.feedThumbs,
+    keyword: String(data.keyword || '').trim(),
+    onlyVideo: data.onlyVideo === true || data.onlyVideo === '1'
   }
 }
-
 async function momentDetail({ me, data }) {
   need(me, 'member')
   const m = momentRow((await query('select * from moments where id = $1', [data.id])).rows[0])

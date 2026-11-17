@@ -154,7 +154,10 @@ function bodyRow(r) {
 function strengthRow(r) {
   return {
     _id: r.id, openid: r.openid, lift: r.lift, weight: r.weight, reps: r.reps,
-    oneRM: r.one_rm, date: r.date, operator: r.operator, createdAt: r.created_at
+    oneRM: r.one_rm, date: r.date, operator: r.operator, createdAt: r.created_at,
+    // 力量成绩可以附一段视频（录错/争议时回看）
+    videoUrl: r.video_url || '',
+    videoThumb: r.video_thumb || ''
   }
 }
 
