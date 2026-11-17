@@ -5,33 +5,38 @@
   </view>
 
   <view class="card">
-    <view class="muted">选择会员</view>
-    <!-- 与会员列表、友圈代发一致：输入 1 个字就开始预搜 -->
-    <view wx:if="{{!picked}}" class="row mt">
-      <input class="grow" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearchTap"
-        confirm-type="search" placeholder="输入昵称或手机号，1 个字就能搜" />
-      <text wx:if="{{keyword}}" class="muted" style="margin-right:12rpx" bindtap="clearKeyword">清空</text>
-      <button class="btn" bindtap="onSearchTap">刷新</button>
-    </view>
-
-    <view wx:if="{{picked}}" class="picked mt">
-      已选择：<text class="title">{{picked.nickName || picked.phone}}</text>
-      <text wx:if="{{picked.phone}}" class="muted">（{{picked.phone}}）</text>
-      <text class="muted" style="margin-left:16rpx" bindtap="repick">重新选择</text>
-    </view>
-
-    <view wx:if="{{memberLoading}}" class="muted mt">搜索中…</view>
-    <view wx:elif="{{memberEmpty}}" class="muted mt">没有找到匹配「{{keyword}}」的会员</view>
-
-    <view wx:if="{{members.length && !picked}}" class="mt">
-      <view wx:for="{{members}}" wx:key="_id" class="list-item" data-openid="{{item._id}}" bindtap="pick">
-        <view class="grow">
-          <view>{{item.nickName || '未命名会员'}}</view>
-          <view class="muted">{{item.phone || '未填手机号'}} · {{item.role}}</view>
-        </view>
-        <text class="muted">选择</text>
+    <!-- 默认只显示一行；点「选择会员」图标才展开搜索和列表 -->
+    <view class="between">
+      <text class="muted">选择会员</text>
+      <view wx:if="{{picked}}" class="row" style="gap:12rpx;align-items:center">
+        <text class="title">{{picked.nickName || picked.phone}}</text>
+        <text wx:if="{{picked.phone}}" class="muted">（{{picked.phone}}）</text>
+        <view class="pick-btn" bindtap="repick">更换</view>
       </view>
+      <view wx:else class="pick-btn {{memberOpen ? 'on' : ''}}" bindtap="toggleMemberPick">👤 选择会员</view>
     </view>
+
+    <block wx:if="{{memberOpen}}">
+      <view class="row mt">
+        <input class="grow" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearchTap"
+          confirm-type="search" placeholder="输入昵称或手机号，1 个字就能搜" />
+        <text wx:if="{{keyword}}" class="muted" style="margin-right:12rpx" bindtap="clearKeyword">清空</text>
+        <button class="btn" bindtap="onSearchTap">刷新</button>
+      </view>
+
+      <view wx:if="{{memberLoading}}" class="muted mt">搜索中…</view>
+      <view wx:elif="{{memberEmpty}}" class="muted mt">没有找到匹配「{{keyword}}」的会员</view>
+
+      <view wx:if="{{members.length}}" class="mt">
+        <view wx:for="{{members}}" wx:key="_id" class="list-item" data-openid="{{item._id}}" bindtap="pick">
+          <view class="grow">
+            <view>{{item.nickName || '未命名会员'}}</view>
+            <view class="muted">{{item.phone || '未填手机号'}} · {{item.role}}</view>
+          </view>
+          <text class="muted">选择</text>
+        </view>
+      </view>
+    </block>
   </view>
 
   <view class="card">

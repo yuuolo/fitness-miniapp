@@ -30,22 +30,27 @@
       </view>
     </view>
 
-    <view wx:if="{{!pickedMember}}" class="row mt">
-      <input class="grow" value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onKeywordConfirm"
-        confirm-type="search" placeholder="搜会员昵称或手机号，1 个字就能搜" />
-      <text wx:if="{{keyword}}" class="muted" style="margin-right:12rpx" bindtap="clearKeyword">清空</text>
+    <view wx:if="{{!pickedMember}}" class="between mt">
+      <view class="pick-btn {{memberOpen ? 'on' : ''}}" bindtap="toggleMemberPick">👤 选择会员</view>
     </view>
-    <view wx:if="{{memberLoading}}" class="muted mt">搜索中…</view>
-    <view wx:elif="{{memberEmpty}}" class="muted mt">没有找到匹配「{{keyword}}」的会员</view>
-    <view wx:if="{{members.length && !pickedMember}}" class="mt">
-      <view wx:for="{{members}}" wx:key="_id" class="list-item" data-openid="{{item._id}}" bindtap="pickMember">
-        <view class="grow">
-          <view>{{item.name}}</view>
-          <view class="muted">{{item.phone || '未填手机号'}}</view>
-        </view>
-        <text class="muted">选择</text>
+    <block wx:if="{{memberOpen}}">
+      <view class="row mt">
+        <input class="grow" value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onKeywordConfirm"
+          confirm-type="search" placeholder="搜会员昵称或手机号，1 个字就能搜" />
+        <text wx:if="{{keyword}}" class="muted" style="margin-right:12rpx" bindtap="clearKeyword">清空</text>
       </view>
-    </view>
+      <view wx:if="{{memberLoading}}" class="muted mt">搜索中…</view>
+      <view wx:elif="{{memberEmpty}}" class="muted mt">没有找到匹配「{{keyword}}」的会员</view>
+      <view wx:if="{{members.length}}" class="mt">
+        <view wx:for="{{members}}" wx:key="_id" class="list-item" data-openid="{{item._id}}" bindtap="pickMember">
+          <view class="grow">
+            <view>{{item.name}}</view>
+            <view class="muted">{{item.phone || '未填手机号'}}</view>
+          </view>
+          <text class="muted">选择</text>
+        </view>
+      </view>
+    </block>
 
     <view class="muted mt">教练可以帮会员拍并代发，动态会记在会员名下。</view>
   </view>

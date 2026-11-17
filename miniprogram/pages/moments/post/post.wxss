@@ -55,3 +55,16 @@
   color: #fff;
   font-size: 30rpx;
 }
+
+/* 「选择会员」图标按钮：默认收起列表，点它才展开 */
+.pick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 26rpx;
+  color: var(--brand-strong);
+  background: var(--fill);
+  border-radius: var(--r-pill);
+  padding: 10rpx 22rpx;
+}
+.pick-btn.on { background: var(--brand); color: #fff; }

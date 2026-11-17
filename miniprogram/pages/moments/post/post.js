@@ -32,6 +32,7 @@ Page(Object.assign({}, memberSearch.mixin, {
     memberLoading: false,
     memberEmpty: false,
     pickedMember: null,
+    memberOpen: false,
     submitting: false,
     maxDuration: FALLBACK.maxDuration,
     maxDurationText: '',
@@ -78,6 +79,13 @@ Page(Object.assign({}, memberSearch.mixin, {
     return this.fetchMembers()
   },
 
+  // 默认收起会员列表，点「选择会员」图标才展开
+  toggleMemberPick() {
+    const open = !this.data.memberOpen
+    this.setData({ memberOpen: open })
+    if (open && !(this.data.members || []).length) this.fetchMembers()
+  },
+
   onKeywordInput(e) {
     this.memberInput(e)
   },
@@ -94,11 +102,11 @@ Page(Object.assign({}, memberSearch.mixin, {
     const openid = e.currentTarget.dataset.openid
     const m = (this.data.members || []).find(x => x._id === openid)
     if (!m) return
-    this.setData({ pickedMember: m })
+    this.setData({ pickedMember: m, memberOpen: false })
   },
 
   clearPickedMember() {
-    this.setData({ pickedMember: null })
+    this.setData({ pickedMember: null, memberOpen: false })
   },
 
   onUnload() {

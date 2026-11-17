@@ -9,6 +9,7 @@ Page(Object.assign({}, memberSearch.mixin, {
     members: [],
     memberLoading: false,
     memberEmpty: false,
+    memberOpen: false,
     id: '',
     competition: null,
     keyword: '',
@@ -40,6 +41,13 @@ Page(Object.assign({}, memberSearch.mixin, {
     }, err => wx.showToast({ title: err.message, icon: 'none' }))
   },
 
+  // 默认收起会员列表，点「选择会员」图标才展开
+  toggleMemberPick() {
+    const open = !this.data.memberOpen
+    this.setData({ memberOpen: open })
+    if (open && !(this.data.members || []).length) this.fetchMembers()
+  },
+
   // 与会员列表、友圈代发共用同一套搜索：输入即搜（1 个字起）
   onKeyword(e) {
     this.memberInput(e)
@@ -53,9 +61,10 @@ Page(Object.assign({}, memberSearch.mixin, {
     this.clearMemberSearch()
   },
 
-  // 重新选一个人
+  // 重新选一个人：清空已选并展开列表
   repick() {
-    this.setData({ picked: null })
+    this.setData({ picked: null, memberOpen: true })
+    this.memberSearchNow()
   },
 
   onUnload() {
@@ -65,7 +74,7 @@ Page(Object.assign({}, memberSearch.mixin, {
   pick(e) {
     const openid = e.currentTarget.dataset.openid
     const m = this.data.members.find(x => x._id === openid)
-    this.setData({ picked: m || null })
+    this.setData({ picked: m || null, memberOpen: false })
     if (!m || !m.phone) {
       wx.showToast({ title: '这个会员还没填手机号', icon: 'none' })
     }
