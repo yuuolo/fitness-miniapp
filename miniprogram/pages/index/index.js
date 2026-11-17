@@ -173,6 +173,9 @@ Page({
     rankMe: null,
     rankTotal: 0,
     rankName: '卧推',
+    rankUnit: 'kg',
+    rankNote: '',
+    scoreRank: 0,
     competitions: [],
     moments: [],
     // 快捷入口：六边形能力图（排行榜格子）
@@ -361,13 +364,24 @@ Page({
     if (hasBlock.competitions && feat.rank !== false) this.loadCompetitions()
     if (hasBlock.moments && feat.moments !== false) this.loadMoments()
     // 快捷入口里的能力图（排行榜格子）
-    if (hasBlock.quick && feat.fitness !== false) this.loadRadar()
+    if (hasBlock.quick && feat.fitness !== false) {
+      this.loadRadar()
+      if (feat.rank !== false) this.loadScoreRank()
+    }
     // 快捷入口里的友圈缩略图：即使没有「友圈预览」模块也要拉
     if (hasBlock.quick && feat.moments !== false && !hasBlock.moments) this.loadMoments()
   },
 
 
   // 快捷入口：拉自己的身体数据，算六边形能力图
+  // 综合评分榜里我的名次（给快捷入口显示）
+  loadScoreRank() {
+    return api.call('leaderboard', { lift: 'score' }, { silent: true }).then(r => {
+      const me = r.me
+      this.setData({ scoreRank: me ? me.rank : 0, scoreTop: (r.top || []).slice(0, 3) })
+    }, () => {})
+  },
+
   loadRadar() {
     return api.call('myFitness', {}, { silent: true }).then(f => {
       const values = radarValues(f)
@@ -384,13 +398,16 @@ Page({
   },
 
   // 首页展示排行榜前 5，并算出条形图比例
+  // 排行榜预览：不指定项目，服务端会挑「最近有成绩更新」的那一项
   loadRank() {
-    return api.call('leaderboard', { lift: 'bench', metric: 'absolute' }, { silent: true }).then(r => {
+    return api.call('leaderboard', { period: 'week' }, { silent: true }).then(r => {
       this.setData({
         rankTop: withPct((r.top || []).slice(0, 5), r.unit),
         rankMe: r.me,
         rankTotal: r.total,
-        rankName: r.liftName
+        rankName: r.liftName || '力量',
+      rankUnit: r.unit || 'kg',
+      rankNote: r.autoPicked ? '最近有更新' : ''
       })
     }, () => {})
   },
@@ -472,7 +489,12 @@ Page({
   },
 
 
+  // 快捷入口的「排行榜」= 综合评分榜；预览模块的「查看全部」= 当前力量榜
   goRank() {
+    wx.navigateTo({ url: '/pages/rank/rank?lift=score' })
+  },
+
+  goRankLift() {
     wx.navigateTo({ url: '/pages/rank/rank' })
   },
 

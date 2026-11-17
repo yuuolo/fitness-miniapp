@@ -39,8 +39,8 @@
       <view wx:elif="{{item.type === 'quick'}}" class="quick">
         <!-- 排行榜：六边形能力图 -->
         <view wx:if="{{features.rank !== false}}" class="q q-rank" bindtap="goRank">
-          <view class="q-t">排行榜</view>
-          <view class="muted">{{radarScore !== null ? '综合能力 ' + radarScore : '录一次体测就能看到'}}</view>
+          <view class="q-t">综合评分榜</view>
+          <view class="muted">{{radarScore !== null ? (scoreRank ? '我 ' + radarScore + ' 分 · 第 ' + scoreRank + ' 名' : '我 ' + radarScore + ' 分') : '录一次体测就能看到'}}</view>
           <view class="radar-wrap">
             <view wx:if="{{radarSvg}}" class="radar" style="background-image:url('{{radarSvg}}')"></view>
             <view wx:else class="radar radar-empty">
@@ -68,17 +68,17 @@
       <!-- 排行榜预览 -->
       <block wx:elif="{{item.type === 'rank' && features.rank !== false}}">
         <view class="between section-title">
-          <text>{{rankName}}排行榜</text>
-          <text class="muted" bindtap="goRank">查看全部 ›</text>
+          <text>{{rankName}}排行榜<text wx:if="{{rankNote}}" class="tag">{{rankNote}}</text></text>
+          <text class="muted" bindtap="goRankLift">查看全部 ›</text>
         </view>
-        <view class="card" bindtap="goRank">
+        <view class="card" bindtap="goRankLift">
           <view wx:if="{{!rankTop.length}}" class="muted">还没有人上榜，教练录入成绩后这里就会出现</view>
           <view wx:for="{{rankTop}}" wx:key="openid" class="list-item rank-row">
             <text class="rank-no {{item.rank <= 3 ? 'top' : ''}}">{{item.rank}}</text>
             <view class="grow">
               <view class="between">
                 <view>{{item.name}} <text wx:if="{{item.isMe}}" class="tag orange">我</text></view>
-                <text class="price">{{item.value}} {{item.unit || 'kg'}}</text>
+                <text class="price">{{item.value}} {{rankUnit}}</text>
               </view>
               <!-- 条形图：宽度按与第一名的比例，直观看出差距 -->
               <view class="bar-track">

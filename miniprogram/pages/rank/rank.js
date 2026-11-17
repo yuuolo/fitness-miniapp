@@ -23,6 +23,12 @@ Page({
     autoNote: ''
   },
 
+  onLoad(query) {
+    // 从首页「综合评分榜」入口进来时，带上 lift=score
+    const lift = (query && query.lift) || ''
+    if (lift) this.setData({ lift })
+  },
+
   onShow() {
     features.ensure().then(f => {
       if (f.rank === false) {

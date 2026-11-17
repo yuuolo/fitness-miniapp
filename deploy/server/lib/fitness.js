@@ -685,6 +685,49 @@ async function leaderboard({ me, data }) {
   const period = ['week', 'month'].includes(data.period) ? data.period : 'all'
   const range = periodRange(period, Date.now())
 
+  // 「综合评分榜」：按实时身体评分排名（体脂率 40 + 相对力量 40 + 体重指数 20）
+  if (wanted === 'score') {
+    const all = (await query('select * from members order by created_at')).rows.map(memberRow)
+    const rows = []
+    for (const m of all) {
+      if (!m.latestBody || !m.latestBody.weight) continue
+      const scored = withScore(m, m.latestBody)
+      if (scored.score == null) continue
+      const isPublic = !!m.isBodyPublic
+      rows.push({
+        openid: m._id,
+        name: memberLabel(m),
+        value: scored.score,
+        oneRM: scored.score,
+        weight: isPublic ? m.latestBody.weight : null,
+        relative: null,
+        bodyScore: scored.score,
+        parts: (scored.detail || []).map(d => ({ key: d.key, label: d.label, score: d.score, max: d.max })),
+        isMe: m._id === me._id
+      })
+    }
+    rows.sort((a, b) => b.value - a.value)
+    rows.forEach((r, i) => { r.rank = i + 1 })
+
+    return {
+      lift: 'score',
+      liftName: '综合评分',
+      autoPicked: false,
+      recentAt: 0,
+      unit: '分',
+      liftMetric: 'score',
+      metric,
+      period: 'all',
+      periodName: '总榜',
+      periodFrom: 0,
+      total: rows.length,
+      top: rows.slice(0, 20),
+      me: rows.find(r => r.isMe) || null,
+      lifts: [{ key: 'score', name: '综合评分', unit: '分' }].concat(items.map(i => ({ key: i.key, name: i.name, unit: i.unit }))),
+      periods: [{ key: 'week', name: '本周' }, { key: 'month', name: '本月' }, { key: 'all', name: '总榜' }]
+    }
+  }
+
   // 没指定项目时自动挑一个：
   // 优先「本周期内最近有成绩变化」的项目，本周期没人练就退回全部历史最近的
   let item = items.find(i => i.key === wanted) || null
@@ -759,7 +802,7 @@ async function leaderboard({ me, data }) {
     total: rows.length,
     top: rows.slice(0, 20),
     me: rows.find(r => r.isMe) || null,
-    lifts: items.map(i => ({ key: i.key, name: i.name, unit: i.unit })),
+    lifts: [{ key: 'score', name: '综合评分', unit: '分' }].concat(items.map(i => ({ key: i.key, name: i.name, unit: i.unit }))),
     periods: [
       { key: 'week', name: '本周' },
       { key: 'month', name: '本月' },

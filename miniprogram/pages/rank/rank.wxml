@@ -12,14 +12,23 @@
 
     <view wx:if="{{autoNote}}" class="auto-note">{{autoNote}}</view>
 
-    <!-- 周期切换 -->
-    <view class="date-bar">
+    <!-- 周期切换（综合评分是当前快照，没有周期） -->
+    <view wx:if="{{lift !== 'score'}}" class="date-bar">
       <view wx:for="{{board.periods}}" wx:key="key" class="d {{period === item.key ? 'on' : ''}}" data-period="{{item.key}}" bindtap="pickPeriod">
         <view class="w">{{item.name}}</view>
       </view>
     </view>
 
-    <view class="card">
+    <view wx:if="{{lift === 'score'}}" class="card">
+      <view class="between">
+        <text>综合评分（满分 100）</text>
+        <text class="tag">实时计算</text>
+      </view>
+      <view class="muted mt">评分 = 体脂率 40 + 相对力量 40 + 体重指数 20，缺项自动归一。
+        相对力量要求卧推/深蹲/硬拉三项都录入，缺项最多 15 分。成绩一更新，排名立刻变化。</view>
+    </view>
+
+    <view wx:if="{{lift !== 'score'}}" class="card">
       <view class="between">
         <text>排序方式</text>
         <view class="row">
