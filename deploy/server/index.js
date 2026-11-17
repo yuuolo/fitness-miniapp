@@ -8,6 +8,8 @@ const { query, one, pool, ensureSchema } = require('./lib/db')
 const { BizError, getMember } = require('./lib/common')
 const storage = require('./lib/storage')
 const limits = require('./lib/limits')
+const video = require('./lib/video')
+const { receiveToFile } = require('./lib/receive')
 const manage = require('./lib/manage')
 const features = require('./lib/features')
 const backup = require('./lib/backup')
@@ -206,6 +208,78 @@ app.post('/api/upload', express.raw({ type: () => true, limit: UPLOAD_LIMIT }), 
     if (e instanceof BizError) return res.json({ code: 400, msg: e.message })
     console.error('upload failed', e)
     res.json({ code: 500, msg: '上传失败' })
+  }
+})
+
+// ---------- 视频上传：超过「视频最长秒数」自动裁切，并把裁切情况返回给上传者 ----------
+// 小程序用 wx.uploadFile（multipart）传原视频，这里落盘 → ffprobe 探测 → 超时长用 ffmpeg 裁
+app.post('/api/video', async (req, res) => {
+  const ext = String(req.query.ext || 'mp4').replace(/^\./, '').toLowerCase()
+  const mime = MIME_BY_EXT[ext]
+  let tmp = ''
+  let outPath = ''
+  try {
+    if (!mime || mime.indexOf('video/') !== 0) return res.json({ code: 400, msg: '只支持视频文件' })
+    const openid = await resolveOpenid(req, req.query.code)
+    const cfg = await limits.get()
+    if (!(await video.available())) return res.json({ code: 500, msg: '服务器未安装 ffmpeg，无法处理视频' })
+
+    const maxRaw = cfg.maxRawVideoMB * 1024 * 1024
+    // 客户端有 Content-Length 时先拦一道，别让用户白传几十兆
+    const declared = Number(req.headers['content-length'] || 0)
+    if (declared > maxRaw + 1024 * 1024) {
+      req.resume()
+      return res.json({
+        code: 400,
+        msg: '原视频约 ' + (declared / 1024 / 1024).toFixed(1) + 'MB，超过 ' + cfg.maxRawVideoMB +
+          'MB 上限，无法自动裁切，请到相册里裁剪后再发'
+      })
+    }
+    tmp = video.tmpFile(ext)
+    const got = await receiveToFile(req, { filePath: tmp, maxBytes: maxRaw + 1024 * 1024 })
+    if (!got.bytes) return res.json({ code: 400, msg: '没有收到视频内容' })
+
+    // 超时长就裁切（只保留前 maxDuration 秒）
+    const prepared = await video.prepare(tmp, {
+      maxDuration: cfg.maxDuration,
+      ext,
+      maxHeight: 720,
+      maxBytes: maxRaw,
+      // 裁切后还要满足「单视频体积上限」，否则发不出去
+      maxVideoBytes: Math.min(cfg.maxVideoMB, cfg.maxTotalMB) * 1024 * 1024
+    })
+    outPath = prepared.path
+
+    const bytes = await fs.promises.readFile(outPath)
+    const saved = await storage.put(bytes, { ext, mime })
+    await ensureMember(openid)
+
+    res.json({
+      code: 0,
+      data: {
+        fileID: saved.url,
+        bytes: bytes.length,
+        mime,
+        storage: saved.driver,
+        duration: prepared.after.duration,
+        originalDuration: prepared.before.duration,
+        trimmed: prepared.trimmed,
+        keptSeconds: prepared.trimmed ? cfg.maxDuration : null,
+        method: prepared.method
+      }
+    })
+  } catch (e) {
+    if (e instanceof BizError) return res.json({ code: 400, msg: e.message })
+    // 体积/时长不合格属于用户侧问题，给 400 和可直接照做的提示
+    if (/超过上限|超过.*上限|没有收到/.test(String(e.message || ''))) {
+      return res.json({ code: 400, msg: String(e.message).replace('文件超过上限', '原视频超过 ' + (await limits.get()).maxRawVideoMB + 'MB 上限，请裁剪后再发') })
+    }
+    console.error('video upload failed', e)
+    res.json({ code: 500, msg: '视频处理失败：' + (e.message || '未知错误') })
+  } finally {
+    for (const f of [tmp, outPath]) {
+      if (f) fs.promises.rm(f, { force: true }).catch(() => {})
+    }
   }
 })
 

@@ -112,8 +112,73 @@ Page({
       camera: 'back',
       success: res => {
         const file = (res.tempFiles || [])[0]
-        if (file) this.compressVideo(file)
+        if (!file) return
+        // 先探测时长：超过限制就不再当场上传，交给服务端裁切（或让用户重选）
+        wx.getVideoInfo({
+          src: file.tempFilePath,
+          success: info => {
+            const realDuration = Math.round(info.duration || file.duration || 0)
+            const lim = this.lim()
+            if (realDuration > lim.maxDuration + 1) {
+              return this.askTrim(file, realDuration)
+            }
+            this.compressVideo(Object.assign({}, file, { duration: realDuration }))
+          },
+          fail: () => this.compressVideo(file)
+        })
       }
+    })
+  },
+
+  // 视频超过限制：告诉用户，并给「只保留前 N 秒」的选择（裁切在服务端做）
+  askTrim(file, duration) {
+    const lim = this.lim()
+    const rawMB = (file.size || 0) / 1024 / 1024
+    wx.showModal({
+      title: '视频超过 ' + lim.maxDuration + ' 秒',
+      content: '这段视频 ' + duration + ' 秒。可以只保留前 ' + lim.maxDuration +
+        ' 秒上传（越长的部分会被裁掉，原视频需要先传上去，请确保网络良好）' +
+        (rawMB ? '，原视频约 ' + rawMB.toFixed(1) + 'MB' : ''),
+      confirmText: '保留前' + lim.maxDuration + '秒',
+      cancelText: '重新选',
+      success: r => {
+        if (!r.confirm) return
+        this.trimUpload(file, duration)
+      }
+    })
+  },
+
+  // 服务端裁切上传：显示进度，完成后告诉用户裁掉了多少
+  trimUpload(file, duration) {
+    const lim = this.lim()
+    wx.showLoading({ title: '上传并裁切中', mask: true })
+    api.uploadVideo(file.tempFilePath).then(v => {
+      wx.hideLoading()
+      const item = {
+        tempFilePath: file.tempFilePath,
+        fileID: v.fileID,
+        type: 'video',
+        duration: Math.round(v.duration || lim.maxDuration),
+        size: v.bytes || 0,
+        thumbPath: file.thumbTempFilePath || '',
+        trimmedFrom: v.trimmed ? Math.round(v.originalDuration || duration) : 0
+      }
+      if (!this.pushMedia(item)) return
+      if (v.trimmed) {
+        wx.showModal({
+          title: '已自动裁切',
+          content: '原视频 ' + Math.round(v.originalDuration || duration) + ' 秒，已保留前 ' +
+            lim.maxDuration + ' 秒（' + fmtMB(v.bytes || 0) + '）。发布后其他会员看到的也是裁切后的版本。',
+          showCancel: false
+        })
+      }
+    }).catch(err => {
+      wx.hideLoading()
+      wx.showModal({
+        title: '视频太长了',
+        content: err.message || '处理失败，建议到相册里裁剪后再发，或重拍一段更短的。',
+        showCancel: false
+      })
     })
   },
 
@@ -225,6 +290,14 @@ Page({
     if (!media.length) return Promise.resolve([])
     const upload = (filePath) => api.upload(filePath)
     const tasks = media.map((m) => {
+      // 长视频已经在裁切接口里传好了，直接用返回的地址
+      if (m.fileID) {
+        const ready = { fileID: m.fileID, type: m.type, duration: m.duration || 0, size: m.size || 0 }
+        if (m.type !== 'video' || !m.thumbPath) return Promise.resolve(ready)
+        return upload(m.thumbPath)
+          .then(thumb => Object.assign(ready, { thumb }))
+          .catch(() => ready)
+      }
       return upload(m.tempFilePath).then(fileID => {
         const item = { fileID, type: m.type, duration: m.duration || 0, size: m.size || 0 }
         if (m.type !== 'video' || !m.thumbPath) return item

@@ -84,6 +84,30 @@ function upload(filePath, ext) {
   )).then(r => r.fileID)
 }
 
+// 视频专用上传：wx.uploadFile 是流式发送，不受 wx.request 体积限制；
+// 服务端会探测时长，超过「视频最长秒数」时自动裁切并告诉我们裁了多久
+function uploadVideo(filePath) {
+  const suffix = String((filePath.match(/\.[a-zA-Z0-9]+$/) || ['.mp4'])[0]).replace(/^\./, '')
+  return login().then(code => new Promise((resolve, reject) => {
+    wx.uploadFile({
+      url: BASE + '/api/video?ext=' + encodeURIComponent(suffix) + '&code=' + encodeURIComponent(code),
+      filePath,
+      name: 'file',
+      timeout: 180000,
+      success: res => {
+        let r = {}
+        try { r = JSON.parse(res.data || '{}') } catch (e) { r = {} }
+        if (r.code === 0) return resolve(r.data)
+        reject(new Error(r.msg || '视频上传失败'))
+      },
+      fail: err => {
+        console.error('uploadVideo', err)
+        reject(new Error('视频上传失败，请检查网络后重试'))
+      }
+    })
+  }))
+}
+
 function readFile(filePath) {
   return new Promise((resolve, reject) => {
     wx.getFileSystemManager().readFile({

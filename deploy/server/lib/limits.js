@@ -10,6 +10,7 @@ const DEFAULTS = {
   maxVideoMB: 12,    // 视频压缩后允许的最大体积
   maxCount: 9,       // 单条动态最多照片/视频数量
   maxTotalMB: 40,    // 单条动态媒体合计大小上限
+  maxRawVideoMB: 60, // 原视频（裁切前）允许的最大体积
   feedThumbs: 9      // 列表里最多显示几个（超出显示 +N）
 }
 
@@ -19,6 +20,7 @@ const RANGES = {
   maxVideoMB: [1, 50, '视频压缩后上限', 'MB'],
   maxCount: [1, 9, '单条最多照片/视频数量', '个'],
   maxTotalMB: [4, 200, '单条合计大小上限', 'MB'],
+  maxRawVideoMB: [5, 200, '原视频（裁切前）上限', 'MB'],
   feedThumbs: [1, 9, '列表最多显示数量', '个']
 }
 

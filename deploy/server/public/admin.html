@@ -303,7 +303,14 @@
       <div class="field">
         <label>视频压缩后上限（MB）</label>
         <input id="lim-maxVideoMB" type="number" min="1" max="50" step="1" placeholder="12">
-        <div class="hint">1–50 MB。压缩后仍然超过就拒绝发送；上传接口也会按这个值拦。</div>
+        <div class="hint">1–50 MB。视频超过时长上限被裁切后，若成品仍然大于这个值，
+          服务器会按目标体积再压一次（先算目标码率，不够就再降一档）。</div>
+      </div>
+      <div class="field">
+        <label>原视频（裁切前）上限（MB）</label>
+        <input id="lim-maxRawVideoMB" type="number" min="5" max="200" step="1" placeholder="60">
+        <div class="hint">5–200 MB。视频超过时长上限时，会先把原视频传上来由服务器裁切；
+          原视频超过这个体积就不建议自动裁切了（流量太大），会提示用户自己裁小再发。</div>
       </div>
       <div class="field">
         <label>单条最多照片/视频数量</label>
@@ -464,7 +471,7 @@
   }
 
   // ---------- 上传与展示限制 ----------
-  var LIM_FIELDS = ['maxDuration', 'maxVideoMB', 'maxCount', 'maxTotalMB', 'feedThumbs']
+  var LIM_FIELDS = ['maxDuration', 'maxVideoMB', 'maxRawVideoMB', 'maxCount', 'maxTotalMB', 'feedThumbs']
   var limDefaults = null
 
   function fillLimits(value) {
@@ -480,8 +487,8 @@
       limDefaults = data.defaults
       fillLimits(data.value)
       showMsg(msg, '当前：视频 ≤ ' + data.value.maxDuration + ' 秒 / ' + data.value.maxVideoMB +
-        'MB，最多 ' + data.value.maxCount + ' 个，合计 ≤ ' + data.value.maxTotalMB +
-        'MB，列表显示 ' + data.value.feedThumbs + ' 个', 'ok')
+        'MB（原视频 ≤ ' + data.value.maxRawVideoMB + 'MB 时自动裁切），最多 ' + data.value.maxCount +
+        ' 个，合计 ≤ ' + data.value.maxTotalMB + 'MB，列表显示 ' + data.value.feedThumbs + ' 个', 'ok')
     }).catch(function (e) {
       showMsg(msg, e.message, 'err')
     })

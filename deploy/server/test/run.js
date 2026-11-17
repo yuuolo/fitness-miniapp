@@ -388,6 +388,34 @@ async function main() {
   assert.strictEqual(homeBack.mediaLimits.maxCount, 9, '限制应能恢复默认')
   ok('上传与展示限制可配置、可校验、可恢复')
 
+  // 视频超时长自动裁切：生成 90 秒测试视频，按 60 秒裁切
+  const video = require('../lib/video')
+  const os = require('os')
+  const path = require('path')
+  const { execFileSync } = require('child_process')
+  const src = path.join(os.tmpdir(), 'trim-test-' + Date.now() + '.mp4')
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi',
+    '-i', 'testsrc=duration=90:size=320x240:rate=15',
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '32', src])
+
+  const info = await video.probe(src)
+  assert.ok(info.duration >= 88 && info.duration <= 92, '测试视频应约 90 秒，实际 ' + info.duration)
+
+  const cut = await video.prepare(src, { maxDuration: 60, ext: 'mp4', maxHeight: 720, maxBytes: 200 * 1024 * 1024 })
+  assert.strictEqual(cut.trimmed, true, '超时长应触发裁切')
+  assert.ok(cut.after.duration <= 62, '裁切后应不超过 60 秒，实际 ' + cut.after.duration)
+  assert.ok(cut.after.bytes > 0, '裁切后文件不能为空')
+  assert.ok(cut.after.bytes < cut.before.bytes, '裁切后体积应更小')
+
+  const cut10 = await video.prepare(src, { maxDuration: 10, ext: 'mp4', maxHeight: 720, maxBytes: 200 * 1024 * 1024 })
+  assert.ok(cut10.after.duration <= 12, '按 10 秒裁切后应不超过 12 秒，实际 ' + cut10.after.duration)
+
+  const asIs = await video.prepare(cut10.path, { maxDuration: 60, ext: 'mp4', maxHeight: 720, maxBytes: 200 * 1024 * 1024 })
+  assert.strictEqual(asIs.trimmed, false, '没超时长的视频不该被裁')
+  ok('视频超时长自动裁切（90 秒 → 60 秒 / 10 秒）')
+
+  for (const f of [src, cut.path, cut10.path]) require('fs').rmSync(f, { force: true })
+
   // 误传资料要能删：教练/管理员可删历史体测，删完最新档案自动换成剩下最新的一条
   const DEL_ID = 'openid-bodydel'
   await ensureMember(DEL_ID)
