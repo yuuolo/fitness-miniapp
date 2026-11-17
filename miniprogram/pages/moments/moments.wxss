@@ -76,3 +76,21 @@
   white-space: nowrap;
 }
 .search-chip.on { background: var(--brand); color: #fff; }
+
+/* 搜索图标：默认收起，点开才显示搜索栏 */
+.search-toggle {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--fill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+}
+.search-toggle.on { background: var(--brand); }
+.search-close {
+  font-size: 26rpx;
+  color: var(--muted);
+  padding: 0 6rpx;
+}

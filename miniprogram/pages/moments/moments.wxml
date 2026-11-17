@@ -7,18 +7,23 @@
   <block wx:else>
     <view class="between section-title">
       <text>健身友圈</text>
-      <button class="btn" bindtap="goPost">发一条</button>
+      <view class="row" style="gap:14rpx;align-items:center">
+        <!-- 点这个图标才展开搜索栏 -->
+        <view class="search-toggle {{searchOpen ? 'on' : ''}}" bindtap="toggleSearch">🔍</view>
+        <button class="btn" bindtap="goPost">发一条</button>
+      </view>
     </view>
 
-    <!-- 搜索：输入 1 个字就开始预搜；可只看视频 -->
-    <view class="search-bar">
+    <!-- 搜索：点图标才展开；输入 1 个字就开始预搜；可只看视频 -->
+    <view wx:if="{{searchOpen}}" class="search-bar">
       <view class="search-box">
         <text class="search-ico">🔍</text>
         <input class="search-input" value="{{keyword}}" placeholder="搜内容 / 作者，1 个字就能搜"
-          confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
+          focus="{{searchOpen}}" confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
         <text wx:if="{{keyword}}" class="search-clear" catchtap="clearSearch">✕</text>
       </view>
       <view class="search-chip {{onlyVideo ? 'on' : ''}}" bindtap="toggleVideoOnly">只看视频</view>
+      <text class="search-close" bindtap="toggleSearch">✕</text>
     </view>
 
     <view wx:if="{{loaded && !list.length}}" class="card">

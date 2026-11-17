@@ -14,8 +14,8 @@ function resolveVideoUrls(list) {
 Page({
   data: {
     list: [], loaded: false, hasMore: true, loading: false, disabled: false,
-    // 搜索：1 个字起就预搜；可以只看视频
-    keyword: '', onlyVideo: false
+    // 搜索：默认收起，点图标才展开；1 个字起就预搜；可以只看视频
+    keyword: '', onlyVideo: false, searchOpen: false
   },
 
   onShow() {
@@ -43,6 +43,22 @@ Page({
 
   onReachBottom() {
     this.loadMore()
+  },
+
+  // 点搜索图标：展开/收起搜索栏；收起时清掉搜索条件并恢复全部
+  toggleSearch() {
+    const open = !this.data.searchOpen
+    this.setData({ searchOpen: open })
+    if (!open) {
+      if (this.searchTimer) {
+        clearTimeout(this.searchTimer)
+        this.searchTimer = null
+      }
+      if (this.data.keyword || this.data.onlyVideo) {
+        this.setData({ keyword: '', onlyVideo: false })
+        this.reload()
+      }
+    }
   },
 
   // 输入即预搜（300ms 防抖）
