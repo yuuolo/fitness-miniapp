@@ -101,10 +101,14 @@ create table if not exists activity_records (
   calories   int  not null default 0,
   avg_hr     int  not null default 0,
   source     text not null default 'staff',
+  external_id text not null default '',
   operator   text not null default '',
   created_at bigint not null default 0
 );
 create index if not exists idx_activity_openid on activity_records (openid, date desc);
+-- 对接手机/手环/手表时用来去重（同来源同外部 ID 只留一条）
+alter table activity_records add column if not exists external_id text not null default '';
+create index if not exists idx_activity_external on activity_records (external_id);
 
 create table if not exists moments (
   id          text primary key,

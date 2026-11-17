@@ -387,6 +387,40 @@ Page({
   },
 
   // 删除一条历史体测（误传时用）
+  // 删除一条力量成绩（管理员）：录错时用，删完自动重算最好成绩与评分
+  deleteStrength(e) {
+    const id = e.currentTarget.dataset.id
+    const name = e.currentTarget.dataset.name || '这条成绩'
+    const info = e.currentTarget.dataset.info || ''
+    wx.showModal({
+      title: '删除力量成绩',
+      content: '确定删除「' + name + ' ' + info + '」吗？删除后最好成绩和身体评分会自动重算。',
+      confirmText: '删除',
+      confirmColor: '#e9603a',
+      success: r => {
+        if (!r.confirm) return
+        wx.showLoading({ title: '删除中', mask: true })
+        api.call('deleteStrength', { id }, { silent: true }).then(res => {
+          wx.hideLoading()
+          sfx.playDelete()
+          wx.showToast({ title: '已删除', icon: 'none' })
+          if (res && res.sbdTotal !== undefined) {
+            wx.showModal({
+              title: '已重算',
+              content: '三项合计现在是 ' + res.sbdTotal + ' kg，身体评分 ' +
+                (res.bodyScore == null ? '-' : res.bodyScore) + ' 分。',
+              showCancel: false
+            })
+          }
+          this.load()
+        }).catch(err => {
+          wx.hideLoading()
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' })
+        })
+      }
+    })
+  },
+
   deleteBody(e) {
     const id = e.currentTarget.dataset.id
     const date = e.currentTarget.dataset.date || ''

@@ -18,6 +18,7 @@
     "pages/staff/competitions/competitions",
     "pages/staff/competition-edit/competition-edit",
     "pages/staff/competition-entry/competition-entry",
+    "pages/activity/activity",
     "pages/manual/manual"
   ],
   "window": {

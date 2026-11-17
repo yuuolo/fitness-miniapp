@@ -1,0 +1,49 @@
+<view class="page">
+  <view class="section-title">记录运动</view>
+  <view class="card">
+    <view class="muted" style="margin-bottom:12rpx">
+      自己记一次运动。不同类型要填的东西不一样：步行填步数，跑步/骑行/游泳填距离和时长，力量训练和团课填时长。
+    </view>
+
+    <view class="form-row">
+      <text class="label">运动类型</text>
+      <picker range="{{actionTypes}}" range-key="name" value="{{typeIndex}}" bindchange="onType">
+        <view class="picker-text">{{currentType ? currentType.name : '请选择'}} ›</view>
+      </picker>
+    </view>
+    <view wx:if="{{currentType && currentType.desc}}" class="muted" style="margin:-4rpx 0 8rpx 0">{{currentType.desc}}</view>
+
+    <view class="form-row">
+      <text class="label">日期</text>
+      <picker mode="date" value="{{date}}" bindchange="onDate">
+        <view class="picker-text">{{date || '今天'}} ›</view>
+      </picker>
+    </view>
+
+    <view wx:for="{{currentFields}}" wx:key="key" class="form-row">
+      <text class="label">{{item.label}}<text wx:if="{{item.required}}" class="req">*</text><text class="unit">（{{item.unit}}）</text></text>
+      <input type="{{item.integer ? 'number' : 'digit'}}" value="{{activity[item.key]}}" data-field="{{item.key}}" bindinput="onInput" placeholder="{{item.placeholder}}" />
+    </view>
+
+    <button class="btn block mt" bindtap="submit" disabled="{{saving}}">保存这条运动记录</button>
+    <view class="muted mt">{{hintText}}</view>
+  </view>
+
+  <view class="section-title between">
+    <text>我的运动记录</text>
+    <text class="muted" wx:if="{{list.length}}">最近 {{list.length}} 次</text>
+  </view>
+  <view class="card">
+    <view wx:if="{{loaded && !list.length}}" class="muted">还没有记录，上面记一条试试</view>
+    <view wx:for="{{list}}" wx:key="id" class="list-item">
+      <view class="grow">
+        <view>{{item.typeName}} <text class="muted">{{item.date}}</text>
+          <text wx:if="{{item.source === 'self'}}" class="tag">自己记</text>
+        </view>
+        <view class="muted">{{item.detail}}</view>
+      </view>
+      <text wx:if="{{item.avgHr}}" class="tag">{{item.avgHr}} 次/分</text>
+      <button class="btn gray sm ml" data-id="{{item.id}}" data-name="{{item.typeName}} {{item.date}}" catchtap="remove">删除</button>
+    </view>
+  </view>
+</view>

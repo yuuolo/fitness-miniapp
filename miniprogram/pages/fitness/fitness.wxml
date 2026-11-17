@@ -136,11 +136,12 @@
     <view class="muted mt-sm">对方打开后能看到身体评分、指标和历史记录（不含手机号）。</view>
   </view>
 
+  <view class="between section-title">
+    <text>最近运动</text>
+    <text class="muted" bindtap="goActivity">＋ 记录运动 ›</text>
+  </view>
+  <view wx:if="{{!actList.length}}" class="card muted">还没有运动记录，点右上角「记录运动」记一条</view>
   <block wx:if="{{actList.length}}">
-    <view class="between section-title">
-      <text>最近运动</text>
-      <text class="muted">最近 {{actList.length}} 次</text>
-    </view>
     <view class="card">
       <view wx:for="{{actList}}" wx:key="id" class="list-item">
         <view class="grow">

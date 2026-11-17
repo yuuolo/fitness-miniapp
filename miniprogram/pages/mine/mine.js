@@ -56,6 +56,10 @@ Page({
   },
 
   // 算法说明书：评分、排行榜项目、能力图
+  goActivity() {
+    wx.navigateTo({ url: '/pages/activity/activity' })
+  },
+
   goManual() {
     wx.navigateTo({ url: '/pages/manual/manual' })
   },

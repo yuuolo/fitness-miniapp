@@ -192,6 +192,11 @@ Page({
   },
 
   // 报告图：点击全屏查看（和看相册里的图一样）
+  // 会员自己记录运动
+  goActivity() {
+    wx.navigateTo({ url: '/pages/activity/activity' })
+  },
+
   previewReport(e) {
     const src = (e && e.currentTarget && e.currentTarget.dataset.src) ||
       (this.data.f && this.data.f.latestBody && this.data.f.latestBody.reportImage)

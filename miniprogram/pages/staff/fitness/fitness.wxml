@@ -159,6 +159,12 @@
           <view class="muted">{{item.weight}} kg × {{item.reps}} 次 → 约 {{item.oneRM}} kg</view>
         </view>
         <text wx:if="{{item.isBest}}" class="tag orange">最好</text>
+        <button wx:if="{{f.canManageStrength}}" class="btn gray sm ml" data-id="{{item.id}}"
+          data-name="{{item.liftName}}" data-info="{{item.weight}} 公斤 × {{item.reps}} 次"
+          catchtap="deleteStrength">删除</button>
+      </view>
+      <view wx:if="{{f.canManageStrength && strengthList.length}}" class="muted mt-sm">
+        录错了可以直接删掉，最好成绩和评分会自动重算
       </view>
     </view>
   </block>

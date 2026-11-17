@@ -1,0 +1,2 @@
+/* 记录运动：表单 + 历史 */
+.picker-text { color: var(--text); }
