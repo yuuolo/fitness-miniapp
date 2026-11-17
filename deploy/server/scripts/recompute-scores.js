@@ -5,7 +5,7 @@
 // - 会员档案（latest_body）用「当前最好成绩」重算
 // - 历史体测记录用「测量当时已有的力量成绩」重算（不能用今天的成绩，否则会篡改历史）
 const { query, pool } = require('../lib/db')
-const { scoreBody, sbdOf, sbdCountOf } = require('../lib/fitness')
+const { scoreBody, sbdOf, sbdCountOf, sbdMissingOf } = require('../lib/fitness')
 
 const LIFTS = ['bench', 'squat', 'deadlift']
 
@@ -23,6 +23,8 @@ function bestLiftAt(records, at) {
 
 async function main() {
   const dry = process.argv.includes('--dry')
+  // --force：即使总分没变，也重写明细（说明文案会随规则更新）
+  const force = process.argv.includes('--force')
   const log = []
 
   // 所有力量成绩，按人会话内升序（用于还原「当时的最好成绩」）
@@ -49,9 +51,10 @@ async function main() {
       height: m.height || latest.height,
       bodyFat: latest.bodyFat,
       sbdTotal: sbdOf(m.best_lift),
-      sbdCount: sbdCountOf(m.best_lift)
+      sbdCount: sbdCountOf(m.best_lift),
+      sbdMissing: sbdMissingOf(m.best_lift)
     })
-    if (latest.score === scored.score) { skipped++; continue }
+    if (!force && latest.score === scored.score && JSON.stringify(latest.detail) === JSON.stringify(scored.detail)) { skipped++; continue }
     changed++
     log.push('  档案 ' + (m.nick_name || m.openid.slice(0, 8)) + '：' + latest.score + ' → ' + scored.score)
     if (dry) continue
@@ -76,9 +79,10 @@ async function main() {
       height: b.mheight || b.height,
       bodyFat: b.body_fat,
       sbdTotal: sbdOf(bestThen),
-      sbdCount: sbdCountOf(bestThen)
+      sbdCount: sbdCountOf(bestThen),
+      sbdMissing: sbdMissingOf(bestThen)
     })
-    if (b.score === scored.score) continue
+    if (!force && b.score === scored.score) continue
     bodyChanged++
     log.push('  体测 ' + b.date + '：' + b.score + ' → ' + scored.score + '（当时 ' + sbdCountOf(bestThen) + '/3 项力量）')
     if (dry) continue
