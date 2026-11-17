@@ -1,16 +1,24 @@
 const api = require('../../../utils/api')
 const sfx = require('../../../utils/sfx')
 
-// 友圈视频限制：时长 + 压缩后大小，避免把云存储 5GB 额度很快吃满
-const MAX_DURATION = 15
-const MAX_VIDEO_BYTES = 20 * 1024 * 1024
-const MAX_TOTAL_BYTES = 40 * 1024 * 1024
+// 友圈上传限制：默认值只是兜底，真正生效的是管理页配置（首页接口下发）
+const FALLBACK = {
+  maxDuration: 15,
+  maxVideoBytes: 12 * 1024 * 1024,
+  maxCount: 9,
+  maxTotalBytes: 40 * 1024 * 1024
+}
 
 function fmtMB(bytes) {
   return (bytes / 1024 / 1024).toFixed(1) + ' MB'
 }
 
 Page({
+
+  // 取当前生效的限制（服务端没返回就用兜底值）
+  lim() {
+    return this.limits || FALLBACK
+  },
 
   data: {
     content: '',
@@ -20,14 +28,31 @@ Page({
     members: [],
     memberIndex: -1,
     submitting: false,
-    maxDuration: MAX_DURATION
+    maxDuration: FALLBACK.maxDuration,
+    maxCount: FALLBACK.maxCount,
+    limitText: ''
   },
 
   onLoad() {
     api.call('home', {}, { silent: true }).then(res => {
       const role = res.me && res.me.role
       const canCoach = !!role && role !== 'member'
-      this.setData({ canCoach })
+      // 管理页配置的上传/展示限制
+      const lim = (res && res.mediaLimits) || {}
+      const mb = n => (Number(n) || 0) * 1024 * 1024
+      this.limits = {
+        maxDuration: Math.round(Number(lim.maxDuration) || FALLBACK.maxDuration),
+        maxVideoBytes: lim.maxVideoMB ? mb(lim.maxVideoMB) : FALLBACK.maxVideoBytes,
+        maxCount: Math.round(Number(lim.maxCount) || FALLBACK.maxCount),
+        maxTotalBytes: lim.maxTotalMB ? mb(lim.maxTotalMB) : FALLBACK.maxTotalBytes
+      }
+      this.setData({
+        canCoach,
+        maxDuration: this.limits.maxDuration,
+        maxCount: this.limits.maxCount,
+        limitText: '视频 ≤ ' + this.limits.maxDuration + ' 秒，最多 ' + this.limits.maxCount +
+          ' 个，合计 ≤ ' + fmtMB(this.limits.maxTotalBytes)
+      })
       if (canCoach) this.loadMembers()
     }, () => {})
   },
@@ -55,11 +80,16 @@ Page({
   },
 
   pushMedia(item) {
+    const lim = this.lim()
+    if (this.data.media.length >= lim.maxCount) {
+      wx.showToast({ title: '最多 ' + lim.maxCount + ' 个', icon: 'none' })
+      return false
+    }
     const total = this.data.media.reduce((s, m) => s + (m.size || 0), 0) + (item.size || 0)
-    if (total > MAX_TOTAL_BYTES) {
+    if (total > lim.maxTotalBytes) {
       wx.showModal({
         title: '内容太大了',
-        content: '合计已超过 ' + fmtMB(MAX_TOTAL_BYTES) + '，请删掉一些再发。',
+        content: '合计已超过 ' + fmtMB(lim.maxTotalBytes) + '，请删掉一些再发。',
         showCancel: false
       })
       return false
@@ -72,12 +102,13 @@ Page({
 
   // 拍/选一段视频：先限制时长，再压缩，超限直接拦掉
   chooseVideo() {
-    if (this.data.media.length >= 9) return wx.showToast({ title: '最多 9 个', icon: 'none' })
+    const lim = this.lim()
+    if (this.data.media.length >= lim.maxCount) return wx.showToast({ title: '最多 ' + lim.maxCount + ' 个', icon: 'none' })
     wx.chooseMedia({
       count: 1,
       mediaType: ['video'],
       sourceType: ['album', 'camera'],
-      maxDuration: MAX_DURATION,
+      maxDuration: lim.maxDuration,
       camera: 'back',
       success: res => {
         const file = (res.tempFiles || [])[0]
@@ -91,17 +122,18 @@ Page({
     const duration = Math.round(file.duration || 0)
     // 选视频时微信会给一张封面图，海报要用，别丢
     const thumbPath = file.thumbTempFilePath || ''
-    if (duration > MAX_DURATION + 1) {
+    const lim = this.lim()
+    if (duration > lim.maxDuration + 1) {
       return wx.showModal({
         title: '视频太长',
-        content: '只能发 ' + MAX_DURATION + ' 秒以内的视频，请重新拍摄。',
+        content: '只能发 ' + lim.maxDuration + ' 秒以内的视频，请重新拍摄。',
         showCancel: false
       })
     }
 
     // 老基础库没有压缩 API，只能靠大小兜底
     if (!wx.compressVideo) {
-      if (rawSize > MAX_VIDEO_BYTES) {
+      if (rawSize > lim.maxVideoBytes) {
         return wx.showModal({
           title: '视频太大',
           content: '当前 ' + fmtMB(rawSize) + '，请拍短一点。',
@@ -120,10 +152,10 @@ Page({
       success: r => {
         wx.hideLoading()
         const size = r.size || rawSize
-        if (size > MAX_VIDEO_BYTES) {
+        if (size > lim.maxVideoBytes) {
           return wx.showModal({
             title: '视频仍偏大',
-            content: '压缩后 ' + fmtMB(size) + '，超过 ' + fmtMB(MAX_VIDEO_BYTES) + ' 上限，建议拍 10 秒以内。',
+            content: '压缩后 ' + fmtMB(size) + '，超过 ' + fmtMB(lim.maxVideoBytes) + ' 上限，建议拍 10 秒以内。',
             showCancel: false
           })
         }
@@ -137,7 +169,7 @@ Page({
       },
       fail: () => {
         wx.hideLoading()
-        if (rawSize > MAX_VIDEO_BYTES) {
+        if (rawSize > lim.maxVideoBytes) {
           return wx.showModal({
             title: '视频太大',
             content: '压缩失败，原文件 ' + fmtMB(rawSize) + ' 超过上限，请拍短一点。',
@@ -151,8 +183,9 @@ Page({
   },
 
   chooseImages() {
-    const left = 9 - this.data.media.length
-    if (left <= 0) return wx.showToast({ title: '最多 9 个', icon: 'none' })
+    const lim = this.lim()
+    const left = lim.maxCount - this.data.media.length
+    if (left <= 0) return wx.showToast({ title: '最多 ' + lim.maxCount + ' 个', icon: 'none' })
     wx.chooseMedia({
       count: left,
       mediaType: ['image'],
@@ -193,7 +226,7 @@ Page({
     const upload = (filePath) => api.upload(filePath)
     const tasks = media.map((m) => {
       return upload(m.tempFilePath).then(fileID => {
-        const item = { fileID, type: m.type, duration: m.duration || 0 }
+        const item = { fileID, type: m.type, duration: m.duration || 0, size: m.size || 0 }
         if (m.type !== 'video' || !m.thumbPath) return item
         // 视频封面单独传一份，海报和列表预览都能用
         return upload(m.thumbPath)
@@ -210,7 +243,7 @@ Page({
     if (!content && !this.data.media.length) {
       return wx.showToast({ title: '写点什么或选个视频', icon: 'none' })
     }
-    if (this.data.media.reduce((s, m) => s + (m.size || 0), 0) > MAX_TOTAL_BYTES) {
+    if (this.data.media.reduce((s, m) => s + (m.size || 0), 0) > this.lim().maxTotalBytes) {
       return wx.showToast({ title: '内容超过大小上限', icon: 'none' })
     }
     this.setData({ submitting: true })

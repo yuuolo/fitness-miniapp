@@ -7,6 +7,7 @@ const express = require('express')
 const { query, one, pool, ensureSchema } = require('./lib/db')
 const { BizError, getMember } = require('./lib/common')
 const storage = require('./lib/storage')
+const limits = require('./lib/limits')
 const manage = require('./lib/manage')
 const features = require('./lib/features')
 const backup = require('./lib/backup')
@@ -161,7 +162,7 @@ app.use(express.json({ limit: '2mb' }))
 app.get('/health', (req, res) => res.json({ ok: true }))
 
 // ---------- 上传：小程序读成 ArrayBuffer 直接 POST 二进制，避免引入 multipart 依赖 ----------
-const UPLOAD_LIMIT = 12 * 1024 * 1024
+const UPLOAD_LIMIT = 64 * 1024 * 1024 // express 的硬上限，真正的限制按管理页配置判断
 const MIME_BY_EXT = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
   gif: 'image/gif', mp4: 'video/mp4', mov: 'video/quicktime'
@@ -175,7 +176,24 @@ app.post('/api/upload', express.raw({ type: () => true, limit: UPLOAD_LIMIT }), 
     const openid = await resolveOpenid(req, req.query.code)
     const bytes = Buffer.isBuffer(req.body) ? req.body : null
     if (!bytes || !bytes.length) return res.json({ code: 400, msg: '没有收到文件内容' })
-    if (bytes.length > UPLOAD_LIMIT) return res.json({ code: 400, msg: '文件超过 12MB' })
+    if (bytes.length > UPLOAD_LIMIT) return res.json({ code: 400, msg: '文件超过 64MB' })
+
+    // 管理页配置的上传限制：视频按「压缩后上限」，图片按合计上限
+    const kind = String(req.query.kind || '').toLowerCase()
+    const cfg = limits.bytesOf(await limits.get())
+    if (mime.indexOf('video/') === 0 || kind === 'video') {
+      if (bytes.length > cfg.maxVideoBytes) {
+        return res.json({
+          code: 400,
+          msg: '视频约 ' + (bytes.length / 1024 / 1024).toFixed(1) + 'MB，超过 ' + cfg.maxVideoMB + 'MB 上限'
+        })
+      }
+    } else if (bytes.length > cfg.maxTotalBytes) {
+      return res.json({
+        code: 400,
+        msg: '图片约 ' + (bytes.length / 1024 / 1024).toFixed(1) + 'MB，超过 ' + cfg.maxTotalMB + 'MB 上限'
+      })
+    }
 
     // 存储位置由管理页配置：数据库 / 腾讯云 COS / 阿里云 OSS
     const saved = await storage.put(bytes, { ext, mime })
@@ -306,6 +324,27 @@ app.put('/api/admin/features', requireAdmin, async (req, res) => {
     const off = data.features.filter(f => !f.enabled).map(f => f.name)
     console.log('features changed ->', JSON.stringify(data.state))
     res.json({ code: 0, data: Object.assign({}, data, { summary: off.length ? '已关闭：' + off.join('、') : '全部功能已开启' }) })
+  } catch (e) {
+    res.json({ code: 400, msg: e.message })
+  }
+})
+
+// ---------- 上传与展示限制 ----------
+app.get('/api/admin/media-limits', requireAdmin, async (req, res) => {
+  try {
+    const value = await limits.get()
+    res.json({ code: 0, data: { value, defaults: limits.DEFAULTS, ranges: limits.RANGES } })
+  } catch (e) {
+    console.error('media limits read failed', e)
+    res.json({ code: 500, msg: '读取上传限制失败' })
+  }
+})
+
+app.put('/api/admin/media-limits', requireAdmin, async (req, res) => {
+  try {
+    const value = await limits.save((req.body && req.body.value) || {}, 'admin')
+    console.log('media limits changed ->', JSON.stringify(value))
+    res.json({ code: 0, data: { value, summary: '已保存：视频 ≤ ' + value.maxDuration + ' 秒 / ' + value.maxVideoMB + 'MB，最多 ' + value.maxCount + ' 个，合计 ≤ ' + value.maxTotalMB + 'MB，列表显示 ' + value.feedThumbs + ' 个' } })
   } catch (e) {
     res.json({ code: 400, msg: e.message })
   }

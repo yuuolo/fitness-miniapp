@@ -30,6 +30,8 @@
           <video wx:if="{{md.type === 'video'}}" class="media-item" src="{{md.url || md.fileID}}" object-fit="cover" show-center-play-btn></video>
           <image wx:else class="media-item" src="{{md.fileID}}" mode="aspectFill" />
         </block>
+        <!-- 超过「列表最多显示数量」的部分，显示 +N，点进详情看全 -->
+        <view wx:if="{{item.hiddenMedia > 0}}" class="media-item media-more">+{{item.hiddenMedia}}</view>
       </view>
 
       <view class="between mt">

@@ -35,3 +35,14 @@
 .op-del:active {
   color: var(--danger);
 }
+
+/* 超出的媒体数量提示 */
+.media-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(35, 32, 29, 0.55);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 600;
+}

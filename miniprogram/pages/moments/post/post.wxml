@@ -13,10 +13,10 @@
         <view class="del" catchtap="remove" data-index="{{index}}">×</view>
         <view wx:if="{{item.sizeText}}" class="size">{{item.sizeText}}</view>
       </view>
-      <view wx:if="{{media.length < 9}}" class="media-item add" bindtap="chooseVideo">＋<text class="add-t">视频</text></view>
-      <view wx:if="{{media.length < 9}}" class="media-item add" bindtap="chooseImages">＋<text class="add-t">照片</text></view>
+      <view wx:if="{{media.length < maxCount}}" class="media-item add" bindtap="chooseVideo">＋<text class="add-t">视频</text></view>
+      <view wx:if="{{media.length < maxCount}}" class="media-item add" bindtap="chooseImages">＋<text class="add-t">照片</text></view>
     </view>
-    <view class="muted mt">视频限 {{maxDuration}} 秒，会自动压缩到 20 MB 以内；照片最多 9 张，合计不超过 40 MB。</view>
+    <view class="muted mt">{{limitText || '视频限 15 秒，最多 9 个，合计不超过 40 MB'}}；照片会压缩后再上传。</view>
     <view wx:if="{{totalText}}" class="muted">{{totalText}}</view>
   </view>
 

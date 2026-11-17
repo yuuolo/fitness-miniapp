@@ -4,6 +4,7 @@ const { query } = require('./db')
 const { fail, need } = require('./common')
 const { isInitialized } = require('./system')
 const features = require('./features')
+const limits = require('./limits')
 const layout = require('./layout')
 const { accessToken } = require('./notify')
 
@@ -48,17 +49,19 @@ function postJson(url, body) {
 }
 
 async function home({ openid, me }) {
-  const [initialized, featureState, blocks] = await Promise.all([
+  const [initialized, featureState, blocks, mediaLimits] = await Promise.all([
     isInitialized(),
     features.get(),
-    layout.forRole(me && me.role)
+    layout.forRole(me && me.role),
+    limits.get()
   ])
   if (!initialized || !me) {
     return {
       initialized: false,
       me: publicMe(me),
       features: featureState,
-      layout: blocks
+      layout: blocks,
+      mediaLimits
     }
   }
   return {
@@ -67,6 +70,8 @@ async function home({ openid, me }) {
     features: featureState,
     // 首页布局：管理员按角色配好的模块顺序
     layout: blocks,
+    // 上传与展示限制（管理页可调）
+    mediaLimits
   }
 }
 

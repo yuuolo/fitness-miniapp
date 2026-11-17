@@ -7,6 +7,7 @@ const {
 } = require('./common')
 const { accessToken } = require('./notify')
 const storage = require('./storage')
+const limits = require('./limits')
 
 const MAX_CONTENT = 500
 const MAX_MEDIA = 9
@@ -51,15 +52,38 @@ function momentView(m, me) {
 }
 
 // 图片/视频先由小程序上传，这里只收地址（云存储 fileID 或自建 https 地址）
-function cleanMedia(list) {
+// 数量 / 时长 / 体积都按管理页配置校验（limits 不传就用默认值）
+function cleanMedia(list, cfg) {
+  const c = cfg || limits.DEFAULTS
   const arr = Array.isArray(list) ? list : []
-  if (arr.length > MAX_MEDIA) fail('最多 ' + MAX_MEDIA + ' 个视频或照片')
-  return arr.map(x => ({
+  const maxCount = Math.min(c.maxCount || MAX_MEDIA, MAX_MEDIA)
+  if (arr.length > maxCount) fail('最多 ' + maxCount + ' 个视频或照片')
+
+  const out = arr.map(x => ({
     fileID: String(x.fileID || ''),
     type: x.type === 'video' ? 'video' : 'image',
     duration: Number(x.duration) || 0,
+    size: Number(x.size) || 0,
     thumb: String(x.thumb || '')
   })).filter(x => /^(cloud:\/\/|https:\/\/)/.test(x.fileID))
+
+  const mb = n => (n / 1024 / 1024).toFixed(1) + 'MB'
+  let total = 0
+  for (const m of out) {
+    if (m.type === 'video') {
+      if (m.duration > c.maxDuration) {
+        fail('视频 ' + m.duration + ' 秒，超过 ' + c.maxDuration + ' 秒上限，请拍短一点')
+      }
+      if (m.size > c.maxVideoMB * limits.MB) {
+        fail('视频 ' + mb(m.size) + '，超过 ' + c.maxVideoMB + 'MB 上限')
+      }
+    }
+    total += m.size
+  }
+  if (total > c.maxTotalMB * limits.MB) {
+    fail('这条动态合计 ' + mb(total) + '，超过 ' + c.maxTotalMB + 'MB 上限，少选几个或选小一点的')
+  }
+  return out
 }
 
 async function insertMoment(client, doc) {
@@ -95,7 +119,8 @@ async function postMoment({ me, data }) {
 
   const content = String(data.content || '').trim()
   if (content.length > MAX_CONTENT) fail('文字不能超过 ' + MAX_CONTENT + ' 个字')
-  const media = cleanMedia(data.media)
+  const cfg = await limits.get()
+  const media = cleanMedia(data.media, cfg)
   if (!content && !media.length) fail('写点什么，或者选一个视频/照片')
 
   const now = Date.now()
@@ -125,9 +150,21 @@ async function momentList({ me, data }) {
      order by created_at desc limit $2`,
     [before, PAGE_SIZE]
   )).rows.map(momentRow)
+  const cfg = await limits.get()
   return {
-    list: list.map(m => momentView(m, me)),
-    hasMore: list.length === PAGE_SIZE
+    // 列表里每条最多显示 feedThumbs 个，剩下的在详情页看
+    list: list.map(m => {
+      const view = momentView(m, me)
+      const all = view.media || []
+      if (all.length > cfg.feedThumbs) {
+        view.media = all.slice(0, cfg.feedThumbs)
+        view.mediaCount = all.length
+        view.hiddenMedia = all.length - cfg.feedThumbs
+      }
+      return view
+    }),
+    hasMore: list.length === PAGE_SIZE,
+    feedThumbs: cfg.feedThumbs
   }
 }
 
