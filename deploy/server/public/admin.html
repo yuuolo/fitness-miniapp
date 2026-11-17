@@ -434,7 +434,7 @@
       <h2>排行榜项目 <span class="tag">比什么、怎么比</span></h2>
       <div class="hint" style="margin-bottom:10px">
         排行榜按这里的项目排名。可以新增项目（如「农夫行走」），也可以把用不上的隐藏——
-        隐藏后排行榜不再显示，历史成绩仍保留。<br>
+        隐藏后排行榜不再显示，历史成绩仍保留；点「编辑」可以改名称、比法和排序。<br>
         <b>关于删除</b>：① 卧推/深蹲/硬拉是身体评分（三项合计）用的标准项，不能删，只能隐藏；
         ② 已经有成绩或竞赛在用的项目也不能删，可以隐藏。能删的项目删除按钮是可点的。
       </div>
@@ -1105,6 +1105,8 @@
   // ---------- 排行榜项目 ----------
   var liftData = { items: [], metrics: [] }
 
+  var editingLiftKey = ''
+
   function renderLifts(data) {
     liftData = data
     $('liftMetric').innerHTML = (data.metrics || []).map(function (m) {
@@ -1112,6 +1114,27 @@
     }).join('')
 
     $('liftList').innerHTML = (data.items || []).map(function (it) {
+      // 编辑态：直接在这一行展开表单
+      if (editingLiftKey === it.key) {
+        var metricOpts = (data.metrics || []).map(function (m) {
+          return '<option value="' + esc(m.key) + '"' + (m.key === it.metric ? ' selected' : '') + '>' +
+            esc(m.name) + '（' + esc(m.unit) + '）</option>'
+        }).join('')
+        var locked = it.key === 'bench' || it.key === 'squat' || it.key === 'deadlift'
+        return '<div class="feat" style="display:block">' +
+          '<div class="field"><label>项目名称</label>' +
+          '<input id="editLiftName" maxlength="12" value="' + esc(it.name) + '"></div>' +
+          '<div class="field"><label>怎么比</label>' +
+          '<select id="editLiftMetric"' + (locked ? ' disabled title="评分标准项，比法固定为估算 1RM"' : '') + '>' +
+          metricOpts + '</select></div>' +
+          '<div class="field"><label>排序（小的在前）</label>' +
+          '<input id="editLiftSort" type="number" step="10" value="' + esc(it.sort) + '"></div>' +
+          (locked ? '<div class="hint">卧推/深蹲/硬拉是身体评分用的标准项，只能改名称和排序。</div>' : '') +
+          '<div class="actions" style="margin-top:10px">' +
+          '<button class="primary" data-edit-save="' + esc(it.key) + '">保存</button>' +
+          '<button data-edit-cancel="1">取消</button>' +
+          '</div></div>'
+      }
       var delBtn = it.deletable
         ? '<button data-del="' + esc(it.key) + '">删除</button>'
         : '<button data-del="' + esc(it.key) + '" disabled title="' + esc(it.deleteHint) + '">删除</button>'
@@ -1126,11 +1149,51 @@
         hint +
         '</div>' +
         '<div class="row" style="gap:8px">' +
+        '<button data-edit="' + esc(it.key) + '">编辑</button>' +
         '<button data-toggle="' + esc(it.key) + '">' + (it.enabled ? '隐藏' : '启用') + '</button>' +
         delBtn +
         '</div>' +
         '</div>'
     }).join('')
+
+    Array.prototype.forEach.call($('liftList').querySelectorAll('[data-edit]'), function (btn) {
+      btn.addEventListener('click', function () {
+        editingLiftKey = this.getAttribute('data-edit')
+        renderLifts(liftData)
+      })
+    })
+
+    Array.prototype.forEach.call($('liftList').querySelectorAll('[data-edit-cancel]'), function (btn) {
+      btn.addEventListener('click', function () {
+        editingLiftKey = ''
+        renderLifts(liftData)
+      })
+    })
+
+    Array.prototype.forEach.call($('liftList').querySelectorAll('[data-edit-save]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var key = this.getAttribute('data-edit-save')
+        var name = $('editLiftName').value.trim()
+        var metricEl = $('editLiftMetric')
+        var metric = metricEl && !metricEl.disabled ? metricEl.value : ''
+        var sort = Number($('editLiftSort').value) || 999
+        if (!name) return showMsg($('liftMsg'), '项目名称不能为空', 'err')
+        var body = { key: key, name: name, sort: sort }
+        // 比法在锁定时不传，服务端会保持原值
+        if (metric) body.metric = metric
+        var saveBtn = this
+        saveBtn.disabled = true
+        api('/api/admin/lifts', { method: 'POST', body: body }).then(function () {
+          editingLiftKey = ''
+          showMsg($('liftMsg'), '已保存：' + name, 'ok')
+          return loadLifts()
+        }).catch(function (e) {
+          showMsg($('liftMsg'), e.message, 'err')
+        }).then(function () {
+          saveBtn.disabled = false
+        })
+      })
+    })
 
     Array.prototype.forEach.call($('liftList').querySelectorAll('[data-toggle]'), function (btn) {
       btn.addEventListener('click', function () {
@@ -1157,6 +1220,7 @@
   }
 
   function loadLifts() {
+    // 重新拉数据时保留编辑态（除非已保存/取消）
     return api('/api/admin/lifts').then(renderLifts)
   }
 

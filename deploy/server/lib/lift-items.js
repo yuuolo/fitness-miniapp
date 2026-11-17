@@ -103,6 +103,10 @@ async function enabledMap() {
  * 新增或修改一个排行榜项目（管理员）。
  * key 传空时自动生成；已有 key 只更新名称/计算方式/排序。
  */
+// 身体评分（SBD 合计）用的标准三项：比法固定为「估算 1RM」，不能删除
+const SBD_KEYS = ['bench', 'squat', 'deadlift']
+const SBD_REASON = '身体评分用的是「卧推+深蹲+硬拉」三项合计，删掉会算不出来；用不上可以隐藏'
+
 async function save({ me, data }) {
   need(me, 'admin')
   const name = String(data.name || '').trim()
@@ -114,6 +118,19 @@ async function save({ me, data }) {
   if (key) {
     const existing = await getItem(key)
     if (!existing) fail('项目不存在')
+
+    // 评分用的标准三项：比法必须是「估算 1RM」，否则三项合计（kg）算不出来
+    if (SBD_KEYS.includes(key) && metric !== 'oneRM') {
+      fail('卧推/深蹲/硬拉是身体评分用的标准项，比法不能改（只能改名称和排序）')
+    }
+    // 已经有成绩的项目改比法，会让历史数据对不上单位/口径
+    if (metric !== existing.metric) {
+      const used = (await query('select count(*)::int as n from strength_records where lift = $1', [key])).rows[0].n
+      if (used > 0) {
+        fail('这个项目已经有 ' + used + ' 条成绩，改比法会让历史成绩对不上；建议新建一个项目')
+      }
+    }
+
     await query('update lift_items set name = $2, metric = $3, unit = $4, sort = $5 where key = $1',
       [key, name, metric, METRICS[metric].unit, sort])
     return getItem(key)
@@ -141,10 +158,6 @@ async function setEnabled({ me, data }) {
   await query('update lift_items set enabled = $2 where key = $1', [item.key, enabled])
   return Object.assign(item, { enabled })
 }
-
-// 身体评分（SBD 合计）用的标准三项：不能删除，可以隐藏
-const SBD_KEYS = ['bench', 'squat', 'deadlift']
-const SBD_REASON = '身体评分用的是「卧推+深蹲+硬拉」三项合计，删掉会算不出来；用不上可以隐藏'
 
 /**
  * 判断一个项目能不能删，以及不能删的原因（管理页直接展示，不用点了才知道）
