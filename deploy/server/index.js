@@ -100,7 +100,7 @@ const INTERNAL_EXPORTS = new Set([
   'LIFTS', 'bmiOf', 'oneRM', 'scoreBody', 'publicMe', 'isInitialized',
   'markNoShows', 'remindClasses', 'remindExpiringCards', 'statusOf'
 ])
-const MODULES = ['system', 'member', 'admin', 'fitness', 'moment', 'competition']
+const MODULES = ['system', 'member', 'admin', 'fitness', 'moment', 'competition', 'challenge']
 const handlers = {}
 for (const name of MODULES) {
   const file = path.join(__dirname, 'lib', name + '.js')
@@ -145,6 +145,17 @@ const ACTION_FEATURE = {
   bodyTrend: 'fitness',
   parseBodyReport: 'fitness',
   ocrBodyReport: 'fitness',
+  // 会员挑战（裁判制）
+  createChallenge: 'rank',
+  pickReferee: 'rank',
+  respondChallenge: 'rank',
+  refereeRespond: 'rank',
+  submitChallengeVideo: 'rank',
+  judgeChallenge: 'rank',
+  challengeList: 'rank',
+  challengeDetail: 'rank',
+  challengeSummary: 'rank',
+  refereeOptions: 'rank',
   // 排行榜与竞赛
   leaderboard: 'rank',
   listLiftItems: 'rank',

@@ -210,3 +210,58 @@ update members set role = 'admin' where role = 'staff';
 
 -- 运动数据补「距离」列（骑行/跑步/游泳用），老库升级用
 alter table activity_records add column if not exists distance numeric not null default 0;
+
+
+-- ---------- 会员挑战（裁判制） ----------
+create table if not exists challenges (
+  id             text primary key,
+  challenger     text not null,
+  opponent       text not null,
+  referee        text not null default '',
+  lift_key       text not null default '',
+  metric         text not null default 'absolute',
+  trash_talk     text not null default '',
+  status         text not null default 'pending',
+  referee_state  text not null default 'invited',   -- invited / accepted / declined
+  judge_result   text not null default '',          -- win_challenger / win_opponent / draw
+  judge_note     text not null default '',
+  judge_history  jsonb not null default '[]'::jsonb,
+  judged_at      bigint not null default 0,
+  expire_at      bigint not null default 0,         -- 应战截止
+  submit_by      bigint not null default 0,         -- 视频提交截止
+  judge_by       bigint not null default 0,         -- 裁判判决截止
+  created_at     bigint not null default 0,
+  finished_at    bigint not null default 0
+);
+create index if not exists idx_challenges_opponent on challenges (opponent, status);
+create index if not exists idx_challenges_challenger on challenges (challenger, status);
+create index if not exists idx_challenges_referee on challenges (referee, status);
+create index if not exists idx_challenges_created on challenges (created_at desc);
+
+create table if not exists challenge_videos (
+  id           text primary key,
+  challenge_id text not null references challenges(id) on delete cascade,
+  openid       text not null,
+  video_url    text not null,
+  video_thumb  text not null default '',
+  uploaded_by  text not null default '',
+  cheat_flag   boolean not null default false,
+  cheat_reason text not null default '',
+  created_at   bigint not null default 0
+);
+create index if not exists idx_challenge_videos on challenge_videos (challenge_id);
+
+create table if not exists challenge_comments (
+  id           text primary key,
+  challenge_id text not null references challenges(id) on delete cascade,
+  openid       text not null,
+  content      text not null,
+  like_count   int not null default 0,
+  status       text not null default 'normal',
+  created_at   bigint not null default 0
+);
+create index if not exists idx_challenge_comments on challenge_comments (challenge_id, created_at);
+
+-- 会员的挑战相关状态：作弊次数 + 禁赛截止
+alter table members add column if not exists challenge_cheat_count int not null default 0;
+alter table members add column if not exists challenge_ban_until bigint not null default 0;

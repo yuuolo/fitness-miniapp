@@ -88,6 +88,9 @@ function memberRow(r) {
     bestLift: r.best_lift || {},
     sbdTotal: r.sbd_total || 0,
     latestBody: r.latest_body || null,
+    // 挑战：作弊次数 + 禁赛截止（禁赛期间不能发起/应战）
+    challengeCheatCount: r.challenge_cheat_count || 0,
+    challengeBanUntil: Number(r.challenge_ban_until) || 0,
     createdAt: r.created_at || 0
   }
 }
