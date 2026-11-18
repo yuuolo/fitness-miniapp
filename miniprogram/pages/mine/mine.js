@@ -5,6 +5,7 @@ const features = require('../../utils/features')
 Page({
   data: {
     challengeBadge: 0,
+    subscribeTickets: 0,
     loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', features: {}
   },
 
@@ -17,6 +18,7 @@ Page({
 
   onShow() {
     this.loadChallengeBadge()
+    this.loadSubscribeTickets()
     this.syncTabBar()
     this.load()
   },
@@ -58,11 +60,24 @@ Page({
   },
 
   // 算法说明书：评分、排行榜项目、能力图
+  // 订阅待发提醒数量
+  loadSubscribeTickets() {
+    api.call('mySubscriptions', {}, { silent: true }).then(r => {
+      const tickets = (r && r.topics) || {}
+      const total = Object.keys(tickets).reduce((n, k) => n + (Number(tickets[k]) || 0), 0)
+      this.setData({ subscribeTickets: total })
+    }, () => {})
+  },
+
   // 挑战待办红点
   loadChallengeBadge() {
     api.call('challengeSummary', {}, { silent: true }).then(r => {
       this.setData({ challengeBadge: (r && r.badge) || 0 })
     }, () => {})
+  },
+
+  goSubscribe() {
+    wx.navigateTo({ url: '/pages/subscribe/subscribe' })
   },
 
   goChallenges() {

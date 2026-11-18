@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/subscribe/subscribe",
     "pages/mine/mine",
     "pages/profile/profile",
     "pages/fitness/fitness",

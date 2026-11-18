@@ -164,6 +164,7 @@ const ACTION_FEATURE = {
   notifyTopicTemplates: 'rank',
   subscribeTopic: 'rank',
   mySubscriptions: 'rank',
+  clearSubscription: 'rank',
   // 排行榜与竞赛
   leaderboard: 'rank',
   listLiftItems: 'rank',

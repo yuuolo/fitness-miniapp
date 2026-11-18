@@ -860,6 +860,11 @@ async function main() {
     })
     const after = await act('mySubscriptions', FAN)
     assert.ok(after.topics.moments >= 0, '群发后票数不能是负数')
+    // 清零：用户停止提醒
+    await act('subscribeTopic', FAN, { topic: 'rankScore' })
+    const cleared = await act('clearSubscription', FAN, { topic: 'rankScore' })
+    assert.strictEqual(cleared.topics.rankScore, 0, '清零后票数应为 0')
+
     ok('内容更新通知：订阅票管理 + 群发容错')
   }
   }

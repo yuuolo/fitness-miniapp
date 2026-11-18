@@ -1,0 +1,38 @@
+<view class="page">
+  <view class="card hero-sub">
+    <view class="hero-title">微信提醒</view>
+    <view class="muted">授权后，有新内容会推送到你的微信。一次授权只能收一条，想持续收就多点几次。</view>
+    <view class="hero-count">
+      <text class="num">{{total}}</text>
+      <text class="muted"> 条待发提醒</text>
+    </view>
+    <button class="btn block" bindtap="subscribeAll" disabled="{{subscribing || !ready}}">
+      {{subscribing ? '授权中…' : (ready ? '一键订阅内容提醒' : '正在准备…')}}
+    </button>
+    <button class="btn ghost block mt" bindtap="subscribeChallenge" disabled="{{challengeSubscribing || !ready}}">
+      {{challengeSubscribing ? '授权中…' : '订阅挑战提醒（有人挑战我 / 该我判了 / 判定结果）'}}
+    </button>
+    <view wx:if="{{lastError}}" class="err">{{lastError}}</view>
+  </view>
+
+  <view class="section-title">提醒内容</view>
+  <view class="card">
+    <view wx:for="{{topics}}" wx:key="key" class="sub-item">
+      <view class="grow">
+        <view class="sub-name">{{item.name}}</view>
+        <view class="muted">{{item.desc}}</view>
+      </view>
+      <view class="sub-right">
+        <text class="ticket {{item.tickets ? 'on' : ''}}">{{item.tickets}} 条</text>
+        <text wx:if="{{item.tickets}}" class="clear" data-topic="{{item.key}}" bindtap="clearTopic">清零</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card tip-card">
+    <view class="muted">说明</view>
+    <view class="muted mt">· 微信订阅消息是「一次授权发一条」，这是微信的限制</view>
+    <view class="muted">· 发一条消耗一张票，票用完要回来再点订阅</view>
+    <view class="muted">· 挑战相关的提醒（有人挑战你、判定结果）在发起/应战时自动申请</view>
+  </view>
+</view>

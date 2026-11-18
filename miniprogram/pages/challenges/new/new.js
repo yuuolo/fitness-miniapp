@@ -84,7 +84,7 @@ Page(Object.assign({}, memberSearch.mixin, {
     if (this.data.submitting) return
     this.setData({ submitting: true })
     // 先申请订阅授权：同意后，对方的应战 / 判定结果才能推送到微信
-    subscribe.request(['invite', 'result']).then(() => api.call('createChallenge', {
+    subscribe.requestSync(['invite', 'result']).then(() => api.call('createChallenge', {
       opponent: opponent._id,
       referee: referee._id,
       liftKey: lift.key || lift.name,

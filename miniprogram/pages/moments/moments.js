@@ -47,18 +47,6 @@ Page({
     this.loadMore()
   },
 
-  // 订阅「友圈新视频」微信提醒
-  subscribeMoments() {
-    subscribe.requestTopics(['moments']).then(topics => {
-      if (!topics.length) {
-        wx.showToast({ title: '没订阅成功，可以稍后再试', icon: 'none' })
-        return
-      }
-      this.setData({ subscribed: true })
-      wx.showToast({ title: '订阅成功，有新视频会通知你' })
-    })
-  },
-
   // 点搜索图标：展开/收起搜索栏；收起时清掉搜索条件并恢复全部
   toggleSearch() {
     const open = !this.data.searchOpen

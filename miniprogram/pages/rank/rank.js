@@ -25,17 +25,6 @@ Page({
   },
 
   // 订阅排行榜更新（综合评分榜 / 力量榜，可分别订阅）
-  subscribeRank(e) {
-    const topic = e.currentTarget.dataset.topic
-    subscribe.requestTopics([topic]).then(topics => {
-      if (!topics.length) {
-        wx.showToast({ title: '没订阅成功，可以稍后再试', icon: 'none' })
-        return
-      }
-      wx.showToast({ title: '订阅成功，榜单更新会通知你' })
-    })
-  },
-
   onLoad(query) {
     // 从首页「综合评分榜」入口进来时，带上 lift=score
     const lift = (query && query.lift) || ''

@@ -81,7 +81,7 @@ Page({
       content: text,
       success: r => {
         if (!r.confirm) return
-        subscribe.request(['result'])
+        subscribe.requestSync(['result'])
           .then(() => api.call('respondChallenge', { id: this.data.id, decision, vetoReferee }, { loading: '处理中' }))
           .then(() => { sfx.playSave(); this.load() })
           .catch(err => wx.showToast({ title: err.message || '操作失败', icon: 'none' }))
@@ -92,7 +92,7 @@ Page({
   // ---------- 裁判接单 / 拒绝 ----------
   refereeAct(e) {
     const decision = e.currentTarget.dataset.decision
-    subscribe.request(['start'])
+    subscribe.requestSync(['start'])
       .then(() => api.call('refereeRespond', { id: this.data.id, decision }, { loading: '处理中' }))
       .then(() => this.load())
       .catch(err => wx.showToast({ title: err.message || '操作失败', icon: 'none' }))

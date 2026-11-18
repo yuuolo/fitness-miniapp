@@ -48,4 +48,16 @@ async function mySubscriptions({ me }) {
   return { topics, names, max: notifyTopics.MAX_TICKETS }
 }
 
-module.exports = { notifyTopicTemplates, subscribeTopic, mySubscriptions }
+// 停止某话题提醒：把票清零
+async function clearSubscription({ me, data }) {
+  need(me, 'member')
+  const topic = String((data && data.topic) || '')
+  assertTopic(topic)
+  await query(
+    'update notify_subscriptions set tickets = 0, updated_at = $3 where openid = $1 and topic = $2',
+    [me._id, topic, Date.now()]
+  )
+  return mySubscriptions({ me })
+}
+
+module.exports = { notifyTopicTemplates, subscribeTopic, mySubscriptions, clearSubscription }

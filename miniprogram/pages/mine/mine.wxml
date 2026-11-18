@@ -44,6 +44,11 @@
       <view wx:if="{{features.fitness !== false}}" class="menu-item" bindtap="goActivity">
         <view class="mi mi-run"></view><text class="grow">记录运动</text><text class="chevron">›</text>
       </view>
+      <view class="menu-item" bindtap="goSubscribe">
+        <view class="mi mi-bell"></view><text class="grow">微信提醒</text>
+        <text wx:if="{{subscribeTickets}}" class="tag orange">{{subscribeTickets}}</text>
+        <text class="chevron">›</text>
+      </view>
       <view class="menu-item" bindtap="goManual">
         <view class="mi mi-book"></view><text class="grow">算法说明</text><text class="chevron">›</text>
       </view>

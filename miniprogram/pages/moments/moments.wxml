@@ -11,13 +11,6 @@
       <button class="btn" bindtap="goPost">发一条</button>
     </view>
 
-    <!-- 订阅提醒：有新视频时微信推送（一次授权一条） -->
-    <view class="sub-tip" bindtap="subscribeMoments">
-      <text class="sub-ico">🔔</text>
-      <text class="grow">有新视频提醒我</text>
-      <text class="muted">{{subscribed ? '已订阅' : '去订阅 ›'}}</text>
-    </view>
-
     <!-- 搜索：点图标才展开；输入 1 个字就开始预搜；可只看视频 -->
     <view wx:if="{{searchOpen}}" class="search-bar">
       <view class="search-box">
