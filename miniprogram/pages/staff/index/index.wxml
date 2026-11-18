@@ -1,5 +1,8 @@
 <view class="page">
   <view class="card mt">
+    <view wx:if="{{isCoach}}" class="list-item" data-url="/pages/staff/challenges/challenges" bindtap="go">
+      <text class="grow">我当裁判的挑战</text><text class="muted">›</text>
+    </view>
     <view class="list-item" data-url="/pages/staff/competitions/competitions" bindtap="go"><text class="grow">竞赛管理</text><text class="muted">›</text></view>
     <view wx:if="{{isCoach}}" class="list-item" data-url="/pages/staff/members/members?manage={{isStaff ? 1 : 0}}&admin={{isAdmin ? 1 : 0}}" bindtap="go">
       <text class="grow">会员资料与体测</text><text class="muted">›</text>

@@ -1,0 +1,96 @@
+<view class="page">
+  <view class="section-title">挑战对象</view>
+  <view class="card">
+    <view wx:if="{{opponent}}" class="between">
+      <view class="row" style="gap:12rpx;align-items:center">
+        <text class="pick-name">{{opponent.name}}</text>
+        <text class="muted">{{opponent.phone || ''}}</text>
+      </view>
+      <text class="muted" bindtap="clearOpponent">更换</text>
+    </view>
+    <view wx:else class="between">
+      <text class="muted">还没选对手</text>
+      <view class="pick-btn {{memberOpen ? 'on' : ''}}" bindtap="toggleMemberOpen">👤 选择会员</view>
+    </view>
+
+    <block wx:if="{{memberOpen}}">
+      <view class="row mt">
+        <input class="grow" value="{{keyword}}" bindinput="onKeyword" bindconfirm="clearKeyword"
+          confirm-type="search" placeholder="输入昵称或手机号，1 个字就能搜" />
+        <text wx:if="{{keyword}}" class="muted" bindtap="clearKeyword">清空</text>
+      </view>
+      <view wx:if="{{memberLoading}}" class="muted mt">搜索中…</view>
+      <view wx:elif="{{memberEmpty}}" class="muted mt">没有找到匹配「{{keyword}}」的会员</view>
+      <view wx:if="{{members.length}}" class="mt">
+        <view wx:for="{{members}}" wx:key="_id" class="list-item" data-openid="{{item._id}}" bindtap="pickMember">
+          <view class="grow">
+            <view>{{item.name}}</view>
+            <view class="muted">{{item.phone || '未填手机号'}}</view>
+          </view>
+          <text class="muted">选择</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="section-title">主裁判（必须是教练）</view>
+  <view class="card">
+    <view wx:if="{{referee}}" class="between">
+      <view class="row" style="gap:12rpx;align-items:center">
+        <text class="pick-name">{{referee.name}}</text>
+        <text class="tag orange">教练</text>
+        <text wx:if="{{referee.cheatCount}}" class="tag">曾判作弊 {{referee.cheatCount}} 次</text>
+      </view>
+      <text class="muted" bindtap="clearReferee">更换</text>
+    </view>
+    <view wx:else class="between">
+      <text class="muted">还没选裁判</text>
+      <view class="pick-btn {{refereeOpen ? 'on' : ''}}" bindtap="toggleReferee">👤 选择教练</view>
+    </view>
+
+    <block wx:if="{{refereeOpen}}">
+      <view wx:if="{{!referees.length}}" class="muted mt">还没有教练账号，先让管理员设置教练角色</view>
+      <view wx:if="{{referees.length}}" class="mt">
+        <view wx:for="{{referees}}" wx:key="_id" class="list-item" data-index="{{index}}" bindtap="pickReferee">
+          <view class="grow">
+            <view>{{item.name}}</view>
+            <view wx:if="{{item.cheatCount}}" class="muted">历史判作弊 {{item.cheatCount}} 次</view>
+          </view>
+          <text class="muted">选择</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="section-title">挑战内容</view>
+  <view class="card">
+    <view class="form-row">
+      <text class="label">项目</text>
+      <picker range="{{lifts}}" range-key="name" value="{{liftIndex}}" bindchange="onLift">
+        <view class="picker-text">{{lifts[liftIndex].name}} ›</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="label">比法</text>
+      <picker range="{{metrics}}" range-key="name" value="{{metricIndex}}" bindchange="onMetric">
+        <view class="picker-text">{{metrics[metricIndex].name}} ›</view>
+      </picker>
+    </view>
+    <view class="muted">{{metrics[metricIndex].desc}}</view>
+
+    <view class="form-row mt">
+      <text class="label">垃圾话</text>
+      <input value="{{trashTalk}}" maxlength="20" bindinput="onTrash" placeholder="选填，最多 20 字" />
+    </view>
+  </view>
+
+  <view class="card rule">
+    <view class="muted">规则速览</view>
+    <view class="muted mt">· 对方 2 小时内应战，超时失效</view>
+    <view class="muted">· 应战后双方各传 1 段视频，2 小时内交齐</view>
+    <view class="muted">· 视频交齐后 2 小时内裁判判定，3 小时内可改判</view>
+    <view class="muted">· 每人同时最多 2 场挑战</view>
+  </view>
+
+  <button class="btn block" bindtap="submit" disabled="{{submitting}}">发出挑战</button>
+</view>

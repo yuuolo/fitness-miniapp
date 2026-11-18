@@ -1,0 +1,28 @@
+/* 挑战大厅 */
+.challenge-head { display: flex; align-items: center; gap: 16rpx; margin: 8rpx 0 16rpx; }
+.challenge-head .title { font-size: 34rpx; font-weight: 600; color: var(--ink); }
+.todo-bar {
+  display: flex; flex-wrap: wrap; gap: 16rpx;
+  background: var(--brand-soft); color: var(--brand-strong);
+  border-radius: var(--r-lg); padding: 14rpx 20rpx; font-size: 24rpx; margin-bottom: 16rpx;
+}
+.tabs { display: flex; gap: 8rpx; margin-bottom: 16rpx; }
+.tab {
+  flex: 1; text-align: center; font-size: 25rpx; color: var(--sub);
+  background: var(--fill); border-radius: var(--r-pill); padding: 12rpx 0;
+}
+.tab.on { background: var(--brand); color: #fff; font-weight: 600; }
+.challenge-card { display: block; }
+.vs-row { display: flex; align-items: center; gap: 12rpx; margin: 14rpx 0 6rpx; }
+.side { flex: 1; }
+.side .name { font-size: 30rpx; font-weight: 600; color: var(--ink); }
+.side.win .name { color: var(--brand); }
+.vs { font-size: 22rpx; color: var(--muted); }
+.trash {
+  font-size: 24rpx; color: var(--sub); background: var(--fill);
+  border-radius: var(--r-sm); padding: 10rpx 16rpx; margin: 10rpx 0;
+}
+.foot { margin-top: 12rpx; }
+.countdown { font-size: 24rpx; color: var(--brand-strong); }
+.result { font-size: 24rpx; color: var(--ink); font-weight: 600; }
+.list-hint { text-align: center; color: var(--muted); font-size: 24rpx; padding: 20rpx 0; }

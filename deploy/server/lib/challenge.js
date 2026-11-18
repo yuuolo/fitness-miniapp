@@ -537,13 +537,5 @@ module.exports = {
   challengeList,
   challengeDetail,
   challengeSummary,
-  refereeOptions,
-  // 供测试/内部使用
-  STATUS_NAMES,
-  RESULT_NAMES,
-  ACCEPT_MS,
-  VIDEO_MS,
-  JUDGE_MS,
-  REJUDGE_MS,
-  MAX_ACTIVE
+  refereeOptions
 }

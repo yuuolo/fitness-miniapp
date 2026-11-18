@@ -4,6 +4,7 @@ const features = require('../../utils/features')
 
 Page({
   data: {
+    challengeBadge: 0,
     loaded: false, initialized: true, me: null, roleName: '', isStaff: false, blockedText: '', features: {}
   },
 
@@ -15,6 +16,7 @@ Page({
   },
 
   onShow() {
+    this.loadChallengeBadge()
     this.syncTabBar()
     this.load()
   },
@@ -56,6 +58,17 @@ Page({
   },
 
   // 算法说明书：评分、排行榜项目、能力图
+  // 挑战待办红点
+  loadChallengeBadge() {
+    api.call('challengeSummary', {}, { silent: true }).then(r => {
+      this.setData({ challengeBadge: (r && r.badge) || 0 })
+    }, () => {})
+  },
+
+  goChallenges() {
+    wx.navigateTo({ url: '/pages/challenges/list/list' })
+  },
+
   goActivity() {
     wx.navigateTo({ url: '/pages/activity/activity' })
   },

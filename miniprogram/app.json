@@ -19,6 +19,10 @@
     "pages/staff/competition-edit/competition-edit",
     "pages/staff/competition-entry/competition-entry",
     "pages/activity/activity",
+    "pages/challenges/list/list",
+    "pages/challenges/new/new",
+    "pages/challenges/detail/detail",
+    "pages/staff/challenges/challenges",
     "pages/manual/manual"
   ],
   "window": {

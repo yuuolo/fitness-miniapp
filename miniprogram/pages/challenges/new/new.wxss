@@ -1,0 +1,9 @@
+/* 发起挑战 */
+.pick-btn {
+  display: inline-flex; align-items: center; gap: 6rpx;
+  font-size: 26rpx; color: var(--brand-strong); background: var(--fill);
+  border-radius: var(--r-pill); padding: 10rpx 22rpx;
+}
+.pick-btn.on { background: var(--brand); color: #fff; }
+.pick-name { font-size: 30rpx; font-weight: 600; color: var(--ink); }
+.rule { margin-top: 16rpx; }

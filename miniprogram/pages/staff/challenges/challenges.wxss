@@ -1,0 +1,3 @@
+/* 教练端挑战 */
+.todo-row { display: flex; gap: 12rpx; margin-top: 10rpx; }
+.vs { font-size: 30rpx; font-weight: 600; color: var(--ink); margin: 12rpx 0 6rpx; }

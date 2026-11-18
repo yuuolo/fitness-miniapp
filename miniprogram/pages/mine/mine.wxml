@@ -30,6 +30,11 @@
       <view wx:if="{{features.fitness !== false}}" class="menu-item" bindtap="goFitness">
         <view class="mi mi-chart"></view><text class="grow">我的身体数据</text><text class="chevron">›</text>
       </view>
+      <view wx:if="{{features.rank !== false}}" class="menu-item" bindtap="goChallenges">
+        <view class="mi mi-duel"></view><text class="grow">会员挑战</text>
+        <text wx:if="{{challengeBadge}}" class="tag orange">{{challengeBadge}}</text>
+        <text class="chevron">›</text>
+      </view>
       <view wx:if="{{features.rank !== false}}" class="menu-item" bindtap="goRank">
         <view class="mi mi-trophy"></view><text class="grow">力量排行榜</text><text class="chevron">›</text>
       </view>

@@ -1,0 +1,61 @@
+<view class="page">
+  <!-- 顶部：发起挑战 + 待办提示 -->
+  <view class="challenge-head">
+    <view class="grow">
+      <view class="title">挑战</view>
+      <view class="muted">{{counts.badge ? '有 ' + counts.badge + ' 件事等你处理' : '约一场，让教练当裁判'}}</view>
+    </view>
+    <button class="btn" bindtap="goNew">发起挑战</button>
+  </view>
+
+  <!-- 待办条 -->
+  <view wx:if="{{counts.badge}}" class="todo-bar">
+    <text wx:if="{{counts.incoming}}">待我应战 {{counts.incoming}}</text>
+    <text wx:if="{{counts.toSubmit}}">待我交视频 {{counts.toSubmit}}</text>
+    <text wx:if="{{counts.judgingInvite}}">裁判待接单 {{counts.judgingInvite}}</text>
+    <text wx:if="{{counts.toJudge}}">待我判决 {{counts.toJudge}}</text>
+  </view>
+
+  <!-- 筛选 -->
+  <view class="tabs">
+    <view wx:for="{{tabs}}" wx:key="key" class="tab {{tab === item.key ? 'on' : ''}}"
+      data-tab="{{item.key}}" bindtap="pickTab">{{item.name}}</view>
+  </view>
+
+  <view wx:if="{{loaded && !list.length}}" class="card muted">
+    还没有挑战。点右上角「发起挑战」，选一个项目、指定一位教练当裁判，约起来。
+  </view>
+
+  <view wx:for="{{list}}" wx:key="_id" class="card challenge-card" data-id="{{item._id}}" bindtap="open">
+    <view class="between">
+      <view class="row" style="gap:12rpx;align-items:center">
+        <text class="tag orange">{{item.liftName}}</text>
+        <text class="tag">{{item.metricName}}</text>
+        <text class="tag {{item.status === 'ready' || item.status === 'accepted' ? 'orange' : ''}}">{{item.statusName}}</text>
+      </view>
+      <text class="muted">{{item.createdDate}}</text>
+    </view>
+
+    <view class="vs-row">
+      <view class="side {{item.judgeResult && item.judgeResult.indexOf('challenger') > 0 ? 'win' : ''}}">
+        <text class="name">{{item.challenger.name}}</text>
+      </view>
+      <text class="vs">VS</text>
+      <view class="side {{item.judgeResult && item.judgeResult.indexOf('opponent') > 0 ? 'win' : ''}}">
+        <text class="name">{{item.opponent.name}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{item.trashTalk}}" class="trash">「{{item.trashTalk}}」</view>
+
+    <view class="between foot">
+      <text class="muted">裁判：{{item.referee.name}}<text wx:if="{{item.referee.isMe}}" class="tag orange">我</text></text>
+      <text wx:if="{{item.countdownText}}" class="countdown">{{item.countdownText}}</text>
+      <text wx:elif="{{item.judgeResultName}}" class="result">{{item.judgeResultName}}</text>
+      <text wx:else class="muted">{{item.line}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="list-hint">加载中…</view>
+  <view wx:elif="{{loaded && !hasMore && list.length}}" class="list-hint">没有更多了</view>
+</view>
