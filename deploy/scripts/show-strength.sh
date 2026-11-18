@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# ⚠️ 这个脚本直接读生产库 gym（只读也要确认，避免误以为是测试库）
+if [ "${ALLOW_PROD_WRITE:-}" != "1" ]; then
+  echo "已拒绝执行：$0 直连生产库。确认请加 ALLOW_PROD_WRITE=1"
+  exit 1
+fi
+
 # 看线上力量记录明细，判断默认应该选中哪一项
 set -uo pipefail
 cd /opt/gym

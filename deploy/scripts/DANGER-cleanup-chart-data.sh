@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# ⚠️ 危险：这个脚本会删除生产库里**所有**力量成绩（历史事故来源之一）
+# 必须显式确认：ALLOW_PROD_DELETE=1 bash DANGER-cleanup-chart-data.sh
+if [ "${ALLOW_PROD_DELETE:-}" != "1" ]; then
+  echo '已拒绝执行：这会删除生产库的全部力量成绩。'
+  echo '确实要清空的话：ALLOW_PROD_DELETE=1 bash $0'
+  exit 1
+fi
+
 # 清理图表验证用的测试数据（保留原有账号与数据）
 set -uo pipefail
 cd /opt/gym

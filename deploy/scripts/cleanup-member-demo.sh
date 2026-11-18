@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# ⚠️ 这个脚本直接操作生产库 gym，执行前请确认
+if [ "${ALLOW_PROD_WRITE:-}" != "1" ]; then
+  echo "已拒绝执行：$0 直接操作生产库。确认请加 ALLOW_PROD_WRITE=1"
+  exit 1
+fi
+
 # 把小菜菜的身体数据恢复到最初的干净状态（best_lift 空 / latest_body 空 / height 0）
 set -uo pipefail
 cd /opt/gym
