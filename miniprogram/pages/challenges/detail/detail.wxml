@@ -152,6 +152,33 @@
       </view>
     </block>
 
+    <!-- 大家怎么看 -->
+    <view class="section-title">会员意见（{{c.commentCount}}）</view>
+    <view class="card">
+      <view wx:if="{{!c.comments.length}}" class="muted">还没有人发表意见，来说两句</view>
+
+      <view wx:for="{{c.comments}}" wx:key="_id" class="comment">
+        <view class="between">
+          <text class="comment-author">{{item.authorName}}</text>
+          <text class="muted">{{item.time}}</text>
+        </view>
+        <view class="comment-body">{{item.content}}</view>
+        <view class="comment-ops">
+          <text class="like {{item.likedByMe ? 'on' : ''}}" data-id="{{item._id}}" bindtap="toggleLike">
+            ♥ {{item.likeCount || 0}}
+          </text>
+          <text wx:if="{{item.canDelete}}" class="op-del" data-id="{{item._id}}" bindtap="deleteComment">删除</text>
+        </view>
+      </view>
+
+      <view wx:if="{{c.canComment}}" class="comment-input-bar">
+        <input class="grow comment-input" value="{{commentText}}" maxlength="100"
+          bindinput="onCommentInput" bindconfirm="sendComment" confirm-type="send"
+          placeholder="发表你的看法（最多 100 字）" />
+        <button class="btn" bindtap="sendComment" disabled="{{sending || !commentText}}">发送</button>
+      </view>
+    </view>
+
     <view class="share-tip muted">点右上角「···」转发，邀请大家来看这场挑战</view>
   </block>
 </view>

@@ -265,3 +265,14 @@ create index if not exists idx_challenge_comments on challenge_comments (challen
 -- 会员的挑战相关状态：作弊次数 + 禁赛截止
 alter table members add column if not exists challenge_cheat_count int not null default 0;
 alter table members add column if not exists challenge_ban_until bigint not null default 0;
+
+-- 评论点赞（一人一次，可取消）
+create table if not exists challenge_comment_likes (
+  comment_id text not null references challenge_comments(id) on delete cascade,
+  openid     text not null,
+  created_at bigint not null default 0,
+  primary key (comment_id, openid)
+);
+
+-- 判定时的成绩快照（「以下克上」徽章用）
+alter table challenges add column if not exists judge_snapshot jsonb not null default '{}'::jsonb;

@@ -44,3 +44,21 @@
 }
 .cheat-pill.on { background: var(--danger); color: #fff; }
 .share-tip { text-align: center; font-size: 24rpx; margin: 24rpx 0 8rpx; }
+
+/* 评论 */
+.comment { padding: 14rpx 0; border-bottom: 1px solid var(--line); }
+.comment:last-child { border-bottom: none; }
+.comment-author { font-size: 26rpx; font-weight: 600; color: var(--ink); }
+.comment-body { font-size: 27rpx; color: var(--sub); margin: 8rpx 0; line-height: 1.5; }
+.comment-ops { display: flex; align-items: center; gap: 28rpx; }
+.like { font-size: 24rpx; color: var(--muted); }
+.like.on { color: var(--danger); }
+.op-del { font-size: 24rpx; color: var(--muted); }
+.comment-input-bar {
+  display: flex; align-items: center; gap: 16rpx; margin-top: 18rpx;
+  padding-top: 18rpx; border-top: 1px solid var(--line);
+}
+.comment-input {
+  background: var(--fill); border-radius: var(--r-pill);
+  padding: 14rpx 24rpx; font-size: 26rpx;
+}

@@ -20,6 +20,7 @@
     "pages/staff/competition-entry/competition-entry",
     "pages/activity/activity",
     "pages/challenges/list/list",
+    "pages/challenges/board/board",
     "pages/challenges/new/new",
     "pages/challenges/detail/detail",
     "pages/staff/challenges/challenges",

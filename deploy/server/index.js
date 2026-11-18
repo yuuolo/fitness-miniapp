@@ -156,6 +156,10 @@ const ACTION_FEATURE = {
   challengeDetail: 'rank',
   challengeSummary: 'rank',
   refereeOptions: 'rank',
+  commentChallenge: 'rank',
+  deleteChallengeComment: 'rank',
+  likeChallengeComment: 'rank',
+  challengeBoard: 'rank',
   // 排行榜与竞赛
   leaderboard: 'rank',
   listLiftItems: 'rank',

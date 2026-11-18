@@ -17,7 +17,7 @@ const TABLES = [
   'config', 'members',
   'body_records', 'strength_records', 'activity_records', 'moments', 'media',
   'competitions', 'competition_entries',
-  'challenges', 'challenge_videos', 'challenge_comments'
+  'challenges', 'challenge_videos', 'challenge_comments', 'challenge_comment_likes'
 ]
 
 let passed = 0
@@ -752,6 +752,79 @@ async function main() {
     const summary = await act('challengeSummary', RIVAL)
     assert.ok(summary.incoming >= 2, '对手应看到 2 条待应战')
     ok('挑战 P1：发起/裁判/应战/视频/判定/改判/作弊禁赛/上限')
+  }
+
+  { // 会员挑战 P2：评论、点赞、挑战榜、徽章
+    const C = 'openid-p2-challenger'
+    const O = 'openid-p2-opponent'
+    const J = 'openid-p2-judge'
+    for (const id of [C, O, J]) await ensureMember(id)
+    await act('setRole', ADMIN, { openid: C, role: 'member' })
+    await act('setRole', ADMIN, { openid: O, role: 'member' })
+    await act('setRole', ADMIN, { openid: J, role: 'coach' })
+    await act('updateProfile', C, { nickName: '挑战甲', phone: '13800001111' })
+    await act('updateProfile', O, { nickName: '挑战乙', phone: '13800002222' })
+
+    const c = await act('createChallenge', C, { opponent: O, referee: J, liftKey: 'bench' })
+    await act('refereeRespond', J, { id: c._id, decision: 'accept' })
+    await act('respondChallenge', O, { id: c._id, decision: 'accept' })
+    await act('submitChallengeVideo', C, { id: c._id, videoUrl: 'https://gym.example.com/api/media/p2v1' })
+    await act('submitChallengeVideo', O, { id: c._id, videoUrl: 'https://gym.example.com/api/media/p2v2' })
+
+    // 评论（先发后管）
+    await expectFail(() => act('commentChallenge', C, { id: c._id, content: '   ' }), '点什么', '空评论被拒')
+    const afterComment = await act('commentChallenge', C, { id: c._id, content: '这把我看好乙' })
+    assert.strictEqual(afterComment.length, 1)
+    assert.strictEqual(afterComment[0].content, '这把我看好乙')
+    assert.strictEqual(afterComment[0].authorName, '挑战甲')
+    assert.ok(afterComment[0].canDelete, '自己能删自己的评论')
+
+    // 别人不能删
+    await expectFail(
+      () => act('deleteChallengeComment', O, { id: afterComment[0]._id }),
+      '只能删自己', '别人的评论不能删'
+    )
+
+    // 详情里能看到评论
+    const detailWithComments = await act('challengeDetail', O, { id: c._id })
+    assert.strictEqual(detailWithComments.comments.length, 1)
+    assert.strictEqual(detailWithComments.commentCount, 1)
+
+    // 点赞 / 取消
+    const liked = await act('likeChallengeComment', O, { id: afterComment[0]._id })
+    assert.strictEqual(liked[0].likeCount, 1)
+    assert.strictEqual(liked[0].likedByMe, true)
+    const unliked = await act('likeChallengeComment', O, { id: afterComment[0]._id })
+    assert.strictEqual(unliked[0].likeCount, 0)
+    assert.strictEqual(unliked[0].likedByMe, false)
+    // 再次点赞，留一个赞给榜单测试
+    await act('likeChallengeComment', O, { id: afterComment[0]._id })
+
+    // 管理员可以删任意评论
+    const adminDeleted = await act('deleteChallengeComment', ADMIN, { id: afterComment[0]._id })
+    assert.strictEqual(adminDeleted.length, 0, '管理员删评论后列表为空')
+
+    // 判定（记录成绩快照）：给双方造力量成绩，乙比甲高
+    await act('saveStrength', J, { openid: C, lift: 'bench', weight: 40, reps: 5 })
+    await act('saveStrength', J, { openid: O, lift: 'bench', weight: 80, reps: 5 })
+    const judged = await act('judgeChallenge', J, { id: c._id, result: 'win_challenger', note: '甲动作更稳' })
+    assert.strictEqual(judged.judgeResult, 'win_challenger')
+
+    // 挑战榜
+    const board = await act('challengeBoard', C, {})
+    assert.ok(Array.isArray(board.week) && Array.isArray(board.streak) && Array.isArray(board.total))
+    const mineRow = board.mine
+    assert.strictEqual(mineRow.wins, 1, '赢一场后 mine.wins = 1')
+    assert.strictEqual(mineRow.judged, 1)
+    assert.ok(mineRow.badges.some(b => b.key === 'first_win'), '应有首胜徽章')
+    assert.ok(mineRow.badges.some(b => b.key === 'giant_killer'), '成绩更低却赢了 → 以下克上徽章')
+    assert.ok(board.week.some(x => x.openid === C && x.weekWins >= 1), '本周胜场榜包含自己')
+
+    // 输的人连胜归零
+    const boardO = await act('challengeBoard', O, {})
+    assert.strictEqual(boardO.mine.streak, 0, '输了连胜清零')
+    assert.strictEqual(boardO.mine.losses, 1)
+    ok('挑战 P2：评论、点赞、挑战榜、徽章')
   }
   }
   }

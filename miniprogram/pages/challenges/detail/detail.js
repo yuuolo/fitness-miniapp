@@ -28,7 +28,10 @@ Page({
     ],
     // 重新选裁判
     referees: [],
-    refereeOpen: false
+    refereeOpen: false,
+    // 评论
+    commentText: '',
+    sending: false
   },
 
   onLoad(query) {
@@ -184,6 +187,53 @@ Page({
           wx.showToast({ title: '已判定' })
           this.load()
         }).catch(err => wx.showModal({ title: '判定失败', content: err.message || '', showCancel: false }))
+      }
+    })
+  },
+
+  // ---------- 评论 ----------
+  onCommentInput(e) {
+    this.setData({ commentText: e.detail.value })
+  },
+
+  sendComment() {
+    const content = String(this.data.commentText || '').trim()
+    if (!content || this.data.sending) return
+    this.setData({ sending: true })
+    api.call('commentChallenge', { id: this.data.id, content }, { silent: true }).then(() => {
+      this.setData({ commentText: '', sending: false })
+      this.load()
+    }, err => {
+      this.setData({ sending: false })
+      wx.showToast({ title: err.message || '发送失败', icon: 'none' })
+    })
+  },
+
+  toggleLike(e) {
+    const id = e.currentTarget.dataset.id
+    api.call('likeChallengeComment', { id }, { silent: true }).then(list => {
+      const c = Object.assign({}, this.data.c, {
+        comments: list,
+        commentCount: (list || []).length
+      })
+      this.setData({ c })
+    }, err => wx.showToast({ title: err.message || '操作失败', icon: 'none' }))
+  },
+
+  deleteComment(e) {
+    const id = e.currentTarget.dataset.id
+    wx.showModal({
+      title: '删除评论',
+      content: '确定删除这条评论？',
+      success: r => {
+        if (!r.confirm) return
+        api.call('deleteChallengeComment', { id }, { silent: true }).then(list => {
+          const c = Object.assign({}, this.data.c, {
+            comments: list,
+            commentCount: (list || []).length
+          })
+          this.setData({ c })
+        }, err => wx.showToast({ title: err.message || '删除失败', icon: 'none' }))
       }
     })
   },

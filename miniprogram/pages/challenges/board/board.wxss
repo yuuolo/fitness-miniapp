@@ -1,0 +1,29 @@
+/* 挑战榜 */
+.my-card { background: linear-gradient(180deg, var(--brand-soft), var(--surface)); }
+.my-name { font-size: 32rpx; font-weight: 600; color: var(--ink); }
+.my-num { text-align: right; }
+.num { font-size: 40rpx; font-weight: 700; color: var(--brand-strong); }
+.ban { margin-top: 10rpx; font-size: 24rpx; color: var(--danger); }
+.badges { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 14rpx; }
+.badge {
+  font-size: 22rpx; color: var(--brand-strong); background: var(--brand-soft);
+  border-radius: var(--r-pill); padding: 4rpx 16rpx;
+}
+.badge.small { font-size: 20rpx; padding: 2rpx 12rpx; color: var(--sub); background: var(--fill); }
+.badges.small { margin-top: 8rpx; }
+.tabs { display: flex; gap: 8rpx; margin: 16rpx 0; }
+.tab {
+  flex: 1; text-align: center; font-size: 25rpx; color: var(--sub);
+  background: var(--fill); border-radius: var(--r-pill); padding: 12rpx 0;
+}
+.tab.on { background: var(--brand); color: #fff; font-weight: 600; }
+.rank-row.me { outline: 2rpx solid var(--brand-line); }
+.rank {
+  width: 44rpx; height: 44rpx; line-height: 44rpx; text-align: center;
+  font-size: 24rpx; color: var(--muted); background: var(--fill); border-radius: 50%;
+}
+.rank.top { background: var(--brand); color: #fff; }
+.rank-name { font-size: 29rpx; font-weight: 600; color: var(--ink); }
+.score .num { font-size: 34rpx; }
+.small { font-size: 23rpx; }
+.rule { text-align: center; font-size: 22rpx; padding: 24rpx 0 8rpx; }

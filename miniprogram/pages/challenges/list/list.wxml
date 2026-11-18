@@ -5,6 +5,7 @@
       <view class="title">挑战</view>
       <view class="muted">{{counts.badge ? '有 ' + counts.badge + ' 件事等你处理' : '约一场，让教练当裁判'}}</view>
     </view>
+    <view class="board-btn" bindtap="goBoard">榜</view>
     <button class="btn" bindtap="goNew">发起挑战</button>
   </view>
 

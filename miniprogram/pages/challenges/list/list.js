@@ -108,6 +108,10 @@ Page({
     wx.navigateTo({ url: '/pages/challenges/detail/detail?id=' + e.currentTarget.dataset.id })
   },
 
+  goBoard() {
+    wx.navigateTo({ url: '/pages/challenges/board/board' })
+  },
+
   goNew() {
     wx.navigateTo({ url: '/pages/challenges/new/new' })
   },
