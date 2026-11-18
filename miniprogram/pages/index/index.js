@@ -184,6 +184,10 @@ Page({
     radarEmpty: true,
     // 快捷入口：最近两条动态的缩略图（友圈格子）
     momentThumbs: [],
+    // 会员挑战模块
+    challengeBadge: 0,
+    challengeCounts: {},
+    challengeActive: 0,
     // 欢迎栏里的运动小人（Canvas 动画，姿势每天一个）
     heroPoseKey: '',
     heroPoseName: '',
@@ -191,7 +195,23 @@ Page({
     figureState: ''
   },
 
+  // 首页挑战模块：待办数字
+  loadChallengeSummary() {
+    api.call('challengeSummary', {}, { silent: true }).then(r => {
+      this.setData({
+        challengeBadge: (r && r.badge) || 0,
+        challengeCounts: r || {},
+        challengeActive: (r && r.active) || 0
+      })
+    }, () => {})
+  },
+
+  goChallenges() {
+    wx.navigateTo({ url: '/pages/challenges/list/list' })
+  },
+
   onShow() {
+    this.loadChallengeSummary()
     if (this.data.heroPoseKey && !this.heroAnimOn) this.startHeroAnim()
     this.syncTabBar()
     this.load()

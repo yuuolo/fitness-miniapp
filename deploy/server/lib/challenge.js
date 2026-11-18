@@ -14,6 +14,7 @@ const {
   ROLE_LEVEL
 } = require('./common')
 const liftItems = require('./lift-items')
+const notify = require('./notify')
 
 // 时间窗口
 const ACCEPT_MS = 2 * 3600e3       // 应战期限
@@ -59,6 +60,75 @@ function isAdmin(me) {
 
 function fmtTime(ts) {
   return cnDateTime(Number(ts) || 0)
+}
+
+// ---------- 订阅消息 ----------
+// 订阅消息是一次性的：用户在按钮上授权后才能发一条；没授权时微信会报 43101，只记日志
+function safeNotify(kind, openid, values) {
+  if (!openid) return
+  notify.notify(kind, openid, values).catch(() => {})
+}
+
+async function memberNameOf(openid) {
+  const row = (await query('select nick_name, phone from members where openid = $1', [openid])).rows[0]
+  return row ? (row.nick_name || row.phone || '会员') : '会员'
+}
+
+// 给小程序下发的模板 ID（客户端要用它调 wx.requestSubscribeMessage）
+async function notifyTemplates({ me }) {
+  need(me, 'member')
+  const templates = require('./templates')
+  const pick = k => (templates[k] && templates[k].id) || ''
+  return {
+    invite: pick('challengeInvite'),
+    start: pick('challengeStart'),
+    result: pick('challengeResult')
+  }
+}
+
+// 发起 / 指派裁判 时通知对方
+async function notifyInvite(c) {
+  const [items, challengerName, opponentName] = await Promise.all([
+    liftItems.list(),
+    memberNameOf(c.challenger),
+    memberNameOf(c.opponent)
+  ])
+  const item = items.find(i => i.key === c.liftKey) || { name: c.liftKey }
+  const title = item.name + '挑战'
+  const vs = challengerName + ' VS ' + opponentName
+  const time = fmtTime(c.createdAt)
+  const values = { inviter: challengerName, time, title, vs, place: '健身房 · 视频挑战' }
+  safeNotify('challengeInvite', c.opponent, values)
+  safeNotify('challengeInvite', c.referee, values)
+}
+
+// 裁判该判了
+async function notifyJudgeReady(c) {
+  const items = await liftItems.list()
+  const item = items.find(i => i.key === c.liftKey) || { name: c.liftKey }
+  safeNotify('challengeStart', c.referee, {
+    title: item.name + '挑战',
+    time: fmtTime(c.judgeBy),
+    tip: '双方视频已交齐，请尽快判定'
+  })
+}
+
+// 判定结果通知双方
+async function notifyJudgeResult(c) {
+  const items = await liftItems.list()
+  const item = items.find(i => i.key === c.liftKey) || { name: c.liftKey }
+  const resultName = c.judgeResult === 'win_challenger' ? '发起方胜'
+    : c.judgeResult === 'win_opponent' ? '应战方胜'
+      : c.judgeResult === 'draw' ? '平局' : '已判定'
+  const values = {
+    title: item.name + '挑战',
+    startAt: fmtTime(c.createdAt),
+    endAt: fmtTime(c.judgedAt),
+    result: resultName,
+    tip: '点开查看判定理由'
+  }
+  safeNotify('challengeResult', c.challenger, values)
+  safeNotify('challengeResult', c.opponent, values)
 }
 
 // ---------- 行映射 ----------
@@ -200,6 +270,8 @@ async function createChallenge({ me, data }) {
     [id, me._id, opponent, referee, item.key, metric, String(data.trashTalk || '').slice(0, 20),
       now + ACCEPT_MS, now]
   )
+  const created = await loadChallenge(id)
+  notifyInvite(created).catch(() => {})
   return detailById(id, me)
 }
 
@@ -311,6 +383,8 @@ async function submitChallengeVideo({ me, data }) {
       "update challenges set status = 'ready', judge_by = $2 where id = $1",
       [c._id, now + JUDGE_MS]
     )
+    const ready = await loadChallenge(c._id)
+    notifyJudgeReady(ready).catch(() => {})
   }
   return detailById(c._id, me)
 }
@@ -378,7 +452,9 @@ async function judgeChallenge({ me, data }) {
     )
   })
   // 事务提交后再读，避免读到旧状态
-  return detailById(c._id, me)
+  const judged = await loadChallenge(c._id)
+  notifyJudgeResult(judged).catch(() => {})
+  return decorate(judged, me)
 }
 
 // ---------- 查询 ----------
@@ -754,5 +830,6 @@ module.exports = {
   commentChallenge,
   deleteChallengeComment,
   likeChallengeComment,
-  challengeBoard
+  challengeBoard,
+  notifyTemplates
 }

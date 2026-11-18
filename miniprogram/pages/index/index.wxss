@@ -204,3 +204,10 @@
   justify-content: center;
 }
 .thumb-empty-t { font-size: 22rpx; color: var(--muted); }
+
+/* 首页挑战模块 */
+.challenge-home { display: block; }
+.challenge-todo { font-size: 26rpx; color: var(--brand-strong); }
+.todo-tags { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 10rpx; }
+.challenge-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12rpx; }
+.challenge-link { font-size: 26rpx; color: var(--brand-strong); font-weight: 600; }

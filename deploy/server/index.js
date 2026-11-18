@@ -160,6 +160,7 @@ const ACTION_FEATURE = {
   deleteChallengeComment: 'rank',
   likeChallengeComment: 'rank',
   challengeBoard: 'rank',
+  notifyTemplates: 'rank',
   // 排行榜与竞赛
   leaderboard: 'rank',
   listLiftItems: 'rank',

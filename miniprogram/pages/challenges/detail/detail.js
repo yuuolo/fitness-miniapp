@@ -1,6 +1,7 @@
 // 挑战详情：双方信息 + 视频 + 裁判判定与理由 + 各角色可做的操作
 const api = require('../../../utils/api')
 const sfx = require('../../../utils/sfx')
+const subscribe = require('../../../utils/subscribe')
 
 function countdown(ts) {
   const left = Number(ts) - Date.now()
@@ -80,7 +81,8 @@ Page({
       content: text,
       success: r => {
         if (!r.confirm) return
-        api.call('respondChallenge', { id: this.data.id, decision, vetoReferee }, { loading: '处理中' })
+        subscribe.request(['result'])
+          .then(() => api.call('respondChallenge', { id: this.data.id, decision, vetoReferee }, { loading: '处理中' }))
           .then(() => { sfx.playSave(); this.load() })
           .catch(err => wx.showToast({ title: err.message || '操作失败', icon: 'none' }))
       }
@@ -90,7 +92,8 @@ Page({
   // ---------- 裁判接单 / 拒绝 ----------
   refereeAct(e) {
     const decision = e.currentTarget.dataset.decision
-    api.call('refereeRespond', { id: this.data.id, decision }, { loading: '处理中' })
+    subscribe.request(['start'])
+      .then(() => api.call('refereeRespond', { id: this.data.id, decision }, { loading: '处理中' }))
       .then(() => this.load())
       .catch(err => wx.showToast({ title: err.message || '操作失败', icon: 'none' }))
   },
@@ -122,7 +125,7 @@ Page({
         const file = (res.tempFiles || [])[0]
         if (!file) return
         wx.showLoading({ title: '上传中', mask: true })
-        api.uploadVideo(file.tempFilePath).then(v => {
+        subscribe.request(['result']).then(() => api.uploadVideo(file.tempFilePath)).then(v => {
           wx.hideLoading()
           return api.call('submitChallengeVideo', { id: this.data.id, videoUrl: v.fileID }, { silent: true })
             .then(() => {

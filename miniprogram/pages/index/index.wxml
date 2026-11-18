@@ -65,6 +65,30 @@
         </view>
       </view>
 
+      <!-- 挑战预览 -->
+      <block wx:elif="{{item.type === 'challenge' && features.rank !== false}}">
+        <view class="between section-title">
+          <text>会员挑战</text>
+          <text class="muted" bindtap="goChallenges">全部挑战 ›</text>
+        </view>
+        <view class="card challenge-home" bindtap="goChallenges">
+          <view wx:if="{{challengeBadge}}" class="challenge-todo">
+            <text>有 {{challengeBadge}} 件事等你处理</text>
+            <view class="todo-tags">
+              <text wx:if="{{challengeCounts.incoming}}" class="tag orange">待应战 {{challengeCounts.incoming}}</text>
+              <text wx:if="{{challengeCounts.toSubmit}}" class="tag orange">待交视频 {{challengeCounts.toSubmit}}</text>
+              <text wx:if="{{challengeCounts.toJudge}}" class="tag orange">待判决 {{challengeCounts.toJudge}}</text>
+              <text wx:if="{{challengeCounts.judgingInvite}}" class="tag orange">裁判待接单 {{challengeCounts.judgingInvite}}</text>
+            </view>
+          </view>
+          <view wx:else class="muted">选个项目，约一个人，让教练当裁判</view>
+          <view class="challenge-actions">
+            <text class="challenge-link">进入挑战大厅 ›</text>
+            <text wx:if="{{challengeActive}}" class="muted">进行中 {{challengeActive}} 场</text>
+          </view>
+        </view>
+      </block>
+
       <!-- 排行榜预览 -->
       <block wx:elif="{{item.type === 'rank' && features.rank !== false}}">
         <view class="between section-title">

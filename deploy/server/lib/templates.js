@@ -13,6 +13,44 @@ const SHOP_ADDRESS = process.env.SHOP_ADDRESS || '前台签到'
 const id = name => process.env['WX_TPL_' + name] || ''
 
 module.exports = {
+
+  // ---- 会员挑战（订阅消息，一次性）----
+  // 模板已在后台选用（2026-11-18）：
+  //   比赛邀请通知  name1 邀请人 / date2 比赛时间 / thing4 比赛名称 / thing5 参赛球队 / thing6 比赛场地
+  //   挑战开始提醒  thing1 挑战名称 / time2 挑战时间 / thing3 温馨提示
+  //   对战结果通知  thing1 活动名称 / time2 开始时间 / time3 结束时间 / short_thing4 对战结果 / thing5 温馨提示
+  challengeInvite: {
+    id: id('CHALLENGE_INVITE') || '-UIVlMMxucmR3oTwIin1ROOSq9U9kCyp0mmFA1nzfY4',
+    page: 'pages/challenges/detail/detail',
+    fields: v => ({
+      name1: v.inviter,
+      date2: v.time,
+      thing4: v.title,
+      thing5: v.vs,
+      thing6: v.place
+    })
+  },
+  challengeStart: {
+    id: id('CHALLENGE_START') || 'uD-Pu7n61BDSLDAmX45Jitf6Kwl4oisVtNSxVSVWTI4',
+    page: 'pages/challenges/detail/detail',
+    fields: v => ({
+      thing1: v.title,
+      time2: v.time,
+      thing3: v.tip
+    })
+  },
+  challengeResult: {
+    id: id('CHALLENGE_RESULT') || 'ddrEoH_Zs3kHShU6NcMrkxPaijA9XMJ14IUi2ODEYwk',
+    page: 'pages/challenges/detail/detail',
+    fields: v => ({
+      thing1: v.title,
+      time2: v.startAt,
+      time3: v.endAt,
+      short_thing4: v.result,
+      thing5: v.tip
+    })
+  },
+
   miniprogramState: state,
   shopAddress: SHOP_ADDRESS,
 

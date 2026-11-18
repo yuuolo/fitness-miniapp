@@ -16,6 +16,7 @@ const BLOCK_TYPES = [
   { type: 'quick', name: '快捷入口', desc: '约团课、娱乐预约等宫格', scope: 'all' },
   { type: 'rank', name: '排行榜预览', desc: '排行榜前 5 名 + 我的名次', scope: 'all', feature: 'rank' },
   { type: 'competitions', name: '竞赛预览', desc: '进行中的竞赛', scope: 'all', feature: 'rank' },
+  { type: 'challenge', name: '挑战预览', desc: '待你应战 / 待你判决 / 进行中', scope: 'all', feature: 'rank' },
   { type: 'moments', name: '友圈预览', desc: '最新几条动态', scope: 'all', feature: 'moments' },
   { type: 'link', name: '自定义快捷入口', desc: '指向任意页面的一张卡片', scope: 'all' }
 ]
@@ -25,6 +26,8 @@ const PAGE_CATALOG = [
   { path: '/pages/moments/moments', name: '健身友圈', tab: true },
   { path: '/pages/rank/rank', name: '力量排行榜', tab: false },
   { path: '/pages/competitions/competitions', name: '竞赛', tab: false },
+  { path: '/pages/challenges/list/list', name: '会员挑战', tab: false },
+  { path: '/pages/challenges/board/board', name: '挑战榜', tab: false },
   { path: '/pages/fitness/fitness', name: '我的身体数据', tab: false },
   { path: '/pages/profile/profile', name: '个人资料', tab: false },
   { path: '/pages/mine/mine', name: '我的', tab: true },
@@ -64,17 +67,18 @@ function defaults() {
   const social = [
     block('hero'),
     block('quick'),
+    block('challenge'),
     block('competitions'),
     block('rank'),
     block('moments')
   ]
   return {
     member: social,
-    coach: [block('hero'), block('quick'), block('competitions'), block('rank'), block('members-link', {
+    coach: [block('hero'), block('quick'), block('challenge'), block('competitions'), block('rank'), block('members-link', {
       type: 'link', title: '会员资料与体测', desc: '查会员、录体测', icon: '📋',
       page: '/pages/staff/members/members', enabled: true
     })],
-    admin: [block('hero'), block('quick'), block('competitions'), block('rank'), block('moments')]
+    admin: [block('hero'), block('quick'), block('challenge'), block('competitions'), block('rank'), block('moments')]
   }
 }
 

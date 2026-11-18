@@ -25,10 +25,11 @@ async function main() {
   // ---------- 1. 默认值 ----------
   const def = layout.defaults()
   assert.deepStrictEqual(Object.keys(def).sort(), ['admin', 'coach', 'member'])
-  assert.strictEqual(def.member.length, 5)
+  assert.strictEqual(def.member.length, 6)
   assert.strictEqual(def.member[0].type, 'hero')
   assert.ok(def.member.some(b => b.type === 'hero'))
   assert.ok(def.member.some(b => b.type === 'competitions'), '默认会员布局应包含竞赛预览')
+  assert.ok(def.member.some(b => b.type === 'challenge'), '默认会员布局应包含挑战预览')
   assert.ok(def.member.every(b => b.enabled), '默认布局的模块都应默认显示')
   assert.ok(def.admin.some(b => b.type === 'hero'), '管理员默认带欢迎模块')
   // 这 4 个模块已彻底删除，不应再出现
@@ -41,7 +42,7 @@ async function main() {
   ok('三个角色都有默认布局，且带各自特色的模块')
 
   const meta = layout.describe()
-  assert.strictEqual(meta.blocks.length, 6, '可选模块只剩 6 种')
+  assert.strictEqual(meta.blocks.length, 7, '可选模块只剩 7 种')
   assert.ok(meta.pages.length >= 8, '可选页面至少 8 个，实际 ' + meta.pages.length)
   assert.strictEqual(meta.roles.length, 3, '角色只有会员/教练/管理员')
   assert.ok(meta.defaults.member)
@@ -83,10 +84,10 @@ async function main() {
 
   // ---------- 3. 读默认 ----------
   const fresh = await layout.get(true)
-  assert.strictEqual(fresh.roles.member.length, 5)
+  assert.strictEqual(fresh.roles.member.length, 6)
   assert.strictEqual(fresh.updatedAt, 0)
   const memberBlocks = await layout.forRole('member')
-  assert.strictEqual(memberBlocks.length, 5)
+  assert.strictEqual(memberBlocks.length, 6)
   ok('没配置过时读出来就是默认布局')
 
   // ---------- 4. 自定义快捷入口 ----------

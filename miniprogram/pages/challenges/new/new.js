@@ -2,6 +2,7 @@
 const api = require('../../../utils/api')
 const sfx = require('../../../utils/sfx')
 const memberSearch = require('../../../utils/member-search')
+const subscribe = require('../../../utils/subscribe')
 
 Page(Object.assign({}, memberSearch.mixin, {
 
@@ -82,13 +83,14 @@ Page(Object.assign({}, memberSearch.mixin, {
     if (!lift) return wx.showToast({ title: '请选择挑战项目', icon: 'none' })
     if (this.data.submitting) return
     this.setData({ submitting: true })
-    api.call('createChallenge', {
+    // 先申请订阅授权：同意后，对方的应战 / 判定结果才能推送到微信
+    subscribe.request(['invite', 'result']).then(() => api.call('createChallenge', {
       opponent: opponent._id,
       referee: referee._id,
       liftKey: lift.key || lift.name,
       metric: metrics[metricIndex].key,
       trashTalk: this.data.trashTalk
-    }, { loading: '发送中' }).then(r => {
+    }, { loading: '发送中' })).then(r => {
       sfx.playSave()
       wx.showToast({ title: '挑战已发出' })
       setTimeout(() => {
