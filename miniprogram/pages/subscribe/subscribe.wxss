@@ -1,14 +1,22 @@
 /* 订阅管理 */
 .hero-sub { background: linear-gradient(180deg, var(--brand-soft), var(--surface)); }
 .hero-title { font-size: 34rpx; font-weight: 600; color: var(--ink); margin-bottom: 8rpx; }
-.hero-count { display: flex; align-items: baseline; gap: 8rpx; margin: 18rpx 0; }
+.hero-count { display: flex; align-items: baseline; gap: 8rpx; margin-top: 18rpx; }
 .hero-count .num { font-size: 52rpx; font-weight: 700; color: var(--brand-strong); }
-.err { margin-top: 12rpx; font-size: 24rpx; color: var(--danger); }
-.sub-item { display: flex; align-items: center; padding: 18rpx 0; border-bottom: 1px solid var(--line); }
-.sub-item:last-child { border-bottom: none; }
-.sub-name { font-size: 29rpx; font-weight: 600; color: var(--ink); }
+
+/* 两组之间留足空隙 */
+.sub-group { margin-top: 24rpx; }
+.challenge-group { margin-top: 28rpx; background: var(--surface); border: 1rpx solid var(--line); }
+.group-head { margin-bottom: 8rpx; }
+.group-title { font-size: 30rpx; font-weight: 600; color: var(--ink); margin-bottom: 4rpx; }
+
+.sub-item { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 1rpx solid var(--line); }
+.sub-item:last-of-type { border-bottom: none; }
+.sub-name { font-size: 28rpx; font-weight: 600; color: var(--ink); }
 .sub-right { display: flex; align-items: center; gap: 14rpx; }
 .ticket { font-size: 24rpx; color: var(--muted); background: var(--fill); border-radius: var(--r-pill); padding: 6rpx 16rpx; }
 .ticket.on { color: var(--brand-strong); background: var(--brand-soft); }
 .clear { font-size: 23rpx; color: var(--muted); }
-.tip-card { margin-top: 8rpx; }
+
+.sub-action { margin-top: 24rpx; }
+.tip-card { margin-top: 28rpx; }

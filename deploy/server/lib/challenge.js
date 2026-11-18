@@ -32,7 +32,7 @@ const ACTIVE_STATUS = ['pending', 'waiting_referee', 'accepted', 'ready']
 
 const STATUS_NAMES = {
   pending: '待应战',
-  waiting_referee: '等裁判确认',
+  waiting_referee: '上传视频中',
   accepted: '进行中',
   ready: '待判决',
   judged: '已判定',
@@ -185,7 +185,7 @@ async function settleOverdue(row) {
     return challengeRow((await query('select * from challenges where id = $1', [c._id])).rows[0])
   }
   // 进行中但视频没交齐、超过提交截止 → 流局
-  if (c.status === 'accepted' && c.submitBy && now > c.submitBy) {
+  if ((c.status === 'accepted' || c.status === 'waiting_referee') && c.submitBy && now > c.submitBy) {
     await query("update challenges set status = 'void', finished_at = $2 where id = $1", [c._id, now])
     return challengeRow((await query('select * from challenges where id = $1', [c._id])).rows[0])
   }
@@ -309,15 +309,22 @@ async function refereeRespond({ me, data }) {
     return detailById(c._id, me)
   }
 
-  // 接受：如果对方已经应战，进入视频阶段
-  if (c.status === 'waiting_referee') {
+  // 接受：按当前进度决定状态（视频已交齐就直接待判决）
+  await query("update challenges set referee_state = 'accepted' where id = $1", [c._id])
+  const vids = (await query(
+    'select count(distinct openid)::int as n from challenge_videos where challenge_id = $1',
+    [c._id]
+  )).rows[0].n
+  if (vids >= 2) {
     await query(
-      `update challenges set referee_state = 'accepted', status = 'accepted', submit_by = $2
-        where id = $1`,
+      "update challenges set status = 'ready', judge_by = $2 where id = $1",
+      [c._id, now + JUDGE_MS]
+    )
+  } else if (c.status === 'waiting_referee') {
+    await query(
+      "update challenges set status = 'accepted', submit_by = coalesce(nullif(submit_by, 0), $2) where id = $1",
       [c._id, now + VIDEO_MS]
     )
-  } else {
-    await query("update challenges set referee_state = 'accepted' where id = $1", [c._id])
   }
   return detailById(c._id, me)
 }
@@ -338,14 +345,17 @@ async function respondChallenge({ me, data }) {
     await query("update challenges set status = 'referee_vetoed' where id = $1", [c._id])
     return detailById(c._id, me)
   }
-  // 裁判已接受 → 直接进入视频阶段；否则等裁判
+  // 双方确认后立刻开始 2 小时视频倒计时；裁判还没接单也不影响传视频
   if (c.refereeState === 'accepted') {
     await query(
       "update challenges set status = 'accepted', submit_by = $2 where id = $1",
       [c._id, now + VIDEO_MS]
     )
   } else {
-    await query("update challenges set status = 'waiting_referee' where id = $1", [c._id])
+    await query(
+      "update challenges set status = 'waiting_referee', submit_by = $2 where id = $1",
+      [c._id, now + VIDEO_MS]
+    )
   }
   return detailById(c._id, me)
 }
@@ -356,7 +366,9 @@ async function submitChallengeVideo({ me, data }) {
   need(me, 'member')
   const c = await loadChallenge(String(data.id || ''))
   assertParticipant(c, me)
-  if (c.status !== 'accepted') fail('现在不是交视频的阶段（' + (STATUS_NAMES[c.status] || c.status) + '）')
+  if (!['accepted', 'waiting_referee'].includes(c.status)) {
+    fail('现在不是交视频的阶段（' + (STATUS_NAMES[c.status] || c.status) + '）')
+  }
   const url = String(data.videoUrl || '')
   if (!/^(cloud:\/\/|https:\/\/)/.test(url)) fail('视频地址不正确')
 
@@ -521,7 +533,8 @@ async function decorate(c, me, opts) {
     // 前端用的可操作性判断
     canRespond: c.status === 'pending' && c.opponent === me._id,
     canRefereeAct: c.referee === me._id && c.refereeState === 'invited' && c.status === 'pending',
-    canSubmitVideo: c.status === 'accepted' && (c.challenger === me._id || c.opponent === me._id),
+    canSubmitVideo: ['accepted', 'waiting_referee'].includes(c.status) &&
+      (c.challenger === me._id || c.opponent === me._id),
     myVideo: videos.find(v => v.openid === me._id) || null,
     canJudge: c.status === 'ready' && (c.referee === me._id || isAdmin(me)),
     canReinvite: (c.status === 'referee_vetoed' || (c.status === 'pending' && c.refereeState === 'declined')) &&
@@ -530,7 +543,7 @@ async function decorate(c, me, opts) {
     isReferee: c.referee === me._id,
     // 倒计时用的截止点
     deadline: c.status === 'pending' ? c.expireAt
-      : c.status === 'accepted' ? c.submitBy
+      : (c.status === 'accepted' || c.status === 'waiting_referee') ? c.submitBy
         : c.status === 'ready' ? c.judgeBy : 0
   }
 }

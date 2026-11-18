@@ -15,11 +15,14 @@
 
     <block wx:if="{{memberOpen}}">
       <view class="row mt">
-        <input class="grow" value="{{keyword}}" bindinput="onKeyword" bindconfirm="clearKeyword"
+        <input class="grow" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onKeywordConfirm"
           confirm-type="search" placeholder="输入昵称或手机号，1 个字就能搜" />
         <text wx:if="{{keyword}}" class="muted" bindtap="clearKeyword">清空</text>
       </view>
-      <view wx:if="{{memberLoading}}" class="muted mt">搜索中…</view>
+      <view class="muted mt" wx:if="{{!members.length && !memberLoading && !keyword && !memberEmpty}}">
+      还没有可选会员（会员先打开一次小程序才会出现）
+    </view>
+    <view wx:if="{{memberLoading}}" class="muted mt">搜索中…</view>
       <view wx:elif="{{memberEmpty}}" class="muted mt">没有找到匹配「{{keyword}}」的会员</view>
       <view wx:if="{{members.length}}" class="mt">
         <view wx:for="{{members}}" wx:key="_id" class="list-item" data-openid="{{item._id}}" bindtap="pickMember">
