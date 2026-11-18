@@ -10,6 +10,15 @@
       <view wx:for="{{lifts}}" wx:key="key" class="tab {{lift === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="pickLift">{{item.name}}</view>
     </scroll-view>
 
+    <view class="sub-row">
+      <view class="sub-chip" bindtap="subscribeRank" data-topic="rankScore">
+        🔔 综合评分榜更新提醒
+      </view>
+      <view class="sub-chip" bindtap="subscribeRank" data-topic="rankLift">
+        🔔 力量榜更新提醒
+      </view>
+    </view>
+
     <view wx:if="{{autoNote}}" class="auto-note">{{autoNote}}</view>
 
     <!-- 周期切换（综合评分是当前快照，没有周期） -->

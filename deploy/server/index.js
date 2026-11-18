@@ -100,7 +100,7 @@ const INTERNAL_EXPORTS = new Set([
   'LIFTS', 'bmiOf', 'oneRM', 'scoreBody', 'publicMe', 'isInitialized',
   'markNoShows', 'remindClasses', 'remindExpiringCards', 'statusOf'
 ])
-const MODULES = ['system', 'member', 'admin', 'fitness', 'moment', 'competition', 'challenge']
+const MODULES = ['system', 'member', 'admin', 'fitness', 'moment', 'competition', 'challenge', 'subscriptions']
 const handlers = {}
 for (const name of MODULES) {
   const file = path.join(__dirname, 'lib', name + '.js')
@@ -161,6 +161,9 @@ const ACTION_FEATURE = {
   likeChallengeComment: 'rank',
   challengeBoard: 'rank',
   notifyTemplates: 'rank',
+  notifyTopicTemplates: 'rank',
+  subscribeTopic: 'rank',
+  mySubscriptions: 'rank',
   // 排行榜与竞赛
   leaderboard: 'rank',
   listLiftItems: 'rank',

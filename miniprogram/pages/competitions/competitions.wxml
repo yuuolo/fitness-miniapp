@@ -5,6 +5,12 @@
   </view>
 
   <block wx:else>
+    <view class="sub-tip" bindtap="subscribeCompetitions">
+      <text class="sub-ico">🔔</text>
+      <text class="grow">竞赛有变化提醒我</text>
+      <text class="muted">{{subscribed ? '已订阅' : '去订阅 ›'}}</text>
+    </view>
+
     <view wx:if="{{loaded && !list.length}}" class="card">
       <view class="muted">还没有竞赛。等教练发起挑战赛，这里就会出现。</view>
     </view>

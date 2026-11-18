@@ -276,3 +276,12 @@ create table if not exists challenge_comment_likes (
 
 -- 判定时的成绩快照（「以下克上」徽章用）
 alter table challenges add column if not exists judge_snapshot jsonb not null default '{}'::jsonb;
+
+-- 「内容更新通知」订阅票（一次授权一张票，发一条扣一张）
+create table if not exists notify_subscriptions (
+  openid     text not null,
+  topic      text not null,
+  tickets    int not null default 0,
+  updated_at bigint not null default 0,
+  primary key (openid, topic)
+);

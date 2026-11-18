@@ -1,5 +1,6 @@
 const api = require('../../utils/api')
 const sfx = require('../../utils/sfx')
+const subscribe = require('../../utils/subscribe')
 const features = require('../../utils/features')
 
 // 自建后端存的是 https 地址，video 组件可以直接播；不再需要临时链接
@@ -15,7 +16,8 @@ Page({
   data: {
     list: [], loaded: false, hasMore: true, loading: false, disabled: false,
     // 搜索：默认收起，点图标才展开；1 个字起就预搜；可以只看视频
-    keyword: '', onlyVideo: false, searchOpen: false
+    keyword: '', onlyVideo: false, searchOpen: false,
+    subscribed: false
   },
 
   onShow() {
@@ -43,6 +45,18 @@ Page({
 
   onReachBottom() {
     this.loadMore()
+  },
+
+  // 订阅「友圈新视频」微信提醒
+  subscribeMoments() {
+    subscribe.requestTopics(['moments']).then(topics => {
+      if (!topics.length) {
+        wx.showToast({ title: '没订阅成功，可以稍后再试', icon: 'none' })
+        return
+      }
+      this.setData({ subscribed: true })
+      wx.showToast({ title: '订阅成功，有新视频会通知你' })
+    })
   },
 
   // 点搜索图标：展开/收起搜索栏；收起时清掉搜索条件并恢复全部

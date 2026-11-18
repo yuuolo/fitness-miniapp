@@ -109,3 +109,11 @@
   color: var(--muted);
   padding: 0 6rpx;
 }
+
+/* 订阅提醒 */
+.sub-tip {
+  display: flex; align-items: center; gap: 10rpx;
+  background: var(--brand-soft); color: var(--brand-strong);
+  border-radius: var(--r-lg); padding: 14rpx 20rpx; font-size: 25rpx; margin-bottom: 14rpx;
+}
+.sub-ico { font-size: 26rpx; }

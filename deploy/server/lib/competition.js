@@ -7,6 +7,7 @@ const {
   cnDateTime, fail, need, newId, memberLabel, getMember, ROLE_LEVEL
 } = require('./common')
 const liftItems = require('./lift-items')
+const notifyTopics = require('./notify-topics')
 
 const MAX_TITLE = 20
 const MAX_PRIZE = 60
@@ -203,7 +204,9 @@ async function saveCompetition({ me, data = {} }) {
     [id, title, descr, item.key, item.name, item.metric, item.unit,
       startAt, endAt, prize, rules, me._id, memberLabel(me), now]
   )
-  return view((await query('select * from competitions where id = $1', [id])).rows[0], { playerCount: 0 })
+  const created = view((await query('select * from competitions where id = $1', [id])).rows[0], { playerCount: 0 })
+  notifyTopics.notifyCompetition(created, '已开赛', '新竞赛已发布，来报名').catch(() => {})
+  return created
 }
 
 async function setCompetitionStatus({ me, data = {} }) {
@@ -215,7 +218,13 @@ async function setCompetitionStatus({ me, data = {} }) {
   await query('update competitions set status = $2, end_at = $3 where id = $1',
     // 手动结束时把结束时间拉到当前，排名停止变化
     [c.id, data.status, data.status === 'ended' ? Math.min(c.end_at, Date.now()) : c.end_at])
-  return view((await query('select * from competitions where id = $1', [c.id])).rows[0])
+  const changed = view((await query('select * from competitions where id = $1', [c.id])).rows[0])
+  notifyTopics.notifyCompetition(
+    changed,
+    data.status === 'ended' ? '已结束' : '已取消',
+    data.status === 'ended' ? '排名已截止，看看冠军是谁' : '这场竞赛取消了'
+  ).catch(() => {})
+  return changed
 }
 
 /** 录入一条成绩（教练/店员），可附带视频 */

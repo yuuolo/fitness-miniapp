@@ -5,6 +5,7 @@ const {
   bodyRow, strengthRow, activityRow, ROLE_LEVEL, ROLE_NAMES
 } = require('./common')
 const liftItems = require('./lift-items')
+const notifyTopics = require('./notify-topics')
 const bodyReport = require('./body-report')
 const ocr = require('./ocr')
 const { query: dbQuery } = require('./db')
@@ -358,12 +359,26 @@ async function saveBodyRecord({ me, data }) {
     )
   })
 
-  return Object.assign({ memberName: memberLabel(target) }, {
+  const record = Object.assign({ memberName: memberLabel(target) }, {
     date, measuredAt: now, weight, height, bmi, gender,
     segmentFat, segmentMuscle, bodyShape, bodyType, deviceName, reportImage,
     score: scored.score, detail: scored.detail, source: data.source || 'staff',
     ...Object.fromEntries(BODY_NUM_FIELDS.filter(f => extra[f[1]] !== undefined).map(f => [f[0], extra[f[1]]]))
   })
+  // 综合评分有变化 → 通知「综合评分榜」订阅者（本人不收）
+  try {
+    if (record.score !== undefined && record.score !== null) {
+      notifyTopics.notifyRank(
+        'rankScore',
+        '综合评分榜',
+        record.memberName + ' 更新评分 ' + record.score + ' 分',
+        { exclude: target._id }
+      ).catch(() => {})
+    }
+  } catch (e) {
+    console.warn('notify rank score failed', e.message)
+  }
+  return record
 }
 
 // 删除一条历史体测记录（教练/管理员，用于处理误传的资料）
@@ -507,7 +522,7 @@ async function saveStrength({ me, data }) {
       [target._id, JSON.stringify(bestLift), sbdTotal, JSON.stringify(latestBody)]
     )
 
-    return {
+    const result = {
       memberName: memberLabel(target),
       lift,
       liftName: item.name,
@@ -524,6 +539,20 @@ async function saveStrength({ me, data }) {
       sbdTotal,
       bodyScore: latestBody.score === undefined ? null : latestBody.score
     }
+    // 刷新了该项目最好成绩 → 通知「力量排行榜」订阅者（本人不收）
+    try {
+      if (improved) {
+        notifyTopics.notifyRank(
+          'rankLift',
+          item.name + '排行榜',
+          result.memberName + ' 刷到 ' + score + (item.unit || ''),
+          { exclude: target._id }
+        ).catch(() => {})
+      }
+    } catch (e) {
+      console.warn('notify rank lift failed', e.message)
+    }
+    return result
   })
 }
 

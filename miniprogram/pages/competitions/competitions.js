@@ -1,9 +1,24 @@
 const api = require('../../utils/api')
+const subscribe = require('../../utils/subscribe')
 const fmt = require('../../utils/format')
 const features = require('../../utils/features')
 
 Page({
-  data: { loaded: false, disabled: false, list: [] },
+  data: {
+    subscribed: false, loaded: false, disabled: false, list: [] },
+
+  // 订阅「竞赛更新」微信提醒
+  subscribeCompetitions() {
+    subscribe.requestTopics(['competitions']).then(r => {
+      const topics = (r && r.accepted) || []
+      if (!topics.length) {
+        wx.showToast({ title: '没订阅成功，可以稍后再试', icon: 'none' })
+        return
+      }
+      this.setData({ subscribed: true })
+      wx.showToast({ title: '订阅成功，竞赛有变化会通知你' })
+    })
+  },
 
   onShow() {
     features.ensure().then(f => {

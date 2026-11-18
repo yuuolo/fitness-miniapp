@@ -8,6 +8,7 @@ const {
 const { accessToken } = require('./notify')
 const storage = require('./storage')
 const limits = require('./limits')
+const notifyTopics = require('./notify-topics')
 
 const MAX_CONTENT = 500
 const MAX_MEDIA = 9

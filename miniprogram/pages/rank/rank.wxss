@@ -70,3 +70,11 @@
   margin: 4rpx 0 12rpx 0;
   display: inline-block;
 }
+
+/* 订阅提醒 */
+.sub-row { display: flex; gap: 12rpx; margin-bottom: 12rpx; }
+.sub-chip {
+  flex: 1; text-align: center; font-size: 23rpx;
+  color: var(--brand-strong); background: var(--brand-soft);
+  border-radius: var(--r-pill); padding: 12rpx 0;
+}

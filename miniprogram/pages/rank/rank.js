@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const subscribe = require('../../utils/subscribe')
 const features = require('../../utils/features')
 
 // 条形图比例：以第一名为 100%；相对体重榜按 relative 算
@@ -21,6 +22,18 @@ Page({
     metric: 'absolute',
     board: null,
     autoNote: ''
+  },
+
+  // 订阅排行榜更新（综合评分榜 / 力量榜，可分别订阅）
+  subscribeRank(e) {
+    const topic = e.currentTarget.dataset.topic
+    subscribe.requestTopics([topic]).then(topics => {
+      if (!topics.length) {
+        wx.showToast({ title: '没订阅成功，可以稍后再试', icon: 'none' })
+        return
+      }
+      wx.showToast({ title: '订阅成功，榜单更新会通知你' })
+    })
   },
 
   onLoad(query) {

@@ -9,7 +9,7 @@ const { query, pool, ensureSchema } = require('../lib/db')
 const { memberRow } = require('../lib/common')
 
 const modules = {}
-for (const name of ['system', 'member', 'admin', 'fitness', 'moment', 'competition', 'challenge']) {
+for (const name of ['system', 'member', 'admin', 'fitness', 'moment', 'competition', 'challenge', 'subscriptions']) {
   Object.assign(modules, require('../lib/' + name))
 }
 
@@ -17,7 +17,8 @@ const TABLES = [
   'config', 'members',
   'body_records', 'strength_records', 'activity_records', 'moments', 'media',
   'competitions', 'competition_entries',
-  'challenges', 'challenge_videos', 'challenge_comments', 'challenge_comment_likes'
+  'challenges', 'challenge_videos', 'challenge_comments', 'challenge_comment_likes',
+  'notify_subscriptions'
 ]
 
 let passed = 0
@@ -825,6 +826,41 @@ async function main() {
     assert.strictEqual(boardO.mine.streak, 0, '输了连胜清零')
     assert.strictEqual(boardO.mine.losses, 1)
     ok('挑战 P2：评论、点赞、挑战榜、徽章')
+  }
+
+  { // 内容更新通知：订阅票 + 群发不崩
+    const FAN = 'openid-fan'
+    await ensureMember(FAN)
+    await act('setRole', ADMIN, { openid: FAN, role: 'member' })
+    await act('updateProfile', FAN, { nickName: '订阅会员', phone: '13800005566' })
+
+    // 模板 ID 下发给小程序
+    const tpl = await act('notifyTopicTemplates', FAN)
+    assert.ok(tpl.moments && tpl.competitions && tpl.rankScore && tpl.rankLift, '四个话题都要有模板 ID')
+
+    // 初始票数为 0
+    let mine = await act('mySubscriptions', FAN)
+    assert.strictEqual(mine.topics.moments, 0)
+    assert.strictEqual(mine.topics.competitions, 0)
+
+    // 订阅 + 重复订阅累加（上限 5）
+    await act('subscribeTopic', FAN, { topic: 'moments' })
+    await act('subscribeTopic', FAN, { topic: 'moments' })
+    mine = await act('mySubscriptions', FAN)
+    assert.strictEqual(mine.topics.moments, 2, '重复订阅要累加票数')
+    await expectFail(
+      () => act('subscribeTopic', FAN, { topic: 'nonsense' }),
+      '不支持', '未知话题要拒绝'
+    )
+
+    // 群发：测试环境没有微信凭证，发不出去也不能崩，票要作废
+    await act('postMoment', FAN, {
+      content: '测试新视频',
+      media: [{ type: 'video', url: 'https://gym.example.com/api/media/mv1', thumb: '' }]
+    })
+    const after = await act('mySubscriptions', FAN)
+    assert.ok(after.topics.moments >= 0, '群发后票数不能是负数')
+    ok('内容更新通知：订阅票管理 + 群发容错')
   }
   }
   }

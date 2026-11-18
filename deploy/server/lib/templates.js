@@ -14,6 +14,27 @@ const id = name => process.env['WX_TPL_' + name] || ''
 
 module.exports = {
 
+  // ---- 内容更新通知（一次性订阅）----
+  // 学员作品发布通知  thing1 练习名称 / thing2 作品名称 / thing3 学员昵称
+  momentsNew: {
+    id: id('MOMENTS_NEW') || 'tQLp7ap5btQM8Xnnql2Rg3_C1ygO7m1HwzzjV88EnYI',
+    page: 'pages/moments/moments',
+    fields: v => ({ thing1: v.channel, thing2: v.what, thing3: v.who })
+  },
+  // 赛事报名通知  thing1 赛事名称 / date2 开赛时间 / thing3 参赛项目 / phrase4 报名状态 / thing5 温馨提示
+  competitionNew: {
+    id: id('COMPETITION_NEW') || 'SwVg2eYVzJojs8NpRfOl56VxS4p7dPrMlyCzWHE7RnY',
+    page: 'pages/competitions/competitions',
+    fields: v => ({ thing1: v.title, date2: v.startAt, thing3: v.lift, phrase4: v.state, thing5: v.tip })
+  },
+  // 运动排行榜更新通知  thing1 榜单名称 / time2 更新时间 / thing3 温馨提示
+  rankUpdate: {
+    id: id('RANK_UPDATE') || 'dTbxPUeq5j3ATK_aseJzJOIZGSMWKKGTfDdoZ5g53ls',
+    page: 'pages/rank/rank',
+    fields: v => ({ thing1: v.board, time2: v.time, thing3: v.tip })
+  },
+
+
   // ---- 会员挑战（订阅消息，一次性）----
   // 模板已在后台选用（2026-11-18）：
   //   比赛邀请通知  name1 邀请人 / date2 比赛时间 / thing4 比赛名称 / thing5 参赛球队 / thing6 比赛场地
