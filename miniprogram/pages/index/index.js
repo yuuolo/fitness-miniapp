@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const subscribe = require('../../utils/subscribe')
 const heroAnim = require('../../utils/hero-anim')
 const sfx = require('../../utils/sfx')
 const fmt = require('../../utils/format')
@@ -206,12 +207,48 @@ Page({
     }, () => {})
   },
 
+  // 打开小程序时提示订阅（微信要求必须用户点击才能弹授权，所以是「提示 + 一键订阅」）
+  // 只在没有待发提醒时提示，且一天最多提示一次，避免打扰
+  promptSubscribe() {
+    if (this._prompted) return
+    this._prompted = true
+    api.call('mySubscriptions', {}, { silent: true }).then(r => {
+      const topics = (r && r.topics) || {}
+      const total = Object.keys(topics).reduce((n, k) => n + (Number(topics[k]) || 0), 0)
+      if (total > 0) return
+      const today = new Date().toISOString().slice(0, 10)
+      let last = ''
+      try { last = wx.getStorageSync('subscribePromptDate') || '' } catch (e) {}
+      if (last === today) return
+      wx.showModal({
+        title: '开启微信提醒？',
+        content: '友圈有新视频、竞赛有变化、排行榜更新时，会推送到你的微信。',
+        confirmText: '一键订阅',
+        cancelText: '以后再说',
+        success: res => {
+          if (!res.confirm) return
+          try { wx.setStorageSync('subscribePromptDate', today) } catch (e) {}
+          subscribe.subscribeAllContent().then(r2 => {
+            const accepted = (r2 && r2.accepted) || []
+            if (!accepted.length) {
+              wx.showToast({ title: '订阅没成功，可到「我的-微信提醒」再试', icon: 'none' })
+              return
+            }
+            wx.showToast({ title: '已订阅，有新内容会通知你' })
+            this.loadSubscribeTickets && this.loadSubscribeTickets()
+          })
+        }
+      })
+    }, () => {})
+  },
+
   goChallenges() {
     wx.navigateTo({ url: '/pages/challenges/list/list' })
   },
 
   onShow() {
     this.loadChallengeSummary()
+    this.promptSubscribe()
     if (this.data.heroPoseKey && !this.heroAnimOn) this.startHeroAnim()
     this.syncTabBar()
     this.load()

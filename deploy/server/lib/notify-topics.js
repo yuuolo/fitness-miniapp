@@ -14,7 +14,7 @@ const TOPICS = {
   rankLift: { name: '力量排行榜', kind: 'rankUpdate' }
 }
 
-const MAX_TICKETS = 5
+const MAX_TICKETS = 10
 const MIN_INTERVAL_MS = 30 * 1000 // 同话题 30 秒内不重复群发
 const MAX_RECIPIENTS = 300
 

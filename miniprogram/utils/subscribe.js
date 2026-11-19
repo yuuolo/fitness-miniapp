@@ -142,7 +142,12 @@ function requestSync(kinds) {
   })
 }
 
+// 一次点击订阅全部内容提醒（3 个模板）
+function subscribeAllContent() {
+  return requestTopicsSync(['moments', 'competitions', 'rankScore', 'rankLift'])
+}
+
 module.exports = {
   prefetch, request, requestSync, requestTopics, requestTopicsSync,
-  loadIds, loadTopicIds, cachedTopicIds
+  subscribeAllContent, loadIds, loadTopicIds, cachedTopicIds
 }
