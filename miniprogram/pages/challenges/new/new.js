@@ -25,6 +25,8 @@ Page(Object.assign({}, memberSearch.mixin, {
 
   onLoad() {
     this.memberLimit = 20
+    // 普通会员没有 searchMembers 权限，挑战选对手走专门接口
+    this.memberSource = 'challengeOpponents'
     this.fetchMembers()
     api.call('listLiftItems', {}, { silent: true }).then(r => {
       const lifts = (r.items || r || []).filter(x => x.enabled !== false)

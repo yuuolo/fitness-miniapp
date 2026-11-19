@@ -147,6 +147,7 @@ const ACTION_FEATURE = {
   ocrBodyReport: 'fitness',
   // 会员挑战（裁判制）
   createChallenge: 'rank',
+  challengeOpponents: 'rank',
   pickReferee: 'rank',
   respondChallenge: 'rank',
   refereeRespond: 'rank',

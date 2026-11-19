@@ -4,7 +4,7 @@
     <view wx:if="{{opponent}}" class="between">
       <view class="row" style="gap:12rpx;align-items:center">
         <text class="pick-name">{{opponent.name}}</text>
-        <text class="muted">{{opponent.phone || ''}}</text>
+        <text wx:if="{{opponent.role !== 'member'}}" class="tag">{{opponent.role === 'coach' ? '教练' : '管理员'}}</text>
       </view>
       <text class="muted" bindtap="clearOpponent">更换</text>
     </view>
@@ -20,7 +20,7 @@
         <text wx:if="{{keyword}}" class="muted" bindtap="clearKeyword">清空</text>
       </view>
       <view class="muted mt" wx:if="{{!members.length && !memberLoading && !keyword && !memberEmpty}}">
-      还没有可选会员（会员先打开一次小程序才会出现）
+      还没有其他会员
     </view>
     <view wx:if="{{memberLoading}}" class="muted mt">搜索中…</view>
       <view wx:elif="{{memberEmpty}}" class="muted mt">没有找到匹配「{{keyword}}」的会员</view>
@@ -28,7 +28,7 @@
         <view wx:for="{{members}}" wx:key="_id" class="list-item" data-openid="{{item._id}}" bindtap="pickMember">
           <view class="grow">
             <view>{{item.name}}</view>
-            <view class="muted">{{item.phone || '未填手机号'}}</view>
+            <view wx:if="{{item.role !== 'member'}}" class="muted">{{item.role === 'coach' ? '教练' : '管理员'}}</view>
           </view>
           <text class="muted">选择</text>
         </view>

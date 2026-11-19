@@ -7,7 +7,7 @@
     <button class="btn" bindtap="onSearchTap">刷新</button>
   </view>
 
-  <view class="hint-block">会员需先打开一次小程序才会出现在这里；没填手机号的可以让教练代填。</view>
+  <view class="hint-block">会员要先打开一次小程序，才会出现在这个列表里。会员需先打开一次小程序才会出现在这里；没填手机号的可以让教练代填。</view>
 
   <view wx:if="{{memberLoading}}" class="empty">搜索中…</view>
   <view wx:elif="{{memberEmpty}}" class="empty">没有找到匹配「{{keyword}}」的会员</view>

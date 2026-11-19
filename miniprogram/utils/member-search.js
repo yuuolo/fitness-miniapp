@@ -61,8 +61,10 @@ const mixin = {
   fetchMembers() {
     const limit = this.memberLimit || DEFAULT_LIMIT
     const kw = String(this.data.keyword || '').trim()
+    // 员工端用 searchMembers（教练权限，带手机号）；挑战选对手用 challengeOpponents（会员权限，不带手机号）
+    const action = this.memberSource || 'searchMembers'
     this.setData({ memberLoading: true })
-    return api.call('searchMembers', { keyword: kw }, { silent: true })
+    return api.call(action, { keyword: kw, limit }, { silent: true })
       .then(list => {
         // 页面可以自定义映射（比如带角色名、入职时间）
         const mapped = this.mapMembers ? this.mapMembers(list) : normalize(list, limit)
