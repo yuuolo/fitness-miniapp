@@ -49,6 +49,8 @@ function wrap(fields) {
 }
 
 async function notify(kind, openid, values) {
+  // 测试环境可关闭发送，避免测试数据打扰真实会员
+  if (process.env.NOTIFY_DISABLED === '1') return false
   const t = templates[kind]
   if (!t || !t.id) return false
   try {

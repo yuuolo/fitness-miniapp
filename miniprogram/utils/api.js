@@ -1,6 +1,25 @@
-// 小程序请求封装：所有业务请求走自建后端 https://gym.novrein.com/api
-// 用法与云开发版一致：call(action, data, options) → Promise；另外提供 upload(filePath, ext)
-const BASE = 'https://gym.novrein.com'
+// 小程序请求封装：所有业务请求走自建后端
+//
+// 两套环境：
+//   正式版（release）→ https://gym.novrein.com        正式库
+//   体验版/开发版      → https://test.gym.novrein.com   测试库（独立数据，不影响会员）
+// 判断依据：wx.getAccountInfoSync().miniProgram.envVersion
+const BASE_RELEASE = 'https://gym.novrein.com'
+const BASE_TEST = 'https://test.gym.novrein.com'
+
+function pickBase() {
+  try {
+    const info = wx.getAccountInfoSync && wx.getAccountInfoSync()
+    const env = info && info.miniProgram && info.miniProgram.envVersion
+    // develop（开发版）/ trial（体验版）一律走测试环境
+    if (env === 'release') return BASE_RELEASE
+    return BASE_TEST
+  } catch (e) {
+    return BASE_RELEASE
+  }
+}
+
+const BASE = pickBase()
 
 let cached = { code: '', at: 0 }
 
