@@ -162,7 +162,7 @@
 .metric-row:last-child { border-bottom: none; }
 .metric-name { width: 168rpx; font-size: 27rpx; color: var(--ink); }
 .metric-values { flex: 1; display: flex; align-items: baseline; gap: 16rpx; }
-.metric-now { font-size: 32rpx; font-weight: 600; color: var(--brand-strong); }
+.metric-now { font-size: 32rpx; font-weight: 600; color: var(--ink); }
 .metric-prev { font-size: 26rpx; color: var(--muted); }
 .metric-u { font-size: 22rpx; margin-left: 2rpx; }
 .metric-delta { font-size: 24rpx; font-weight: 600; }

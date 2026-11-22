@@ -114,7 +114,7 @@ function round1(v) {
   return Math.round(Number(v) * 10) / 10
 }
 
-// 生成折线图 SVG（背景图形式，和小程序里其它图表一致）
+// 生成曲线图 SVG（平滑曲线，两个点也画成弧线）
 function lineSvg(values, opts) {
   const W = 620
   const H = 300
@@ -137,9 +137,10 @@ function lineSvg(values, opts) {
   const yOf = v => padT + (H - padT - padB) * (1 - (Number(v) - min) / span)
 
   const pts = vs.map((v, i) => [xOf(i), yOf(v)])
-  const line = pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')
-  const area = 'M' + padL + ',' + (H - padB) + ' L' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') +
-    ' L' + pts[pts.length - 1][0].toFixed(1) + ',' + (H - padB) + ' Z'
+  const curve = smoothPath(pts, H)
+  const last = pts[pts.length - 1]
+  const area = curve + ' L' + last[0].toFixed(1) + ',' + (H - padB) +
+    ' L' + pts[0][0].toFixed(1) + ',' + (H - padB) + ' Z'
 
   const grid = [0, 0.25, 0.5, 0.75, 1].map(t => {
     const y = (padT + (H - padT - padB) * t).toFixed(1)
@@ -147,8 +148,8 @@ function lineSvg(values, opts) {
   }).join('')
 
   const dots = pts.map((p, i) => {
-    const last = i === pts.length - 1
-    return '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (last ? 6 : 3.4) + '" fill="' + (last ? '#c8562f' : '#e0b3a0') + '"/>'
+    const isLast = i === pts.length - 1
+    return '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (isLast ? 6 : 3.4) + '" fill="' + (isLast ? '#c8562f' : '#e0b3a0') + '"/>'
   }).join('')
 
   const yTop = round1(max)
@@ -159,11 +160,47 @@ function lineSvg(values, opts) {
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' +
     grid +
     '<path d="' + area + '" fill="rgba(200,86,47,0.10)"/>' +
-    '<polyline points="' + line + '" fill="none" stroke="#c8562f" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<path d="' + curve + '" fill="none" stroke="#c8562f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
     dots + labels +
     '</svg>'
 
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+}
+
+// 平滑曲线路径：
+//   ≥3 个点用 Catmull-Rom 转三次贝塞尔；
+//   只有 2 个点时两端切线取水平，并在中间加一点弧度，让看起来是一条曲线而不是直线段。
+function smoothPath(pts, H) {
+  const f = v => v.toFixed(1)
+  if (!pts.length) return ''
+  if (pts.length === 1) return 'M' + f(pts[0][0]) + ',' + f(pts[0][1])
+
+  if (pts.length === 2) {
+    const [p1, p2] = pts
+    const dx = (p2[0] - p1[0]) / 3
+    // 弧度：取图表高度的 6%，方向朝上（视觉上更像趋势曲线）
+    const bow = -(H || 300) * 0.06
+    const c1x = p1[0] + dx
+    const c1y = p1[1] + bow
+    const c2x = p2[0] - dx
+    const c2y = p2[1] + bow
+    return 'M' + f(p1[0]) + ',' + f(p1[1]) +
+      ' C' + f(c1x) + ',' + f(c1y) + ' ' + f(c2x) + ',' + f(c2y) + ' ' + f(p2[0]) + ',' + f(p2[1])
+  }
+
+  let d = 'M' + f(pts[0][0]) + ',' + f(pts[0][1])
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[i + 2] || pts[i + 1]
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6
+    d += ' C' + f(c1x) + ',' + f(c1y) + ' ' + f(c2x) + ',' + f(c2y) + ' ' + f(p2[0]) + ',' + f(p2[1])
+  }
+  return d
 }
 
 Page({
