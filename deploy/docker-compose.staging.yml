@@ -34,6 +34,8 @@ services:
       # 测试环境用独立管理密码，避免和正式后台混用
       ADMIN_PASSWORD: ${STAGING_ADMIN_PASSWORD:-}
       CONFIG_SECRET: ${CONFIG_SECRET:-}
+      # 打开访问日志：排查小程序请求有没有到（正式环境不开）
+      ACCESS_LOG: "1"
       # 测试环境不发微信订阅消息（避免打扰真实会员）
       NOTIFY_DISABLED: "1"
       OCR_URL: ${OCR_URL:-}

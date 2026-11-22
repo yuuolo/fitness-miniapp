@@ -185,6 +185,19 @@ const ACTION_FEATURE = {
 const app = express()
 app.use(express.json({ limit: '2mb' }))
 
+// 可选访问日志（排查小程序请求用）：环境变量 ACCESS_LOG=1 打开
+if (process.env.ACCESS_LOG === '1') {
+  app.use((req, res, next) => {
+    const t0 = Date.now()
+    res.on('finish', () => {
+      const ua = String(req.headers['user-agent'] || '').slice(0, 36)
+      console.log('[access] ' + req.method + ' ' + (req.headers.host || '') + req.originalUrl.split('?')[0] +
+        ' -> ' + res.statusCode + ' ' + (Date.now() - t0) + 'ms ua=' + ua)
+    })
+    next()
+  })
+}
+
 app.get('/health', (req, res) => res.json({ ok: true }))
 
 // ---------- 上传：小程序读成 ArrayBuffer 直接 POST 二进制，避免引入 multipart 依赖 ----------
