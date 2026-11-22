@@ -2,10 +2,10 @@
 //
 // 两套环境：
 //   正式版（release）→ https://gym.novrein.com        正式库
-//   体验版/开发版      → https://test.gym.novrein.com   测试库（独立数据，不影响会员）
+//   体验版/开发版      → https://test-gym.novrein.com   测试库（独立数据，不影响会员）
 // 判断依据：wx.getAccountInfoSync().miniProgram.envVersion
 const BASE_RELEASE = 'https://gym.novrein.com'
-const BASE_TEST = 'https://test.gym.novrein.com'
+const BASE_TEST = 'https://test-gym.novrein.com'
 
 function pickBase() {
   try {
