@@ -23,12 +23,22 @@
       <view class="muted">相对力量三项各占三分之一：录 1 项最多 13.3 分、2 项最多 26.7 分，三项齐全才能满分</view>
     </view>
 
-    <view wx:if="{{metrics.length}}" class="section-title">身体指标</view>
-    <view wx:if="{{metrics.length}}" class="card">
-      <view class="grid">
-        <view wx:for="{{metrics}}" wx:key="key" class="grid-cell">
-          <view class="grid-v">{{item.value}}<text wx:if="{{item.unit}}" class="grid-u">{{item.unit}}</text></view>
-          <view class="muted">{{item.name}}</view>
+    <view wx:if="{{compare.length}}" class="between section-title">
+      <text>身体指标</text>
+      <text class="muted">点指标看历史曲线 ›</text>
+    </view>
+    <view wx:if="{{compare.length}}" class="card">
+      <view class="compare-hint muted">{{compareHint}}</view>
+      <view class="metric-list">
+        <view wx:for="{{compare}}" wx:key="key" class="metric-row" data-key="{{item.key}}" bindtap="openMetric">
+          <view class="metric-name">{{item.name}}</view>
+          <view class="metric-values">
+            <text class="metric-now">{{item.value}}<text wx:if="{{item.unit}}" class="metric-u">{{item.unit}}</text></text>
+            <text wx:if="{{item.hasPrev}}" class="metric-prev">{{item.prev}}<text wx:if="{{item.unit}}" class="metric-u">{{item.unit}}</text></text>
+            <text wx:else class="metric-prev muted">—</text>
+            <text wx:if="{{item.delta !== null}}" class="metric-delta {{item.tone}}">{{item.deltaText}}</text>
+          </view>
+          <text class="metric-arrow">›</text>
         </view>
       </view>
       <view wx:if="{{f.latestBody.bodyShape || f.latestBody.bodyType}}" class="muted mt">

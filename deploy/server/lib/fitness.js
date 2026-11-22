@@ -476,6 +476,29 @@ async function bodyTrend({ me, data }) {
   }
 }
 
+// 全部历史体测（含评分实时重算）：给单指标历史曲线、最近两次对比用
+async function bodyHistory({ me, data }) {
+  need(me, 'member')
+  const asStaff = (ROLE_LEVEL[me.role] || 0) >= ROLE_LEVEL.admin
+  const openid = data.openid && asStaff ? data.openid : me._id
+
+  const rows = (await query(
+    `select * from body_records where openid = $1
+      order by date asc, created_at asc limit 500`, [openid]
+  )).rows.map(bodyRow)
+
+  const m = memberRow((await query('select * from members where openid = $1', [openid])).rows[0])
+  const records = m ? rows.map(b => withScore(m, b)) : rows
+
+  // 最新/上一次 与 各指标是否有值，前端用来做对比
+  return {
+    count: records.length,
+    latestDate: records.length ? records[records.length - 1].date : '',
+    prevDate: records.length > 1 ? records[records.length - 2].date : '',
+    records
+  }
+}
+
 // ---------- 力量成绩 ----------
 
 async function saveStrength({ me, data }) {
@@ -1122,7 +1145,8 @@ module.exports = {
   // 评分相关（重算脚本 / 测试会用到）
   scoreBody, sbdOf, sbdCountOf, sbdMissingOf, fatRange, bmiOf,
   saveBodyRecord, deleteBodyRecord, saveStrength, saveActivity,
-  myFitness, memberFitness, memberProfile, leaderboard, setBodyPublic, bodyTrend,
+  myFitness,
+  bodyHistory, memberFitness, memberProfile, leaderboard, setBodyPublic, bodyTrend,
   listLiftItems, saveLiftItem, setLiftItemEnabled, deleteLiftItem,
   parseBodyReport, ocrBodyReport,
   // 供内部/测试复用

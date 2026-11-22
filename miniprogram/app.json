@@ -5,6 +5,7 @@
     "pages/mine/mine",
     "pages/profile/profile",
     "pages/fitness/fitness",
+    "pages/fitness-metric/fitness-metric",
     "pages/member/member",
     "pages/rank/rank",
     "pages/competitions/competitions",

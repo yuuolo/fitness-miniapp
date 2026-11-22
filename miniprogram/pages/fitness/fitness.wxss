@@ -151,3 +151,22 @@
 }
 .seg-badge.ok { background: var(--ok-soft); color: var(--ok); }
 .seg-badge.warn { background: var(--brand-soft); color: var(--brand); }
+
+/* 指标对比：最新（主色）vs 上一次（灰） */
+.compare-hint { font-size: 23rpx; margin-bottom: 6rpx; }
+.metric-list { margin-top: 4rpx; }
+.metric-row {
+  display: flex; align-items: center; gap: 12rpx;
+  padding: 20rpx 0; border-bottom: 1rpx solid var(--line);
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-name { width: 168rpx; font-size: 27rpx; color: var(--ink); }
+.metric-values { flex: 1; display: flex; align-items: baseline; gap: 16rpx; }
+.metric-now { font-size: 32rpx; font-weight: 600; color: var(--brand-strong); }
+.metric-prev { font-size: 26rpx; color: var(--muted); }
+.metric-u { font-size: 22rpx; margin-left: 2rpx; }
+.metric-delta { font-size: 24rpx; font-weight: 600; }
+.metric-delta.good { color: #2e9e5b; }
+.metric-delta.bad { color: #d9534f; }
+.metric-delta.flat { color: var(--muted); }
+.metric-arrow { color: var(--muted); font-size: 26rpx; }

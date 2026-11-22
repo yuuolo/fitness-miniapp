@@ -143,6 +143,7 @@ const ACTION_FEATURE = {
   memberFitness: 'fitness',
   memberProfile: 'fitness',
   bodyTrend: 'fitness',
+  bodyHistory: 'fitness',
   parseBodyReport: 'fitness',
   ocrBodyReport: 'fitness',
   // 会员挑战（裁判制）

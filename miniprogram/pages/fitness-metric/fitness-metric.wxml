@@ -1,0 +1,41 @@
+<view class="page">
+  <view wx:if="{{!loaded}}" class="card muted">加载中…</view>
+
+  <block wx:if="{{loaded}}">
+    <view class="card head-card">
+      <view class="between">
+        <view>
+          <view class="title">{{meta.name}}</view>
+          <view class="muted">{{latest ? latest.date + ' 最新' : '暂无数据'}}</view>
+        </view>
+        <view class="head-num">
+          <text class="num">{{latest ? latest.value : '—'}}</text>
+          <text class="unit">{{meta.unit}}</text>
+        </view>
+      </view>
+      <view wx:if="{{prev}}" class="head-cmp">
+        <text class="muted">上一次 {{prev.value}}{{meta.unit}}（{{prev.date}}）</text>
+        <text class="delta {{tone}}">{{deltaText}}</text>
+      </view>
+      <view wx:elif="{{latest}}" class="muted">只有 1 次记录，再测一次就能看到变化</view>
+    </view>
+
+    <view class="card">
+      <view class="between">
+        <text>历史曲线</text>
+        <text class="muted">共 {{count}} 次记录</text>
+      </view>
+      <view wx:if="{{svg}}" class="chart" style="background-image:url('{{svg}}')"></view>
+      <view wx:else class="muted mt">至少 2 次记录才能画曲线</view>
+    </view>
+
+    <view class="section-title">全部记录</view>
+    <view class="card">
+      <view wx:if="{{!list.length}}" class="muted">暂无记录</view>
+      <view wx:for="{{list}}" wx:key="date" class="list-item">
+        <text class="grow">{{item.date}}</text>
+        <text class="now">{{item.value}}{{meta.unit}}</text>
+      </view>
+    </view>
+  </block>
+</view>

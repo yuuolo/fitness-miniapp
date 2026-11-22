@@ -27,6 +27,53 @@ const METRICS = [
   { key: 'fatFreeMass', name: '去脂体重', unit: 'kg' }
 ]
 
+// 指标好坏方向：-1 越低越好，1 越高越好，0 中性（不标颜色）
+const METRIC_DIR = {
+  weight: -1, bodyFat: -1, fatMass: -1, visceral: -1, bmi: -1, waistHipRatio: -1,
+  bodyAge: -1, heartRate: 0,
+  muscle: 1, muscleRate: 1, protein: 1, water: 1, boneMass: 1,
+  skeletalMuscle: 1, bmr: 1, fatFreeMass: 1, score: 1
+}
+
+function round1(v) {
+  return Math.round(Number(v) * 10) / 10
+}
+
+// 最新一条 vs 上一次「有该指标」的记录
+function buildCompare(history) {
+  const list = history || []
+  if (!list.length) return []
+  const latest = list[0]
+  const out = []
+  for (const m of METRICS) {
+    const now = latest[m.key]
+    if (now == null || now === '') continue
+    const prevRec = list.slice(1).find(x => x[m.key] != null && x[m.key] !== '')
+    const prev = prevRec ? prevRec[m.key] : null
+    let delta = null
+    let tone = 'flat'
+    if (prev != null) {
+      delta = round1(now - prev)
+      const dir = METRIC_DIR[m.key] == null ? 0 : METRIC_DIR[m.key]
+      if (delta === 0 || dir === 0) tone = 'flat'
+      else tone = (delta > 0 ? 1 : -1) === dir ? 'good' : 'bad'
+    }
+    out.push({
+      key: m.key,
+      name: m.name,
+      unit: m.unit,
+      value: now,
+      prev,
+      prevDate: prevRec ? prevRec.date : '',
+      delta,
+      hasPrev: prev != null,
+      deltaText: delta == null ? '' : (delta > 0 ? '+' : '') + delta,
+      tone
+    })
+  }
+  return out
+}
+
 const SEG_META = [
   { key: 'leftArm', name: '左上肢', cls: 'seg-la' },
   { key: 'rightArm', name: '右上肢', cls: 'seg-ra' },
@@ -72,7 +119,7 @@ Page({
   data: {
     loaded: false, f: null, isPublic: false,
     hasBody: false, score: 0, scoreDetail: [], openid: '',
-    metrics: [], bestList: [], bodyList: [], actList: [],
+    metrics: [], compare: [], compareHint: '', bestList: [], bodyList: [], actList: [],
     periods: PERIODS, days: 30, trend: null, trendList: [],
     segTab: 'fat', seg: null, segCurrent: null
   },
@@ -114,6 +161,11 @@ Page({
           const b = f.bestLift[l.key]
           return { key: l.key, name: l.name, oneRM: b ? b.oneRM : 0, has: !!b }
         }),
+        // 最近两次对比（按日期倒序，第一条是最新）
+        compare: buildCompare(f.bodyHistory || []),
+        compareHint: (f.bodyHistory || []).length > 1
+          ? '左侧是最新（' + ((f.bodyHistory || [])[0] || {}).date + '），右侧上一次（' + ((f.bodyHistory || [])[1] || {}).date + '）'
+          : '只有一次记录，再测一次就能对比',
         bodyList: (f.bodyHistory || []).map(b => ({
           id: b._id,
           date: b.date,
@@ -185,6 +237,13 @@ Page({
       this.setData({ isPublic })
       wx.showToast({ title: isPublic ? '已公开身体数据' : '已设为私密' })
     })
+  },
+
+  // 点某个指标 → 看它的历史曲线
+  openMetric(e) {
+    const key = e.currentTarget.dataset.key
+    if (!key) return
+    wx.navigateTo({ url: '/pages/fitness-metric/fitness-metric?key=' + key })
   },
 
   goRank() {
