@@ -35,6 +35,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       # 云存储 AccessKey 等敏感配置的加密密钥（换掉会导致已保存的密钥失效）
       CONFIG_SECRET: ${CONFIG_SECRET:-}
+      # 体验版代理：把 /test-api/* 转发给测试环境容器（不配则关闭）
+      STAGING_PROXY_URL: ${STAGING_PROXY_URL:-http://server-staging:3000}
       # 体测报告图片识别（自建 OCR 服务，见 ./ocr）
       OCR_URL: ${OCR_URL:-}
       OCR_TIMEOUT: ${OCR_TIMEOUT:-20000}

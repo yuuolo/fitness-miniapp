@@ -6,7 +6,7 @@ cd /opt/gym
 echo '=== 准备测试环境密钥 ==='
 if ! grep -q '^STAGING_ADMIN_PASSWORD=' .env; then
   NEWPW=$(head -c 12 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 14)
-  printf '\n# 测试环境（体验版）管理后台密码\nSTAGING_ADMIN_PASSWORD=%s\nSTAGING_PUBLIC_BASE_URL=https://test-gym.novrein.com\n' "$NEWPW" >> .env
+  printf '\n# 测试环境（体验版）管理后台密码\nSTAGING_ADMIN_PASSWORD=%s\nSTAGING_PUBLIC_BASE_URL=https://gym.novrein.com/test-api\n' "$NEWPW" >> .env
   echo "  已生成 STAGING_ADMIN_PASSWORD=$NEWPW"
 else
   echo '  STAGING_ADMIN_PASSWORD 已存在'

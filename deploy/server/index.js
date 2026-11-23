@@ -3,6 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const https = require('https')
 const express = require('express')
+const http = require('http')
 
 const { query, one, pool, ensureSchema } = require('./lib/db')
 const { BizError, getMember } = require('./lib/common')
@@ -186,6 +187,48 @@ const ACTION_FEATURE = {
 }
 
 const app = express()
+// ---------- 测试环境反代（体验版专用） ----------
+// 体验版把请求发到 https://gym.novrein.com/test-api/*，这里转发给 staging 容器。
+// 好处：只用一个老域名（解析稳定、已在微信白名单），大文件上传也不会再遇到 DNS 问题。
+if (process.env.STAGING_PROXY_URL) {
+  const stagingUrl = process.env.STAGING_PROXY_URL
+  app.use('/test-api', (req, res) => {
+    let target
+    try {
+      target = new URL(stagingUrl)
+    } catch (e) {
+      res.statusCode = 500
+      return res.end(JSON.stringify({ code: 500, msg: '测试环境地址配置错误' }))
+    }
+    const headers = Object.assign({}, req.headers)
+    headers.host = target.host
+
+    const preq = http.request({
+      hostname: target.hostname,
+      port: target.port || 80,
+      path: req.url,
+      method: req.method,
+      headers
+    }, pres => {
+      res.writeHead(pres.statusCode || 502, pres.headers)
+      pres.pipe(res)
+    })
+
+    preq.on('error', err => {
+      console.warn('staging proxy error', err.message)
+      if (!res.headersSent) {
+        res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' })
+        res.end(JSON.stringify({ code: 502, msg: '测试环境暂时不可用' }))
+      } else {
+        res.end()
+      }
+    })
+
+    req.pipe(preq)
+  })
+  console.log('staging proxy enabled ->', stagingUrl)
+}
+
 app.use(express.json({ limit: '2mb' }))
 
 // 可选访问日志（排查小程序请求用）：环境变量 ACCESS_LOG=1 打开

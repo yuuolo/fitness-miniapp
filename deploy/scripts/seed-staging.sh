@@ -41,10 +41,10 @@ curl -s -X POST http://127.0.0.1:8081/api -H 'content-type: application/json' \
 echo '=== 修正测试环境媒体地址 ==='
 docker exec -e PGPASSWORD="$PW" gym-db-staging-1 psql -U postgres -d gym_staging -c "
 update config
-   set value = jsonb_set(value, '{postgres,baseUrl}', '\"https://test-gym.novrein.com\"'::jsonb)
+   set value = jsonb_set(value, '{postgres,baseUrl}', '\"https://gym.novrein.com/test-api\"'::jsonb)
  where key = 'storage' and value->'postgres' is not null;"
 
 docker exec -e PGPASSWORD="$PW" gym-db-staging-1 psql -U postgres -d gym_staging -c "
 update moments
-   set media = replace(media::text, 'https://gym.novrein.com/api/media/', 'https://test-gym.novrein.com/api/media/')::jsonb
+   set media = replace(media::text, 'https://gym.novrein.com/api/media/', 'https://gym.novrein.com/test-api/api/media/')::jsonb
  where media::text like '%https://gym.novrein.com/api/media/%';"

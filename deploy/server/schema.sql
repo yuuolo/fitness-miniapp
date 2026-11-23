@@ -285,3 +285,11 @@ create table if not exists notify_subscriptions (
   updated_at bigint not null default 0,
   primary key (openid, topic)
 );
+
+-- ---------- 视频列自愈（老库恢复备份后可能缺列，create table if not exists 补不上） ----------
+alter table strength_records add column if not exists video_url text not null default '';
+alter table strength_records add column if not exists video_thumb text not null default '';
+alter table competition_entries add column if not exists video_url text not null default '';
+alter table competition_entries add column if not exists video_thumb text not null default '';
+alter table moments add column if not exists status text not null default 'normal';
+alter table moments add column if not exists short text not null default '';

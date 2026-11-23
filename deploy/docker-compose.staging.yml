@@ -30,7 +30,7 @@ services:
       WX_MP_STATE: ${WX_MP_STATE:-developer}
       SHOP_ADDRESS: ${SHOP_ADDRESS:-前台签到}
       # 测试环境的媒体地址：必须指向测试域名，否则体验版里分享出去会指到正式站
-      PUBLIC_BASE_URL: ${STAGING_PUBLIC_BASE_URL:-https://test-gym.novrein.com}
+      PUBLIC_BASE_URL: ${STAGING_PUBLIC_BASE_URL:-https://gym.novrein.com/test-api}
       # 测试环境用独立管理密码，避免和正式后台混用
       ADMIN_PASSWORD: ${STAGING_ADMIN_PASSWORD:-}
       CONFIG_SECRET: ${CONFIG_SECRET:-}

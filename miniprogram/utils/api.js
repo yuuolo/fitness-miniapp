@@ -5,7 +5,8 @@
 //   体验版/开发版      → https://test-gym.novrein.com   测试库（独立数据，不影响会员）
 // 判断依据：wx.getAccountInfoSync().miniProgram.envVersion
 const BASE_RELEASE = 'https://gym.novrein.com'
-const BASE_TEST = 'https://test-gym.novrein.com'
+// 测试环境挂在老域名下用路径区分：老域名解析稳定，微信上传不会报 DNS 失败
+const BASE_TEST = 'https://gym.novrein.com/test-api'
 
 function pickBase() {
   try {
