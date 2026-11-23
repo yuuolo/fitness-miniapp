@@ -153,6 +153,7 @@ const ACTION_FEATURE = {
   respondChallenge: 'rank',
   refereeRespond: 'rank',
   submitChallengeVideo: 'rank',
+  deleteChallengeVideo: 'rank',
   judgeChallenge: 'rank',
   challengeList: 'rank',
   challengeDetail: 'rank',

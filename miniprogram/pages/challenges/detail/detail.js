@@ -15,6 +15,7 @@ Page({
   data: {
     id: '',
     c: null,
+    sides: [],
     loaded: false,
     countdownText: '',
     // 裁判判定面板
@@ -60,6 +61,7 @@ Page({
     return api.call('challengeDetail', { id: this.data.id }, { silent: true }).then(c => {
       this.setData({
         c,
+        sides: this.buildSides(c),
         loaded: true,
         countdownText: countdown(c.deadline)
       })
@@ -113,34 +115,118 @@ Page({
       .then(() => this.setData({ refereeOpen: false }), () => {}).then(() => this.load())
   },
 
-  // ---------- 上传视频（走 /api/video，自动裁切） ----------
-  uploadVideo() {
+  // 把「双方视频」整理成两列（发起方 / 应战方），供页面渲染
+  buildSides(c) {
+    if (!c) return []
+    const limit = c.videoLimit || 9
+    const open = ['accepted', 'waiting_referee', 'ready'].indexOf(c.status) >= 0
+    const all = c.videos || []
+    const isRef = !!c.isReferee || !!c.canProxyVideo
+
+    const mk = person => {
+      const videos = all.filter(v => v.openid === person.openid).map(v => Object.assign({}, v, {
+        // 本人可删自己的，裁判可删任意（已判定后只有管理员能删，服务端会再校验）
+        canDelete: !!(person.isMe || isRef),
+        uploadedByName: v.uploadedBy === c.referee.openid
+          ? '裁判代传'
+          : (v.uploadedBy === person.openid ? '本人上传' : '')
+      }))
+      const isMeSide = !!person.isMe
+      return {
+        openid: person.openid,
+        name: person.name,
+        isMe: isMeSide,
+        videos,
+        count: videos.length,
+        canUpload: open && (isMeSide || isRef) && videos.length < limit,
+        // 裁判给双方代传时按钮写成「代传视频」
+        proxy: isRef && !isMeSide
+      }
+    }
+    return [mk(c.challenger), mk(c.opponent)]
+  },
+
+  // ---------- 上传视频（可多段，每方最多 9 段；裁判可代传） ----------
+  // data-forOpenid 传了就是裁判代传：值是该方 openid
+  uploadVideo(e) {
+    const c = this.data.c
+    if (!c) return
+    const forOpenid = (e && e.currentTarget && e.currentTarget.dataset.forOpenid) || ''
+    const sideOpenid = forOpenid || this.mySideOpenid()
+    if (!sideOpenid) return
+    const existing = (c.videos || []).filter(v => v.openid === sideOpenid).length
+    const left = Math.max(0, (c.videoLimit || 9) - existing)
+    if (!left) {
+      wx.showModal({ title: '已达上限', content: '每方最多 ' + (c.videoLimit || 9) + ' 段视频，先删掉一些再传。', showCancel: false })
+      return
+    }
     wx.chooseMedia({
-      count: 1,
+      count: left,
       mediaType: ['video'],
       sourceType: ['camera', 'album'],
       maxDuration: 60,
       camera: 'back',
       success: res => {
-        const file = (res.tempFiles || [])[0]
-        if (!file) return
-        wx.showLoading({ title: '上传中', mask: true })
-        subscribe.request(['result']).then(() => api.uploadVideo(file.tempFilePath)).then(v => {
-          wx.hideLoading()
-          return api.call('submitChallengeVideo', { id: this.data.id, videoUrl: v.fileID }, { silent: true })
-            .then(() => {
-              sfx.playSave()
-              if (v.trimmed) {
-                wx.showToast({ title: '已按设定裁到 ' + v.keptSeconds + ' 秒', icon: 'none' })
-              } else {
-                wx.showToast({ title: '视频已提交' })
-              }
-              this.load()
-            })
-        }).catch(err => {
-          wx.hideLoading()
-          wx.showModal({ title: '视频提交失败', content: err.message || '请稍后重试', showCancel: false })
-        })
+        const files = res.tempFiles || []
+        if (!files.length) return
+        this.uploadQueue(files, sideOpenid, 0)
+      }
+    })
+  },
+
+  // 我自己是发起方还是应战方
+  mySideOpenid() {
+    const c = this.data.c
+    if (!c) return ''
+    if (c.challenger.isMe) return c.challenger.openid
+    if (c.opponent.isMe) return c.opponent.openid
+    return ''
+  },
+
+  // 按顺序逐个上传（微信 uploadFile 同时只能一个，避免抢带宽）
+  uploadQueue(files, sideOpenid, index) {
+    if (index >= files.length) {
+      wx.hideLoading()
+      sfx.playSave()
+      wx.showToast({ title: '已上传 ' + files.length + ' 段视频' })
+      this.load()
+      return
+    }
+    const file = files[index]
+    wx.showLoading({ title: '上传中 ' + (index + 1) + '/' + files.length, mask: true })
+    const payload = { id: this.data.id, videoUrl: '' }
+    if (sideOpenid) payload.forOpenid = sideOpenid
+    api.uploadVideo(file.tempFilePath).then(v => {
+      payload.videoUrl = v.fileID
+      return api.call('submitChallengeVideo', payload, { silent: true }).then(() => {
+        if (v.trimmed) {
+          wx.showToast({ title: '第 ' + (index + 1) + ' 段按设定裁到 ' + v.keptSeconds + ' 秒', icon: 'none' })
+        }
+        this.uploadQueue(files, sideOpenid, index + 1)
+      })
+    }).catch(err => {
+      wx.hideLoading()
+      wx.showModal({
+        title: '视频提交失败',
+        content: (err.message || '请稍后重试') + (index + 1 < files.length ? '（已成功 ' + index + ' 段）' : ''),
+        showCancel: false
+      })
+      if (index > 0) this.load()
+    })
+  },
+
+  // 删除一段视频（本人可删自己的，裁判可删任意）
+  deleteVideo(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id) return
+    wx.showModal({
+      title: '删除视频',
+      content: '确定删除这段视频？',
+      success: r => {
+        if (!r.confirm) return
+        api.call('deleteChallengeVideo', { id }, { loading: '删除中' })
+          .then(() => this.load())
+          .catch(err => wx.showToast({ title: err.message || '删除失败', icon: 'none' }))
       }
     })
   },
@@ -148,7 +234,11 @@ Page({
   playVideo(e) {
     const url = e.currentTarget.dataset.url
     if (!url) return
-    wx.previewMedia({ sources: [{ url, type: 'video' }] })
+    const c = this.data.c
+    const list = (c && c.videos) || []
+    const sources = list.map(v => ({ url: v.videoUrl, type: 'video' }))
+    const idx = Math.max(0, list.findIndex(v => v.videoUrl === url))
+    wx.previewMedia({ sources: sources.length ? sources : [{ url, type: 'video' }], current: idx })
   },
 
   // ---------- 裁判判定 ----------

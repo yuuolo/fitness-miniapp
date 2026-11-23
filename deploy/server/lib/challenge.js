@@ -25,7 +25,7 @@ const BAN_MS = 7 * 24 * 3600e3     // 作弊禁赛（每次 7 天）
 const BAN_HARD_MS = 30 * 24 * 3600e3 // 累计 3 次后 30 天
 const CHEAT_HARD_COUNT = 3
 const MAX_ACTIVE = 2               // 每人同时最多进行中挑战数
-const MAX_VIDEOS_PER_SIDE = 1      // 每方最多 1 段视频
+const MAX_VIDEOS_PER_SIDE = 9      // 每方最多 9 段视频
 const PAGE_SIZE = 20
 
 const ACTIVE_STATUS = ['pending', 'waiting_referee', 'accepted', 'ready']
@@ -405,39 +405,75 @@ async function respondChallenge({ me, data }) {
 async function submitChallengeVideo({ me, data }) {
   need(me, 'member')
   const c = await loadChallenge(String(data.id || ''))
-  assertParticipant(c, me)
-  if (!['accepted', 'waiting_referee'].includes(c.status)) {
+  // 待判决（双方都已交齐）时也允许继续补传，方便补齐多段视频
+  if (!['accepted', 'waiting_referee', 'ready'].includes(c.status)) {
     fail('现在不是交视频的阶段（' + (STATUS_NAMES[c.status] || c.status) + '）')
   }
+
+  // 谁上传的：本人或裁判（教练/管理员）代传
+  const isReferee = c.referee === me._id || isAdmin(me)
+  let owner = me._id
+  if (data.forOpenid) {
+    if (!isReferee) fail('只有主裁判可以代传视频')
+    owner = String(data.forOpenid)
+    if (owner !== c.challenger && owner !== c.opponent) fail('只能给挑战双方代传')
+  } else if (!isReferee) {
+    if (c.challenger !== me._id && c.opponent !== me._id) fail('只有挑战双方能上传视频')
+  } else if (c.challenger !== me._id && c.opponent !== me._id && !data.forOpenid) {
+    // 裁判自己上传时必须说明是哪一方
+    fail('裁判代传请指定是给哪一方')
+  }
+
   const url = String(data.videoUrl || '')
   if (!/^(cloud:\/\/|https:\/\/)/.test(url)) fail('视频地址不正确')
 
-  const mine = (await query(
+  const count = (await query(
     'select count(*)::int as n from challenge_videos where challenge_id = $1 and openid = $2',
-    [c._id, me._id]
+    [c._id, owner]
   )).rows[0].n
-  if (mine >= MAX_VIDEOS_PER_SIDE) fail('每人最多 ' + MAX_VIDEOS_PER_SIDE + ' 段视频，先删掉旧的再传')
+  if (count >= MAX_VIDEOS_PER_SIDE) {
+    fail('每方最多 ' + MAX_VIDEOS_PER_SIDE + ' 段视频，请先删掉一些再传')
+  }
 
   const now = Date.now()
   await query(
     `insert into challenge_videos (id, challenge_id, openid, video_url, video_thumb, uploaded_by, cheat_flag, cheat_reason, created_at)
      values ($1, $2, $3, $4, $5, $6, false, '', $7)`,
-    [newId(), c._id, me._id, url, String(data.videoThumb || ''), me._id, now]
+    [newId(), c._id, owner, url, String(data.videoThumb || ''), me._id, now]
   )
 
-  // 双方都交了 → 进入待判决，开始算裁判的 2 小时
+  // 双方都至少有一段 → 进入待判决，开始算裁判的 2 小时
   const counts = (await query(
     'select count(distinct openid)::int as n from challenge_videos where challenge_id = $1',
     [c._id]
   )).rows[0].n
   if (counts >= 2) {
-    await query(
-      "update challenges set status = 'ready', judge_by = $2 where id = $1",
-      [c._id, now + JUDGE_MS]
-    )
-    const ready = await loadChallenge(c._id)
-    notifyJudgeReady(ready).catch(() => {})
+    if (c.status === 'ready') {
+      // 已经是待判决：只补视频，不重置裁判倒计时
+      await query("update challenges set status = 'ready' where id = $1", [c._id])
+    } else {
+      await query(
+        "update challenges set status = 'ready', judge_by = $2 where id = $1",
+        [c._id, now + JUDGE_MS]
+      )
+      const ready = await loadChallenge(c._id)
+      notifyJudgeReady(ready).catch(() => {})
+    }
   }
+  return detailById(c._id, me)
+}
+
+// 删除一段挑战视频（本人可删自己的，裁判/管理员可删任意）
+async function deleteChallengeVideo({ me, data }) {
+  need(me, 'member')
+  const id = String(data.id || '')
+  const video = (await query('select * from challenge_videos where id = $1', [id])).rows[0]
+  if (!video) fail('视频不存在')
+  const c = await loadChallenge(video.challenge_id)
+  const isReferee = c.referee === me._id || isAdmin(me)
+  if (!isReferee && video.openid !== me._id) fail('只能删除自己的视频')
+  if (c.status === 'judged' && !isAdmin(me)) fail('已判定的挑战不能再删视频')
+  await query('delete from challenge_videos where id = $1', [id])
   return detailById(c._id, me)
 }
 
@@ -573,8 +609,12 @@ async function decorate(c, me, opts) {
     // 前端用的可操作性判断
     canRespond: c.status === 'pending' && c.opponent === me._id,
     canRefereeAct: c.referee === me._id && c.refereeState === 'invited' && c.status === 'pending',
-    canSubmitVideo: ['accepted', 'waiting_referee'].includes(c.status) &&
-      (c.challenger === me._id || c.opponent === me._id),
+    canSubmitVideo: ['accepted', 'waiting_referee', 'ready'].includes(c.status) &&
+      (c.challenger === me._id || c.opponent === me._id || c.referee === me._id || isAdmin(me)),
+    // 裁判 / 管理员可以给任意一方代传
+    canProxyVideo: ['accepted', 'waiting_referee', 'ready'].includes(c.status) &&
+      (c.referee === me._id || isAdmin(me)) && c.challenger !== me._id && c.opponent !== me._id,
+    videoLimit: MAX_VIDEOS_PER_SIDE,
     myVideo: videos.find(v => v.openid === me._id) || null,
     canJudge: c.status === 'ready' && (c.referee === me._id || isAdmin(me)),
     canReinvite: (c.status === 'referee_vetoed' || (c.status === 'pending' && c.refereeState === 'declined')) &&
@@ -875,6 +915,7 @@ module.exports = {
   respondChallenge,
   refereeRespond,
   submitChallengeVideo,
+  deleteChallengeVideo,
   judgeChallenge,
   challengeList,
   challengeDetail,

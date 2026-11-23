@@ -725,16 +725,15 @@ async function main() {
     assert.ok(accepted.submitBy > Date.now(), '视频截止应在未来')
 
     // 只有双方能交视频
+    // STAFF 在测试里是管理员，会被当成「可代传」，但必须说明给哪一方
     await expectFail(
       () => act('submitChallengeVideo', STAFF, { id: c1._id, videoUrl: 'https://x/v1.mp4' }),
-      '挑战双方', '非参与者不能交视频'
+      '代传', '非参与者不能直接交视频（管理员需指定代传对象）'
     )
-    // 每人最多 1 段
+    // 每方可以交多段（上限 9）
     await act('submitChallengeVideo', MEMBER, { id: c1._id, videoUrl: 'https://gym.example.com/api/media/v1' })
-    await expectFail(
-      () => act('submitChallengeVideo', MEMBER, { id: c1._id, videoUrl: 'https://gym.example.com/api/media/v2' }),
-      '最多', '每方只能交 1 段视频'
-    )
+    const second = await act('submitChallengeVideo', MEMBER, { id: c1._id, videoUrl: 'https://gym.example.com/api/media/v2' })
+    assert.strictEqual(second.videos.filter(v => v.openid === MEMBER).length, 2, '同一方可以交多段视频')
     const ready = await act('submitChallengeVideo', RIVAL, { id: c1._id, videoUrl: 'https://gym.example.com/api/media/v3' })
     assert.strictEqual(ready.status, 'ready', '双方都交了应进入待判决')
     assert.ok(ready.judgeBy > Date.now(), '裁判截止应在未来')
@@ -830,6 +829,56 @@ async function main() {
     })
     assert.strictEqual(judged.status, 'judged')
     ok('双方确认即可先传视频（裁判未接单也不影响）')
+  }
+
+  { // 挑战视频：每方最多 9 段 + 裁判代传 + 删除
+    const VA = 'openid-vid-a'
+    const VB = 'openid-vid-b'
+    const VC = 'openid-vid-coach'
+    for (const id of [VA, VB, VC]) await ensureMember(id)
+    await act('setRole', ADMIN, { openid: VA, role: 'member' })
+    await act('setRole', ADMIN, { openid: VB, role: 'member' })
+    await act('setRole', ADMIN, { openid: VC, role: 'coach' })
+    await act('updateProfile', VA, { nickName: '视频甲', phone: '13800009111' })
+    await act('updateProfile', VB, { nickName: '视频乙', phone: '13800009222' })
+
+    const c = await act('createChallenge', VA, { opponent: VB, referee: VC, liftKey: 'bench' })
+    await act('respondChallenge', VB, { id: c._id, decision: 'accept' })
+    await act('refereeRespond', VC, { id: c._id, decision: 'accept' })
+
+    // 同一方可以传多段
+    await act('submitChallengeVideo', VA, { id: c._id, videoUrl: 'https://gym.example.com/api/media/v1' })
+    const two = await act('submitChallengeVideo', VA, { id: c._id, videoUrl: 'https://gym.example.com/api/media/v2' })
+    assert.strictEqual(two.videos.filter(v => v.openid === VA).length, 2, '同一方可以传多段')
+
+    // 裁判代传乙的视频
+    const proxied = await act('submitChallengeVideo', VC, { id: c._id, forOpenid: VB, videoUrl: 'https://gym.example.com/api/media/v3' })
+    assert.strictEqual(proxied.videos.filter(v => v.openid === VB).length, 1, '裁判可以代传')
+    const pv = proxied.videos.find(v => v.openid === VB)
+    assert.strictEqual(pv.uploadedBy, VC, '要记录是裁判代传的')
+    assert.strictEqual(proxied.status, 'ready', '双方都有视频后进入待判决')
+
+    // 非裁判不能代传
+    await expectFail(
+      () => act('submitChallengeVideo', VA, { id: c._id, forOpenid: VB, videoUrl: 'https://gym.example.com/api/media/v4' }),
+      '主裁判', '普通会员不能代传'
+    )
+
+    // 上限 9 段
+    for (let i = 0; i < 7; i++) {
+      await act('submitChallengeVideo', VA, { id: c._id, videoUrl: 'https://gym.example.com/api/media/m' + i })
+    }
+    await expectFail(
+      () => act('submitChallengeVideo', VA, { id: c._id, videoUrl: 'https://gym.example.com/api/media/over' }),
+      '最多', '每方最多 9 段'
+    )
+
+    // 删除自己的视频
+    const mine = (await act('challengeDetail', VA, { id: c._id })).videos.find(v => v.openid === VA)
+    const afterDel = await act('deleteChallengeVideo', VA, { id: mine._id })
+    assert.ok(!afterDel.videos.some(v => v._id === mine._id), '可以删除自己的视频')
+
+    ok('挑战视频：每方最多 9 段、裁判可代传、可删除')
   }
 
   { // 普通会员也能选挑战对手（不暴露手机号）

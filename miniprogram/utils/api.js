@@ -150,4 +150,4 @@ function download(url) {
   })
 }
 
-module.exports = { call, upload, resetLogin }
+module.exports = { call, upload, uploadVideo, download, readFile, resetLogin }
