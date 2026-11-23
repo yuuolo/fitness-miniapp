@@ -390,7 +390,7 @@ Page({
         if (!file) return
         this.setData({ videoUploading: true, strengthVideoTip: '上传中，超时长的视频会被自动裁切…' })
         wx.showLoading({ title: '上传并处理中', mask: true })
-        api.uploadVideo(file.tempFilePath).then(v => {
+        api.uploadVideo(file.tempFilePath, { duration: file.duration }).then(v => {
           wx.hideLoading()
           this.setData({
             strengthVideo: v.fileID,

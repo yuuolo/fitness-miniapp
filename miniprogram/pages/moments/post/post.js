@@ -198,7 +198,7 @@ Page(Object.assign({}, memberSearch.mixin, {
   trimUpload(file, duration) {
     const lim = this.lim()
     wx.showLoading({ title: '上传并裁切中', mask: true })
-    api.uploadVideo(file.tempFilePath).then(v => {
+    api.uploadVideo(file.tempFilePath, { duration: file.duration }).then(v => {
       wx.hideLoading()
       const item = {
         tempFilePath: file.tempFilePath,

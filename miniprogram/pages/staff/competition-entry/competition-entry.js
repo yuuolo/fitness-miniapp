@@ -112,7 +112,7 @@ Page(Object.assign({}, memberSearch.mixin, {
         this.setData({ uploading: true })
         wx.showLoading({ title: '上传并处理中', mask: true })
         // 统一走 /api/video：按管理页设定限制时长/体积，超时长自动裁切
-        api.uploadVideo(file.tempFilePath).then(v => {
+        api.uploadVideo(file.tempFilePath, { duration: file.duration }).then(v => {
           wx.hideLoading()
           this.setData({ videoUrl: v.fileID, uploading: false })
           if (v.trimmed) {

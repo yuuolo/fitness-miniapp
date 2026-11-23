@@ -14,6 +14,7 @@ const {
   ROLE_LEVEL
 } = require('./common')
 const liftItems = require('./lift-items')
+const limits = require('./limits')
 const notify = require('./notify')
 
 // 时间窗口
@@ -25,7 +26,8 @@ const BAN_MS = 7 * 24 * 3600e3     // 作弊禁赛（每次 7 天）
 const BAN_HARD_MS = 30 * 24 * 3600e3 // 累计 3 次后 30 天
 const CHEAT_HARD_COUNT = 3
 const MAX_ACTIVE = 2               // 每人同时最多进行中挑战数
-const MAX_VIDEOS_PER_SIDE = 9      // 每方最多 9 段视频
+// 每方视频段数沿用后台「单条最多照片/视频数量」（maxCount），默认 9
+let MAX_VIDEOS_PER_SIDE = 9
 const PAGE_SIZE = 20
 
 const ACTIVE_STATUS = ['pending', 'waiting_referee', 'accepted', 'ready']
@@ -427,12 +429,15 @@ async function submitChallengeVideo({ me, data }) {
   const url = String(data.videoUrl || '')
   if (!/^(cloud:\/\/|https:\/\/)/.test(url)) fail('视频地址不正确')
 
+  // 段数上限跟随管理页设定
+  const cfg = await limits.get()
+  MAX_VIDEOS_PER_SIDE = cfg.maxCount > 0 ? cfg.maxCount : 9
   const count = (await query(
     'select count(*)::int as n from challenge_videos where challenge_id = $1 and openid = $2',
     [c._id, owner]
   )).rows[0].n
   if (count >= MAX_VIDEOS_PER_SIDE) {
-    fail('每方最多 ' + MAX_VIDEOS_PER_SIDE + ' 段视频，请先删掉一些再传')
+    fail('每方最多 ' + MAX_VIDEOS_PER_SIDE + ' 段视频（管理页设定），请先删掉一些再传')
   }
 
   const now = Date.now()
@@ -551,6 +556,11 @@ function metricName(metric) {
   return metric === 'relative' ? '相对体重' : '绝对成绩'
 }
 
+async function videoLimitOf() {
+  const cfg = await limits.get()
+  return cfg.maxCount > 0 ? cfg.maxCount : 9
+}
+
 async function decorate(c, me, opts) {
   const items = await liftItems.list()
   const item = items.find(i => i.key === c.liftKey) || { name: c.liftKey, unit: '' }
@@ -614,7 +624,7 @@ async function decorate(c, me, opts) {
     // 裁判 / 管理员可以给任意一方代传
     canProxyVideo: ['accepted', 'waiting_referee', 'ready'].includes(c.status) &&
       (c.referee === me._id || isAdmin(me)) && c.challenger !== me._id && c.opponent !== me._id,
-    videoLimit: MAX_VIDEOS_PER_SIDE,
+    videoLimit: await videoLimitOf(),
     myVideo: videos.find(v => v.openid === me._id) || null,
     canJudge: c.status === 'ready' && (c.referee === me._id || isAdmin(me)),
     canReinvite: (c.status === 'referee_vetoed' || (c.status === 'pending' && c.refereeState === 'declined')) &&

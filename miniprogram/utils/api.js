@@ -103,9 +103,26 @@ function upload(filePath, ext) {
   )).then(r => r.fileID)
 }
 
-// 手机相册里的视频往往几十上百 MB，直接传容易在弱网下超时失败。
-// 这里先按文件大小决定要不要压缩，再走 wx.uploadFile。
-const COMPRESS_OVER_MB = 15 // 超过这个体积先压缩
+// ---------- 视频上传：完全按后台「上传与展示限制」执行 ----------
+// 后台设定（管理页 → 上传与展示限制）：
+//   maxRawVideoMB  原视频（裁切前）上限，超过就直接拒绝并提示裁剪
+//   maxVideoMB     压缩后（裁切后）目标体积；超过就压
+//   maxDuration    视频最长秒数；超过由服务端自动裁切
+//   maxCount       单条最多照片/视频数量
+//   maxTotalMB     单条合计大小上限
+// 0 = 不限
+const POLICY_TTL = 5 * 60 * 1000
+let policyCache = { at: 0, value: null }
+
+function uploadPolicy() {
+  if (policyCache.value && Date.now() - policyCache.at < POLICY_TTL) {
+    return Promise.resolve(policyCache.value)
+  }
+  return call('uploadLimits', {}, { silent: true }).then(v => {
+    policyCache = { at: Date.now(), value: v || {} }
+    return policyCache.value
+  }, () => ({}))
+}
 
 function fileSizeMB(filePath) {
   return new Promise(resolve => {
@@ -134,37 +151,69 @@ function compressVideo(filePath, quality) {
   })
 }
 
-// 视频专用上传：wx.uploadFile 是流式发送，不受 wx.request 体积限制；
-// 服务端会探测时长，超过「视频最长秒数」时自动裁切并告诉我们裁了多久
-function uploadVideo(filePath) {
-  return fileSizeMB(filePath).then(sizeMB => {
-    // 大文件先压缩，能显著减少弱网失败
-    if (sizeMB > COMPRESS_OVER_MB) {
-      return compressVideo(filePath, sizeMB > 80 ? 'low' : 'medium').then(r => r.path)
-    }
-    return filePath
-  }).then(finalPath => {
-    const suffix = String((finalPath.match(/\.[a-zA-Z0-9]+$/) || ['.mp4'])[0]).replace(/^\./, '')
-    return login().then(code => new Promise((resolve, reject) => {
-      wx.uploadFile({
-        url: BASE + '/api/video?ext=' + encodeURIComponent(suffix) + '&code=' + encodeURIComponent(code),
-        filePath: finalPath,
-        name: 'file',
-        timeout: 300000,
-        success: res => {
-          let r = {}
-          try { r = JSON.parse(res.data || '{}') } catch (e) { r = {} }
-          if (r.code === 0) return resolve(r.data)
-          reject(new Error(r.msg || ('视频上传失败（HTTP ' + res.statusCode + '）')))
-        },
-        fail: err => {
-          const raw = (err && err.errMsg) || '未知错误'
-          console.error('uploadVideo fail:', raw)
-          // 把微信的原始原因带出来，方便定位（域名/超时/体积/编码）
-          reject(new Error('视频上传失败（' + raw + '）'))
-        }
+/**
+ * 视频上传：先按后台策略检查/压缩，再流式上传
+ * opts.duration 可选（chooseMedia 返回的时长，用来提示是否会裁切）
+ * 返回 { fileID, trimmed, keptSeconds, originalDuration, compressed }
+ */
+function uploadVideo(filePath, opts) {
+  const options = opts || {}
+  return uploadPolicy().then(policy => {
+    const maxRaw = Number(policy.maxRawVideoMB) || 0   // 0 = 不限
+    const maxVideo = Number(policy.maxVideoMB) || 0    // 0 = 不限
+    const maxDuration = Number(policy.maxDuration) || 0
+
+    return fileSizeMB(filePath).then(sizeMB => {
+      // 1) 原视频就超过「裁切前上限」→ 直接提示先裁剪（别再白传）
+      if (maxRaw > 0 && sizeMB > maxRaw) {
+        const err = new Error('这个视频 ' + sizeMB.toFixed(1) + 'MB，超过原视频上限 ' + maxRaw +
+          'MB，请先在相册裁剪短一点再上传')
+        err.tooLarge = true
+        throw err
+      }
+
+      // 2) 超过「压缩后目标体积」→ 压缩（大文件用低质量，尽量一次到位）
+      const needCompress = maxVideo > 0 && sizeMB > maxVideo
+      if (!needCompress) return { path: filePath, compressed: false }
+
+      const quality = sizeMB > maxVideo * 4 ? 'low' : 'medium'
+      return compressVideo(filePath, quality).then(r => {
+        if (!r.compressed) return r
+        return fileSizeMB(r.path).then(after => {
+          // 压完还超目标体积也不拦：服务端会再转码到目标体积
+          return { path: r.path, compressed: true, sizeMB: after }
+        })
       })
-    }))
+    }).then(source => {
+      const finalPath = source.path
+      const suffix = String((finalPath.match(/.[a-zA-Z0-9]+$/) || ['.mp4'])[0]).replace(/^./, '')
+      // 超过最长秒数：告诉用户会被裁切（服务端执行）
+      const willTrim = maxDuration > 0 && options.duration && options.duration > maxDuration + 1
+      return login().then(code => new Promise((resolve, reject) => {
+        wx.uploadFile({
+          url: BASE + '/api/video?ext=' + encodeURIComponent(suffix) + '&code=' + encodeURIComponent(code),
+          filePath: finalPath,
+          name: 'file',
+          timeout: 300000,
+          success: res => {
+            let r = {}
+            try { r = JSON.parse(res.data || '{}') } catch (e) { r = {} }
+            if (r.code === 0) {
+              return resolve(Object.assign({}, r.data, {
+                compressed: !!source.compressed,
+                willTrim: !!willTrim
+              }))
+            }
+            reject(new Error(r.msg || ('视频上传失败（HTTP ' + res.statusCode + '）')))
+          },
+          fail: err => {
+            const raw = (err && err.errMsg) || '未知错误'
+            console.error('uploadVideo fail:', raw)
+            reject(new Error('视频上传失败（' + raw + '）'))
+          }
+        })
+      }))
+    })
   })
 }
 
@@ -191,4 +240,4 @@ function download(url) {
   })
 }
 
-module.exports = { call, upload, uploadVideo, download, readFile, resetLogin }
+module.exports = { call, upload, uploadVideo, uploadPolicy, download, readFile, resetLogin }

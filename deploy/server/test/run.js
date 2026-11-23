@@ -879,6 +879,18 @@ async function main() {
     assert.ok(!afterDel.videos.some(v => v._id === mine._id), '可以删除自己的视频')
 
     ok('挑战视频：每方最多 9 段、裁判可代传、可删除')
+
+    // 段数上限跟随管理页设定：改成 3 后第 4 段应被拒
+    const limitsLib = require('../lib/limits')
+    await limitsLib.save({ maxCount: 3 }, 'test')
+    const cur = await act('challengeDetail', VA, { id: c._id })
+    assert.strictEqual(cur.videoLimit, 3, '详情里的上限要跟管理页一致')
+    await expectFail(
+      () => act('submitChallengeVideo', VA, { id: c._id, videoUrl: 'https://gym.example.com/api/media/over2' }),
+      '最多 3 段', '超出管理页设定的段数要被拒'
+    )
+    await limitsLib.save({ maxCount: 9 }, 'test')
+    ok('挑战视频段数以管理页 maxCount 设定为准')
   }
 
   { // 普通会员也能选挑战对手（不暴露手机号）

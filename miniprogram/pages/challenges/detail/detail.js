@@ -183,36 +183,6 @@ Page({
     return ''
   },
 
-  // 读取上传限制（只拉一次）
-  checkUploadLimits() {
-    if (this._limits) return Promise.resolve(this._limits)
-    return api.call('uploadLimits', {}, { silent: true }).then(v => {
-      this._limits = v || {}
-      return this._limits
-    }, () => ({}))
-  },
-
-  // 上传前检查体积/时长，避免白传几十兆再失败
-  precheckVideo(file) {
-    return this.checkUploadLimits().then(limits => {
-      const maxRaw = Number(limits.maxRawVideoMB) || 0
-      const sizeMB = file.size ? file.size / 1024 / 1024 : 0
-      if (maxRaw > 0 && sizeMB > maxRaw) {
-        return {
-          ok: false,
-          msg: '这个视频 ' + sizeMB.toFixed(1) + ' MB，超过单次上传上限 ' + maxRaw +
-            ' MB。请在相册里裁剪短一点，或换成清晰度更低的版本再传。'
-        }
-      }
-      const maxDuration = Number(limits.maxDuration) || 0
-      if (maxDuration > 0 && file.duration && file.duration > maxDuration + 1) {
-        // 超时长服务端会自动裁切，只提示不阻止
-        wx.showToast({ title: '超时长会自动裁到 ' + maxDuration + ' 秒', icon: 'none' })
-      }
-      return { ok: true }
-    })
-  },
-
   // 按顺序逐个上传（微信 uploadFile 同时只能一个，避免抢带宽）
   uploadQueue(files, sideOpenid, index) {
     if (index >= files.length) {
@@ -223,14 +193,7 @@ Page({
       return
     }
     const file = files[index]
-    this.precheckVideo(file).then(chk => {
-      if (chk && chk.ok === false) {
-        wx.hideLoading()
-        wx.showModal({ title: '视频太大', content: chk.msg, showCancel: false })
-        return
-      }
-      this.doUploadOne(file, sideOpenid, files, index)
-    })
+    this.doUploadOne(file, sideOpenid, files, index)
   },
 
   // 单个文件上传（失败重试一次）
@@ -238,7 +201,8 @@ Page({
     wx.showLoading({ title: '上传中 ' + (index + 1) + '/' + files.length, mask: true })
     const payload = { id: this.data.id, videoUrl: '' }
     if (sideOpenid) payload.forOpenid = sideOpenid
-    api.uploadVideo(file.tempFilePath).then(v => {
+    api.uploadVideo(file.tempFilePath, { duration: file.duration }).then(v => {
+      if (v.compressed) wx.showToast({ title: '已按设定压缩后上传', icon: 'none' })
       payload.videoUrl = v.fileID
       return api.call('submitChallengeVideo', payload, { silent: true }).then(() => {
         if (v.trimmed) {
