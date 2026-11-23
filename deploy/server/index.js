@@ -125,6 +125,7 @@ const ACTION_FEATURE = {
   // 健身友圈
   momentList: 'moments',
   postMoment: 'moments',
+  uploadLimits: 'moments',
   momentDetail: 'moments',
   deleteMoment: 'moments',
   likeMoment: 'moments',

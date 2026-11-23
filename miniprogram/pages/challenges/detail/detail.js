@@ -183,6 +183,36 @@ Page({
     return ''
   },
 
+  // 读取上传限制（只拉一次）
+  checkUploadLimits() {
+    if (this._limits) return Promise.resolve(this._limits)
+    return api.call('uploadLimits', {}, { silent: true }).then(v => {
+      this._limits = v || {}
+      return this._limits
+    }, () => ({}))
+  },
+
+  // 上传前检查体积/时长，避免白传几十兆再失败
+  precheckVideo(file) {
+    return this.checkUploadLimits().then(limits => {
+      const maxRaw = Number(limits.maxRawVideoMB) || 0
+      const sizeMB = file.size ? file.size / 1024 / 1024 : 0
+      if (maxRaw > 0 && sizeMB > maxRaw) {
+        return {
+          ok: false,
+          msg: '这个视频 ' + sizeMB.toFixed(1) + ' MB，超过单次上传上限 ' + maxRaw +
+            ' MB。请在相册里裁剪短一点，或换成清晰度更低的版本再传。'
+        }
+      }
+      const maxDuration = Number(limits.maxDuration) || 0
+      if (maxDuration > 0 && file.duration && file.duration > maxDuration + 1) {
+        // 超时长服务端会自动裁切，只提示不阻止
+        wx.showToast({ title: '超时长会自动裁到 ' + maxDuration + ' 秒', icon: 'none' })
+      }
+      return { ok: true }
+    })
+  },
+
   // 按顺序逐个上传（微信 uploadFile 同时只能一个，避免抢带宽）
   uploadQueue(files, sideOpenid, index) {
     if (index >= files.length) {
@@ -193,6 +223,18 @@ Page({
       return
     }
     const file = files[index]
+    this.precheckVideo(file).then(chk => {
+      if (chk && chk.ok === false) {
+        wx.hideLoading()
+        wx.showModal({ title: '视频太大', content: chk.msg, showCancel: false })
+        return
+      }
+      this.doUploadOne(file, sideOpenid, files, index)
+    })
+  },
+
+  // 单个文件上传（失败重试一次）
+  doUploadOne(file, sideOpenid, files, index, isRetry) {
     wx.showLoading({ title: '上传中 ' + (index + 1) + '/' + files.length, mask: true })
     const payload = { id: this.data.id, videoUrl: '' }
     if (sideOpenid) payload.forOpenid = sideOpenid
@@ -205,10 +247,16 @@ Page({
         this.uploadQueue(files, sideOpenid, index + 1)
       })
     }).catch(err => {
+      // 每个文件最多自动重试一次（网络抖动很常见）
+      if (!isRetry) {
+        wx.showToast({ title: '网络不稳，重试中…', icon: 'none' })
+        return this.doUploadOne(file, sideOpenid, files, index, true)
+      }
       wx.hideLoading()
       wx.showModal({
-        title: '视频提交失败',
-        content: (err.message || '请稍后重试') + (index + 1 < files.length ? '（已成功 ' + index + ' 段）' : ''),
+        title: '视频上传失败',
+        content: (err.message || '请稍后重试') +
+          (files.length > 1 ? '（已成功 ' + index + '/' + files.length + ' 段）' : ''),
         showCancel: false
       })
       if (index > 0) this.load()

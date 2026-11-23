@@ -103,28 +103,69 @@ function upload(filePath, ext) {
   )).then(r => r.fileID)
 }
 
+// 手机相册里的视频往往几十上百 MB，直接传容易在弱网下超时失败。
+// 这里先按文件大小决定要不要压缩，再走 wx.uploadFile。
+const COMPRESS_OVER_MB = 15 // 超过这个体积先压缩
+
+function fileSizeMB(filePath) {
+  return new Promise(resolve => {
+    try {
+      wx.getFileInfo({
+        filePath,
+        success: r => resolve((r.size || 0) / 1024 / 1024),
+        fail: () => resolve(0)
+      })
+    } catch (e) {
+      resolve(0)
+    }
+  })
+}
+
+// 压缩视频（不支持时返回原路径）
+function compressVideo(filePath, quality) {
+  return new Promise(resolve => {
+    if (!wx.compressVideo) return resolve({ path: filePath, compressed: false })
+    wx.compressVideo({
+      src: filePath,
+      quality: quality || 'medium',
+      success: r => resolve({ path: r.tempFilePath || filePath, compressed: !!r.tempFilePath }),
+      fail: () => resolve({ path: filePath, compressed: false })
+    })
+  })
+}
+
 // 视频专用上传：wx.uploadFile 是流式发送，不受 wx.request 体积限制；
 // 服务端会探测时长，超过「视频最长秒数」时自动裁切并告诉我们裁了多久
 function uploadVideo(filePath) {
-  const suffix = String((filePath.match(/\.[a-zA-Z0-9]+$/) || ['.mp4'])[0]).replace(/^\./, '')
-  return login().then(code => new Promise((resolve, reject) => {
-    wx.uploadFile({
-      url: BASE + '/api/video?ext=' + encodeURIComponent(suffix) + '&code=' + encodeURIComponent(code),
-      filePath,
-      name: 'file',
-      timeout: 180000,
-      success: res => {
-        let r = {}
-        try { r = JSON.parse(res.data || '{}') } catch (e) { r = {} }
-        if (r.code === 0) return resolve(r.data)
-        reject(new Error(r.msg || '视频上传失败'))
-      },
-      fail: err => {
-        console.error('uploadVideo', err)
-        reject(new Error('视频上传失败，请检查网络后重试'))
-      }
-    })
-  }))
+  return fileSizeMB(filePath).then(sizeMB => {
+    // 大文件先压缩，能显著减少弱网失败
+    if (sizeMB > COMPRESS_OVER_MB) {
+      return compressVideo(filePath, sizeMB > 80 ? 'low' : 'medium').then(r => r.path)
+    }
+    return filePath
+  }).then(finalPath => {
+    const suffix = String((finalPath.match(/\.[a-zA-Z0-9]+$/) || ['.mp4'])[0]).replace(/^\./, '')
+    return login().then(code => new Promise((resolve, reject) => {
+      wx.uploadFile({
+        url: BASE + '/api/video?ext=' + encodeURIComponent(suffix) + '&code=' + encodeURIComponent(code),
+        filePath: finalPath,
+        name: 'file',
+        timeout: 300000,
+        success: res => {
+          let r = {}
+          try { r = JSON.parse(res.data || '{}') } catch (e) { r = {} }
+          if (r.code === 0) return resolve(r.data)
+          reject(new Error(r.msg || ('视频上传失败（HTTP ' + res.statusCode + '）')))
+        },
+        fail: err => {
+          const raw = (err && err.errMsg) || '未知错误'
+          console.error('uploadVideo fail:', raw)
+          // 把微信的原始原因带出来，方便定位（域名/超时/体积/编码）
+          reject(new Error('视频上传失败（' + raw + '）'))
+        }
+      })
+    }))
+  })
 }
 
 function readFile(filePath) {

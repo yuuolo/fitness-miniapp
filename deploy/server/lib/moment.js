@@ -304,7 +304,21 @@ async function momentByShort({ me, data }) {
   return momentView(m, me)
 }
 
+// 上传限制（只读，会员也能看）：前端在上传前先用它检查体积/时长
+async function uploadLimits({ me }) {
+  need(me, 'member')
+  const cfg = await limits.get()
+  return {
+    maxDuration: cfg.maxDuration,
+    maxVideoMB: cfg.maxVideoMB,
+    maxRawVideoMB: cfg.maxRawVideoMB,
+    maxTotalMB: cfg.maxTotalMB,
+    maxCount: cfg.maxCount,
+    feedThumbs: cfg.feedThumbs
+  }
+}
+
 module.exports = {
   postMoment, momentList, momentDetail, deleteMoment, likeMoment,
-  momentPoster, momentByShort, setPosterQr
+  momentPoster, momentByShort, setPosterQr, uploadLimits
 }
